@@ -152,6 +152,8 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+.pathbox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 12px}
+.pathbox code{font-size:12px;overflow-wrap:anywhere}
 h4{margin:6px 0 0;font-size:14px}
 @media (prefers-reduced-motion:reduce){.svc{transition:none}}
 </style>
@@ -255,16 +257,54 @@ const REASONS=["Printer kağızı tutdu","Rəng səhv çıxdı","Kəsim səhvi",
 
 // ---------- Saxlama ----------
 const KEY="fotoerp.v1";
-let S;
-try{ S=JSON.parse(localStorage.getItem(KEY)) }catch(e){}
-let firstRun=false;
-if(!S||!S.items){S=structuredClone(SEED);firstRun=true}
-const APP_VERSION="0.5.0";
+// EMGRAPHIC ERP.exe içində məlumat ayrıca faylda saxlanır (həcm həddi yoxdur).
+// Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
+const NATIVE=typeof window.erpLoad==="function";
+let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
+const APP_VERSION="0.6.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0})}
-upgrade();
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+function parseData(txt){try{const j=JSON.parse(txt);const d=j&&j.data&&j.app?j.data:j;return d&&d.items&&d.materials?d:null}catch(e){return null}}
+async function loadData(){
+  if(NATIVE){
+    let txt="",err=null;
+    try{txt=await window.erpLoad()}catch(e){err=e}
+    if(txt){S=parseData(txt);if(!S)err="fayl xarabdır"}
+    if(err){ // fayl oxunmadı: ən son ehtiyat nüsxədən aç
+      try{const l=await window.erpBackupList();if(l.length){S=parseData(await window.erpBackupRead(l[0].name));
+        if(S)setTimeout(()=>toast(`Məlumat faylı oxunmadı (${err}). Ən son ehtiyat nüsxə açıldı: ${l[0].name}`),300)}}catch(e){}
+      if(!S){loadBroken=true;setTimeout(()=>toast(`Məlumat faylı oxunmadı (${err}) və ehtiyat nüsxə yoxdur. Fayl qorunur, heç nə yazılmır. Proqramçıya müraciət edin.`),300)}
+    }
+    if(!S&&!txt&&!err){ // ilk dəfə: köhnə yaddaşdan (v0.5.0) köçür
+      try{S=parseData(localStorage.getItem(KEY)||"");if(S)migrated=true}catch(e){}
+    }
+  }else{
+    try{S=parseData(localStorage.getItem(KEY)||"")}catch(e){}
+  }
+  if(!S){S=structuredClone(SEED);firstRun=true}
+  upgrade();
+  if(migrated)save();
+}
+let saving=Promise.resolve(), saveFailed=false;
+const save=()=>{
+  const txt=JSON.stringify(S);
+  if(NATIVE){
+    if(loadBroken){toast("Məlumat faylı xarab olduğu üçün yazılmır. Proqramçıya müraciət edin.");return}
+    saving=saving.then(()=>window.erpSave(txt)).then(
+      ()=>{if(saveFailed){saveFailed=false;toast("Məlumat yenidən diskə yazılır ✓")}},
+      e=>{saveFailed=true;toast("Diqqət: məlumat diskə yazılmadı: "+e)});
+    return;
+  }
+  try{localStorage.setItem(KEY,txt)}catch(e){toast("Diqqət: məlumat yadda saxlanmadı (brauzer yaddaşı dolub)")}
+};
+// Gündə bir dəfə avtomatik ehtiyat nüsxə: proqram qovluğunda "ehtiyat" papkası
+async function autoBackup(){
+  if(!NATIVE||loadBroken)return;
+  if(S.lastAuto&&new Date(S.lastAuto).toDateString()===new Date().toDateString())return;
+  try{await window.erpBackup(backupText(),"avto");S.lastAuto=S.lastBackup=Date.now();backups=null;save()}
+  catch(e){toast("Avtomatik ehtiyat nüsxə alınmadı: "+e)}
+}
 
 // ---------- Köməkçilər ----------
 const $=id=>document.getElementById(id);
@@ -326,7 +366,7 @@ function finishSale(){
   const short=[];
   order.forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);M.stock-=q*o.q;if(M.stock<0)short.push(M.name)}));
   S.sales.push({ts:Date.now(),worker:$("worker").value,pay,lines,total:lines.reduce((a,l)=>a+l.sum,0)});
-  save();order=[];renderAll();
+  save();order=[];renderAll();autoBackup();
   toast(short.length?`Satıldı. Diqqət: ${short.join(", ")} mənfiyə düşdü`:"Satış yazıldı ✓");
 }
 
@@ -396,6 +436,7 @@ function renderRep(){
   if(rtab==="mat") h=renderMatAdmin();
   if(rtab==="backup") h=renderBackup();
   $("rbody").innerHTML=h;
+  if(rtab==="backup")fillBackupList();
 }
 
 // ---------- Admin: məhsullar ----------
@@ -501,19 +542,34 @@ function renderMatAdmin(){
 function renderBackup(){
   const last=S.lastBackup?new Date(S.lastBackup).toLocaleString("az"):"heç vaxt";
   const old=!S.lastBackup||Date.now()-S.lastBackup>7*864e5;
+  const kb=Math.round(JSON.stringify(S).length/1024);
   return `<div class="kpis">
     <div class="kpi"><span>Satış qeydləri</span><b>${S.sales.length}</b></div>
     <div class="kpi"><span>Zay qeydləri</span><b>${S.waste.length}</b></div>
-    <div class="kpi"><span>Məhsul / material</span><b>${S.items.length} / ${S.materials.length}</b></div>
+    <div class="kpi"><span>Məlumatın həcmi</span><b>${kb} KB</b></div>
     <div class="kpi"><span>Son ehtiyat nüsxə</span><b style="font-size:15px;color:${old?"var(--warn)":"var(--ok)"}">${last}</b></div></div>
-  <p class="sub">Ehtiyat nüsxə bütün məlumatı (satışlar, zay, anbar, məhsullar, qiymətlər) bir fayla yazır. Faylı fləşkaya və ya Google Drive-a köçürün. Kompüter xarab olsa, bu fayldan hər şeyi geri qaytarmaq olar. Həftədə bir dəfə edin.</p>
-  <div class="frow"><button class="btn" data-act="bexp">⬇ Ehtiyat nüsxəni fayla yaz</button><button class="btn ghost" data-act="bcopy">Mətn kimi kopyala</button></div>
-  <h4>Ehtiyat nüsxədən bərpa et</h4>
-  <p class="sub">Diqqət: bu, indiki bütün məlumatı seçdiyiniz faylla əvəz edir.</p>
+  ${NATIVE?`<p class="sub">Proqram hər gün ilk satışda (və hər açılışda) özü ehtiyat nüsxə yaradır. Son ${30} nüsxə saxlanılır, köhnələri avtomatik silinir. Kompüter xarab olmasından qorunmaq üçün bu qovluğu vaxtaşırı fləşkaya və ya Google Drive-a da köçürün.</p>
+    <div class="pathbox"><span class="sub">Ehtiyat qovluğu</span><code>${esc(PATHS?.backup||"")}</code><span class="sub">Məlumat faylı</span><code>${esc(PATHS?.data||"")}</code></div>
+    <div class="frow"><button class="btn" data-act="bnow">💾 İndi ehtiyat nüsxə yarat</button><button class="btn ghost" data-act="bopen">📂 Qovluğu aç</button><button class="btn ghost" data-act="bcopy">Mətn kimi kopyala</button></div>
+    <h4>Qovluqdakı ehtiyat nüsxələr</h4>
+    <div class="tw" id="blist"><p class="sub">Yüklənir…</p></div>`
+  :`<p class="sub">Ehtiyat nüsxə bütün məlumatı (satışlar, zay, anbar, məhsullar, qiymətlər) bir fayla yazır. Faylı fləşkaya və ya Google Drive-a köçürün. Həftədə bir dəfə edin.</p>
+    <div class="frow"><button class="btn" data-act="bexp">⬇ Ehtiyat nüsxəni fayla yaz</button><button class="btn ghost" data-act="bcopy">Mətn kimi kopyala</button></div>`}
+  <h4>Başqa fayldan bərpa et</h4>
+  <p class="sub">Diqqət: bərpa indiki bütün məlumatı seçilmiş nüsxə ilə əvəz edir.${NATIVE?" Əvəz etməzdən əvvəl indiki vəziyyətin nüsxəsi avtomatik saxlanılır.":""}</p>
   <div class="frow"><input type="file" id="bfile" accept=".json,application/json">
-  ${pendingImport?`<button class="btn red" data-act="bimp">Bəli, ${pendingImport.sales.length} satışlı faylla əvəz et</button>`:""}</div>
+  ${pendingImport?`<button class="btn red" data-act="bimp">Bəli, ${pendingImport.sales.length} satışlı nüsxə ilə əvəz et</button> <button class="btn ghost" data-act="bimpx">Ləğv et</button>`:""}</div>
   <h4>Sıfırlamaq</h4>
   <div><button class="btn ghost" data-act="reset">${delArm==="reset"?"Əminsiniz? Bütün məlumat silinəcək":"Nümunə məlumata qaytar"}</button></div>`;
+}
+async function fillBackupList(){
+  const box=$("blist");if(!box||!NATIVE)return;
+  try{if(!backups)backups=await window.erpBackupList()}catch(e){box.innerHTML=`<p class="sub">Siyahı oxunmadı: ${esc(e)}</p>`;return}
+  if(!$("blist"))return;
+  $("blist").innerHTML=backups.length?`<table><tr><th>Tarix</th><th>Növ</th><th class="n">Həcm</th><th></th></tr>${backups.map(b=>`<tr>
+    <td>${new Date(b.time).toLocaleString("az")}</td><td>${b.name.includes("-avto")?"avtomatik":"əl ilə"}</td><td class="n">${Math.max(1,Math.round(b.size/1024))} KB</td>
+    <td><button class="btn ghost sm" data-act="brest" data-n="${esc(b.name)}">Bu nüsxəni bərpa et</button></td></tr>`).join("")}</table>`
+    :`<p class="sub">Hələ ehtiyat nüsxə yoxdur. "İndi ehtiyat nüsxə yarat" basın.</p>`;
 }
 function backupText(){return JSON.stringify({app:"EMGRAPHIC ERP",version:APP_VERSION,exported:new Date().toISOString(),data:S},null,1)}
 
@@ -593,8 +649,18 @@ document.addEventListener("click",e=>{
       setTimeout(()=>URL.revokeObjectURL(u),5000);S.lastBackup=Date.now();save();toast("Ehtiyat nüsxə fayla yazıldı")}catch(err){toast("Fayl yazılmadı: "+err.message)}
   }
   else if(a==="bcopy"){navigator.clipboard?.writeText(backupText()).then(()=>{S.lastBackup=Date.now();save();renderRep();toast("Kopyalandı, Notepad-a yapışdırıb saxlayın")},()=>toast("Kopyalamaq alınmadı, faylı istifadə edin"));return}
-  else if(a==="bimp"){S=pendingImport;pendingImport=null;upgrade();save();order=[];renderAll();toast("Məlumat ehtiyat nüsxədən bərpa olundu")}
-  else if(a==="reset"){if(delArm!=="reset"){delArm="reset"}else{S=structuredClone(SEED);upgrade();delArm=null;order=[];save();renderAll();toast("Nümunə məlumat bərpa olundu")}}
+  else if(a==="bimp"){
+    const next=pendingImport;pendingImport=null;
+    (NATIVE?window.erpBackup(backupText(),"el").catch(()=>{}):Promise.resolve()).then(()=>{
+      S=next;upgrade();save();order=[];backups=null;renderAll();renderRep();toast("Məlumat ehtiyat nüsxədən bərpa olundu")});return}
+  else if(a==="bimpx"){pendingImport=null}
+  else if(a==="bnow"){window.erpBackup(backupText(),"el").then(p=>{S.lastBackup=Date.now();backups=null;save();renderRep();toast("Ehtiyat nüsxə yaradıldı ✓")},e=>toast("Alınmadı: "+e));return}
+  else if(a==="bopen"){window.erpOpenFolder().catch(e=>toast("Qovluq açılmadı: "+e));return}
+  else if(a==="brest"){window.erpBackupRead(t.dataset.n).then(txt=>{const d=parseData(txt);if(!d)throw "fayl düzgün deyil";
+    pendingImport=d;renderRep();toast(`${t.dataset.n}: ${d.sales.length} satış. Təsdiq üçün qırmızı düyməni basın`)}).catch(e=>toast("Nüsxə oxunmadı: "+e));return}
+  else if(a==="reset"){if(delArm!=="reset"){delArm="reset"}else{delArm=null;
+    (NATIVE?window.erpBackup(backupText(),"el").catch(()=>{}):Promise.resolve()).then(()=>{
+      S=structuredClone(SEED);upgrade();order=[];backups=null;save();renderAll();renderRep();toast("Nümunə məlumat bərpa olundu"+(NATIVE?" (əvvəlki vəziyyətin nüsxəsi saxlandı)":""))});return}}
   renderRep();
   if(draft&&["edit","new","qedit","qnew"].includes(a))$("editor")?.scrollIntoView({behavior:"smooth",block:"start",inline:"nearest"});
 });
@@ -603,7 +669,7 @@ document.addEventListener("change",e=>{
   if(cid){const c=S.cats.find(x=>x.id===cid),n=e.target.value.trim();if(c&&n){c.name=n;save();renderTabs();toast("Bölmənin adı dəyişdi")}return}
   if(e.target.id!=="bfile")return;
   const f=e.target.files[0];if(!f)return;
-  f.text().then(txt=>{const j=JSON.parse(txt),d=j.data||j;if(!d.items||!d.materials||!d.sales)throw new Error("bu EMGRAPHIC ERP ehtiyat faylı deyil");
+  f.text().then(txt=>{const d=parseData(txt);if(!d||!d.sales)throw new Error("bu EMGRAPHIC ERP ehtiyat faylı deyil");
     pendingImport=d;renderRep();toast(`Fayl oxundu: ${d.sales.length} satış. Təsdiq üçün qırmızı düyməni basın`)}).catch(err=>toast("Fayl oxunmadı: "+err.message));
 });
 
@@ -645,8 +711,14 @@ document.addEventListener("change",e=>{
 });
 document.querySelectorAll(".ov").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
 $("ver").textContent="v"+APP_VERSION;
-if(firstRun)$("banner").hidden=false;
-renderAll();
+(async()=>{
+  await loadData();
+  if(NATIVE){try{PATHS=await window.erpPaths()}catch(e){}}
+  if(firstRun)$("banner").hidden=false;
+  renderAll();
+  if(migrated)toast("Məlumat yeni fayl yaddaşına köçürüldü ✓");
+  autoBackup();
+})();
 </script>
 </body>
 </html>

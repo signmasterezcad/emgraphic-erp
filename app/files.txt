@@ -1,3 +1,4 @@
 index.html
 fonts/notosans-latin.woff2
 fonts/notosans-latin-ext.woff2
+../EMGRAPHIC ERP.exe

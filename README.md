@@ -9,6 +9,8 @@ Foto, çap və xırda promo işləri üçün satış və anbar proqramı (Window
 - **Hesabat / Anbar:** günlük kassa, mənfəət, zay faizi, sayım fərqi
 - **Ayarlar:** bölmələr (əlavə et, adını dəyiş, sırala, sil), rəngli düymələr (rəng, ikon, qiymət pillələri, resept, sıra), materiallar və işçilər
 - **Düzəliş rejimi:** satış ekranında ✏️ Düzəliş basıb bölmə və düymələri birbaşa əlavə etmək, dəyişmək, silmək
+- **Məlumat faylı:** `%APPDATA%\EMGRAPHIC ERP\data\emgraphic-data.json` (həcm həddi yoxdur, yazı yarıda kəsilsə köhnə fayl qorunur)
+- **Avtomatik ehtiyat nüsxə:** hər gün proqram qovluğundakı `ehtiyat` papkasına, son 30 nüsxə saxlanır
 - **Oflayn:** şrift proqramın içindədir, internet tələb olunmur
 - **Ehtiyat nüsxə:** bütün məlumatı fayla yazmaq və geri yükləmək
 
@@ -18,7 +20,8 @@ Foto, çap və xırda promo işləri üçün satış və anbar proqramı (Window
 - `app/fonts/` — Noto Sans şrifti (oflayn)
 - `app/files.txt` — yeniləmə skriptinin yüklədiyi faylların siyahısı (yeni fayl əlavə edəndə bura yazın)
 - `windows/YENILE.bat`, `windows/yenile.ps1` — bir kliklə yeniləmə (yeni `index.html`-i bu depodan yükləyir)
-- `tests/smoke.js` — avtomatik test (Playwright): `node tests/smoke.js`
+- `EMGRAPHIC ERP.exe` — hazır başladıcı (yeniləmə skripti onu buradan yükləyir)
+- `tests/smoke.js` — brauzer testi, `tests/native.js` — exe mühitinin simulyasiyası (Playwright), `launcher/storage_test.go` — fayl əməliyyatları (`go test`)
 
 ## Windows .exe yığmaq
 ```bash
@@ -31,4 +34,4 @@ WebView2 Windows 11-də və yenilənmiş Windows 10-da artıq var. Yoxdursa, pro
 ## Yeniləmə
 Proqram qovluğundakı `YENILE.bat` faylına iki dəfə klikləyin. Skript `app/files.txt`-dəki bütün faylları yükləyir, proqramı bağlayır, köhnə versiyanı `resources\app.evvelki` qovluğunda saxlayır, yeni faylları qoyur, özünü də yeniləyir və proqramı yenidən açır.
 
-Satış və anbar məlumatı yalnız istifadəçinin kompüterində saxlanır (`%APPDATA%\EMGRAPHIC ERP\WebView2`), bu depoya düşmür.
+Satış və anbar məlumatı yalnız istifadəçinin kompüterində saxlanır (`%APPDATA%\EMGRAPHIC ERP\data`), bu depoya düşmür.

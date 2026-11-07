@@ -1,6 +1,6 @@
 ﻿# EMGRAPHIC ERP - yenileme skripti
-# app/files.txt siyahisindaki butun fayllari GitHub-dan yukleyir.
-# Kohne versiya resources\app.evvelki qovluguna saxlanir. Satis melumatina toxunmur.
+# app/files.txt siyahisindaki butun fayllari (EMGRAPHIC ERP.exe daxil) GitHub-dan yukleyir.
+# Kohne versiya app.evvelki qovluguna saxlanir. Satis melumatina ve ehtiyat qovluguna toxunmur.
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -15,10 +15,13 @@ $exe    = Join-Path $root "EMGRAPHIC ERP.exe"
 $base   = "https://raw.githubusercontent.com/signmasterezcad/emgraphic-erp/main"
 $nc     = "?t=" + [DateTimeOffset]::Now.ToUnixTimeSeconds()
 
+# files.txt-də "../X" yazılan fayl proqramın əsas qovluğuna gedir (məs. EMGRAPHIC ERP.exe)
+function Tmp-Path($f) { if ($f.StartsWith("../")) { return (Join-Path $tmp ("_root\" + $f.Substring(3))) } return (Join-Path $tmp $f) }
+function Dest-Path($f) { if ($f.StartsWith("../")) { return (Join-Path $root $f.Substring(3)) } return (Join-Path $appDir $f) }
 function Get-File($rel, $dest) {
   $dir = Split-Path -Parent $dest
   if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-  Invoke-WebRequest -Uri ($base + "/" + $rel + $nc) -OutFile $dest -UseBasicParsing
+  Invoke-WebRequest -Uri ($base + "/" + $rel.Replace(" ", "%20") + $nc) -OutFile $dest -UseBasicParsing
 }
 function Get-Ver($file) {
   if (-not (Test-Path $file)) { return "" }
@@ -33,7 +36,15 @@ try {
   New-Item -ItemType Directory -Path $tmp | Out-Null
   Get-File "app/files.txt" (Join-Path $tmp "files.txt")
   $list = Get-Content (Join-Path $tmp "files.txt") | Where-Object { $_.Trim() -ne "" }
-  foreach ($f in $list) { Write-Host "  yüklənir: $f"; Get-File ("app/" + $f.Trim()) (Join-Path $tmp $f.Trim()) }
+  foreach ($f in $list) {
+    $f = $f.Trim(); Write-Host "  yüklənir: $f"
+    $rel = if ($f.StartsWith("../")) { $f.Substring(3) } else { "app/" + $f }
+    Get-File $rel (Tmp-Path $f)
+    if ($f.EndsWith(".exe")) {
+      $b = [IO.File]::ReadAllBytes((Tmp-Path $f))
+      if ($b.Length -lt 100000 -or $b[0] -ne 0x4D -or $b[1] -ne 0x5A) { throw "$f düzgün proqram faylı deyil" }
+    }
+  }
   Get-File "windows/yenile.ps1" (Join-Path $tmp "_yenile.ps1")
   Get-File "windows/YENILE.bat" (Join-Path $tmp "_YENILE.bat")
 } catch {
@@ -49,14 +60,19 @@ $oldVer = Get-Ver (Join-Path $appDir "index.html")
 if ($newVer -and $newVer -eq $oldVer) {
   Write-Host "Sizdə artıq ən son versiya var: v$newVer" -ForegroundColor Green
 } else {
-  Get-Process -Name "EMGRAPHIC ERP" -ErrorAction SilentlyContinue | Stop-Process -Force
+  $p = Get-Process -Name "EMGRAPHIC ERP" -ErrorAction SilentlyContinue
+  if ($p) { Write-Host "  proqram bağlanır..."; $p | Stop-Process -Force; $p | Wait-Process -Timeout 15 -ErrorAction SilentlyContinue }
   Start-Sleep -Seconds 1
   if (Test-Path $oldDir) { Remove-Item $oldDir -Recurse -Force }
   Copy-Item $appDir $oldDir -Recurse -Force
   foreach ($f in $list) {
-    $dest = Join-Path $appDir $f.Trim(); $dir = Split-Path -Parent $dest
+    $f = $f.Trim(); $dest = Dest-Path $f; $dir = Split-Path -Parent $dest
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-    Copy-Item (Join-Path $tmp $f.Trim()) $dest -Force
+    if ($f.EndsWith(".exe") -and (Test-Path $dest)) { Copy-Item $dest ($dest + ".evvelki") -Force }
+    for ($i = 1; $i -le 5; $i++) {
+      try { Copy-Item (Tmp-Path $f) $dest -Force; break }
+      catch { if ($i -eq 5) { throw }; Start-Sleep -Seconds 2 }
+    }
   }
   Copy-Item (Join-Path $tmp "_YENILE.bat") (Join-Path $root "YENILE.bat") -Force
   Copy-Item (Join-Path $tmp "_yenile.ps1") (Join-Path $root "yenile.ps1") -Force

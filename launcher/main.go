@@ -1,3 +1,5 @@
+//go:build windows
+
 // EMGRAPHIC ERP başladıcısı.
 // Windows-un daxili WebView2 (Edge) mühərriki ilə app\index.html faylını açır.
 // Electron-dan fərqli olaraq öz brauzerini daşımır, ona görə kiçik və sürətlidir.
@@ -6,8 +8,10 @@ package main
 import (
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"syscall"
+	"time"
 	"unsafe"
 
 	webview2 "github.com/jchv/go-webview2"
@@ -82,6 +86,23 @@ func main() {
 	}
 	defer w.Destroy()
 	procShowWindow.Call(uintptr(w.Window()), swMaximize)
+
+	// Məlumat faylı və ehtiyat qovluğu (proqram qovluğunda "ehtiyat")
+	home, _ := os.UserHomeDir()
+	programDir := filepath.Dir(exe)
+	st := &store{
+		dataFile:  filepath.Join(cfg, "EMGRAPHIC ERP", "data", "emgraphic-data.json"),
+		backupDir: chooseBackupDir(programDir, home),
+	}
+	w.Bind("erpLoad", st.load)
+	w.Bind("erpSave", st.save)
+	w.Bind("erpBackup", func(json, kind string) (string, error) { return st.backup(json, kind, time.Now()) })
+	w.Bind("erpBackupList", st.list)
+	w.Bind("erpBackupRead", st.read)
+	w.Bind("erpPaths", func() map[string]string {
+		return map[string]string{"data": st.dataFile, "backup": st.backupDir}
+	})
+	w.Bind("erpOpenFolder", func() error { return exec.Command("explorer.exe", st.backupDir).Start() })
 
 	u := url.URL{Scheme: "file", Path: "/" + filepath.ToSlash(index)}
 	w.Navigate(u.String())
