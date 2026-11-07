@@ -152,6 +152,7 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+tr.confirm td{background:color-mix(in srgb,var(--bad) 10%,var(--panel));border-bottom:1px solid var(--bad)}
 .pathbox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 12px}
 .pathbox code{font-size:12px;overflow-wrap:anywhere}
 h4{margin:6px 0 0;font-size:14px}
@@ -261,7 +262,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.6.0";
+const APP_VERSION="0.6.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0})}
@@ -329,7 +330,7 @@ function renderHeader(){
 function renderTabs(){
   refreshCats();
   $("tabs").innerHTML=CATS.map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${esc(l)}${editMode&&k!=="fav"?
-    `<span class="tx" role="button" data-act="qcren" data-c="${k}" title="Adını dəyiş">✏️</span><span class="tx" role="button" data-act="qcdel" data-c="${k}" title="Sil">${delArm===k?"Sil?":"🗑"}</span>`:""}</button>`).join("")
+    `<span class="tx" role="button" data-act="qcren" data-c="${k}" title="Adını dəyiş">✏️</span><span class="tx" role="button" data-act="qcdel" data-c="${k}" title="Sil">${delArm===k?(S.items.some(it=>it.cat===k)?`${S.items.filter(it=>it.cat===k).length} düymə ilə sil?`:"Sil?"):"🗑"}</span>`:""}</button>`).join("")
     +(editMode?`<button class="tab add" data-act="qcadd">+ Bölmə</button>`:"");
 }
 function renderGrid(){
@@ -510,13 +511,35 @@ function renderCats(){
   ${S.cats.map((c,i)=>{const n=S.items.filter(it=>it.cat===c.id).length;return `<tr>
     <td class="arrows"><button class="btn ghost sm" data-act="cup" data-i="${i}" ${i===0?"disabled":""} aria-label="yuxarı">↑</button><button class="btn ghost sm" data-act="cdown" data-i="${i}" ${i===S.cats.length-1?"disabled":""} aria-label="aşağı">↓</button></td>
     <td><input class="wide" data-cid="${c.id}" value="${esc(c.name)}" aria-label="bölmənin adı"></td><td class="n">${n}</td>
-    <td><button class="btn ghost sm" data-act="cbtn" data-c="${c.id}">Düymələrə bax</button> <button class="btn ghost sm" data-act="cdel" data-c="${c.id}">${delArm===c.id?"Əminsiniz? Sil":"Sil"}</button></td></tr>`}).join("")}
+    <td><button class="btn ghost sm" data-act="cbtn" data-c="${c.id}">Düymələrə bax</button> <button class="btn ghost sm del" data-act="cdel" data-c="${c.id}">Sil</button></td></tr>
+    ${delArm===c.id?`<tr class="confirm"><td></td><td colspan="3"><div class="frow">
+      <b>"${esc(c.name)}" silinsin?</b>
+      ${n?`<span class="sub">İçində ${n} düymə var:</span>
+        <button class="btn red sm" data-act="cdelall" data-c="${c.id}">Bölməni ${n} düymə ilə birlikdə sil</button>
+        ${S.cats.length>1?`<span class="sub">və ya düymələri</span><select id="mv_${c.id}" aria-label="hara köçürülsün">${S.cats.filter(x=>x.id!==c.id).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select>
+        <button class="btn sm" data-act="cmove" data-c="${c.id}">bölməsinə köçür, bölməni sil</button>`:""}`
+      :`<button class="btn red sm" data-act="cdelall" data-c="${c.id}">Bəli, sil</button>`}
+      <button class="btn ghost sm" data-act="cdelx">Ləğv et</button></div></td></tr>`:""}`}).join("")}
   <tr><td></td><td><input id="nc_name" class="wide" placeholder="Yeni bölmə, məs. Möhür"></td><td></td><td><button class="btn sm" data-act="cadd">+ Bölmə əlavə et</button></td></tr>
   </table></div>`;
 }
 
 function setEdit(on){editMode=on;delArm=null;document.body.classList.toggle("editing",on);$("editbar").hidden=!on;$("btnEdit").classList.toggle("on",on);
   if(on){order=[];renderOrder()}renderTabs();renderGrid()}
+// Bölməni sil: içindəki düymələri ya birlikdə sil, ya da başqa bölməyə köçür.
+// Keçmiş satışlar və hesabatlar dəyişmir (satışda düymənin adı saxlanır).
+async function deleteCat(id,moveTo){
+  const c=S.cats.find(x=>x.id===id);if(!c)return;
+  const its=S.items.filter(i=>i.cat===id);
+  if(NATIVE&&its.length&&!moveTo)await window.erpBackup(backupText(),"el").catch(()=>{});
+  if(moveTo)its.forEach(i=>i.cat=moveTo);
+  else{const ids=new Set(its.map(i=>i.id));S.items=S.items.filter(i=>!ids.has(i.id));order=order.filter(o=>!ids.has(o.id))}
+  S.cats=S.cats.filter(x=>x.id!==id);
+  if(cat===id)cat="fav";if(setCat===id)setCat="all";delArm=null;backups=null;
+  save();renderAll();if(!$("ovRep").hidden)renderRep();
+  toast(moveTo?`"${c.name}" silindi, ${its.length} düymə "${S.cats.find(x=>x.id===moveTo)?.name}" bölməsinə köçdü`
+    :`"${c.name}" bölməsi${its.length?` və ${its.length} düymə`:""} silindi`);
+}
 function openSet(tab,sc){mode="set";rtab=tab;if(sc)setCat=sc;$("ovRep").hidden=false}
 
 // ---------- Admin: materiallar və işçilər ----------
@@ -576,7 +599,7 @@ function backupText(){return JSON.stringify({app:"EMGRAPHIC ERP",version:APP_VER
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
-  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel"].includes(a))delArm=null;
+  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove"].includes(a))delArm=null;
   if(a==="editdone"){setEdit(false);return}
   else if(a==="banx"){$("banner").hidden=true;return}
   else if(a==="bango"){$("banner").hidden=true;mode="set";rtab="backup";$("ovRep").hidden=false}
@@ -587,10 +610,9 @@ document.addEventListener("click",e=>{
     const n=item(id)?.name;S.items=S.items.filter(x=>x.id!==id);order=order.filter(o=>o.id!==id);delArm=null;save();renderGrid();renderOrder();toast(`"${n}" silindi`);return}
   else if(a==="qcadd"){openSet("bolme");setTimeout(()=>$("nc_name")?.focus(),50)}
   else if(a==="qcren"){openSet("bolme");setTimeout(()=>{const i=document.querySelector(`input[data-cid="${t.dataset.c}"]`);i?.focus();i?.select()},50)}
-  else if(a==="qcdel"){const id=t.dataset.c,n=S.items.filter(it=>it.cat===id).length;
-    if(n){toast(`Bu bölmədə ${n} düymə var. Əvvəlcə düymələri silin və ya başqa bölməyə köçürün`);return}
+  else if(a==="qcdel"){const id=t.dataset.c;
     if(delArm!==id){delArm=id;renderTabs();return}
-    S.cats=S.cats.filter(c=>c.id!==id);delArm=null;if(cat===id)cat="fav";save();renderTabs();renderGrid();toast("Bölmə silindi");return}
+    deleteCat(id);return}
   else if(a==="ldel"){const id=t.dataset.id;if(delArm!==id){delArm=id}else{const n=item(id)?.name;S.items=S.items.filter(x=>x.id!==id);order=order.filter(o=>o.id!==id);delArm=null;if(draft?.id===id)draft=null;save();renderAll();toast(`"${n}" silindi`)}}
   else if(a==="scat"){setCat=t.dataset.c;draft=null}
   else if(a==="up"||a==="down"){
@@ -602,9 +624,10 @@ document.addEventListener("click",e=>{
   else if(a==="cadd"){const n=$("nc_name").value.trim();if(!n){toast("Bölmənin adını yazın");return}
     S.cats.push({id:newId("c"),name:n});save();renderTabs();toast(`"${n}" bölməsi əlavə olundu`)}
   else if(a==="cbtn"){rtab="admin";setCat=t.dataset.c}
-  else if(a==="cdel"){const id=t.dataset.c,n=S.items.filter(it=>it.cat===id).length;
-    if(n){toast(`Bu bölmədə ${n} düymə var. Əvvəlcə onları başqa bölməyə köçürün və ya silin`);return}
-    if(delArm!==id)delArm=id;else{S.cats=S.cats.filter(c=>c.id!==id);delArm=null;save();renderTabs();toast("Bölmə silindi")}}
+  else if(a==="cdel"){delArm=delArm===t.dataset.c?null:t.dataset.c}
+  else if(a==="cdelx"){delArm=null}
+  else if(a==="cdelall"){deleteCat(t.dataset.c);return}
+  else if(a==="cmove"){deleteCat(t.dataset.c,$("mv_"+t.dataset.c).value);return}
   else if(a==="edit"){const it=item(t.dataset.id);draft={...structuredClone(it),isNew:false}}
   else if(a==="new"){draft={id:newId("p"),name:"",cat:setCat!=="all"?setCat:(cat!=="fav"?cat:S.cats[0]?.id),icon:"🧾",color:"#2563eb",fav:0,ink:0,recipe:[],tiers:[[1,1]],isNew:true}}
   else if(a==="radd"){syncDraft();draft.recipe.push([S.materials[0]?.id,1])}
