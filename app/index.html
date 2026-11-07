@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EMGRAPHIC ERP</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap">
+<style>
+@font-face{font-family:"Noto Sans";font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/notosans-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Noto Sans";font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/notosans-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+</style>
 <style>
 /* Layout: kassir ekranı — solda kateqoriya + böyük düymələr, sağda cari sifariş; modal pəncərələr zay və hesabat üçün */
 :root{
@@ -128,6 +131,15 @@ label.chk{display:flex;gap:6px;align-items:center;font-size:13px}
 td input.wide{width:200px;text-align:left}
 .chip .x{background:none;border:0;color:var(--muted);font-weight:800;padding:0 0 0 4px}
 .ver{color:var(--muted);font-size:11px;font-weight:600}
+.tab.sm{padding:6px 12px;font-size:13px}
+td.arrows{white-space:nowrap}
+td.arrows .btn{padding:4px 8px;margin-right:2px}
+.btn:disabled{opacity:.35;cursor:default}
+.mini{display:inline-block;color:#fff;border-radius:8px;padding:3px 9px;font-weight:700;font-size:12px}
+.swatches{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:16px}
+.sw{width:24px;height:24px;border-radius:50%;border:2px solid transparent}
+.sw.on{border-color:var(--fg)}
+.svc.preview{width:180px;min-height:96px;cursor:default}
 h4{margin:6px 0 0;font-size:14px}
 @media (prefers-reduced-motion:reduce){.svc{transition:none}}
 </style>
@@ -139,6 +151,7 @@ h4{margin:6px 0 0;font-size:14px}
   <select class="worker" id="worker" aria-label="İşçi"></select>
   <button class="hbtn" id="btnZay">🗑️ Zay</button>
   <button class="hbtn" id="btnRep">📊 Hesabat / Anbar</button>
+  <button class="hbtn" id="btnSet">⚙️ Ayarlar</button>
   <div class="today" id="today"></div>
 </header>
 <div class="chips wrap" id="chips"></div>
@@ -220,7 +233,9 @@ const SEED = {
   ],
   sales:[], waste:[]
 };
-const CATS=[["fav","⭐ Sevimlilər"],["cap","Çap"],["foto","Foto"],["viz","Vizit / Promo"],["skan","Skan / Kserokopiya"],["lam","Laminasiya / Cild"],["kag","Kağız satışı"]];
+const DEFAULT_CATS=[["fav","⭐ Sevimlilər"],["cap","Çap"],["foto","Foto"],["viz","Vizit / Promo"],["skan","Skan / Kserokopiya"],["lam","Laminasiya / Cild"],["kag","Kağız satışı"]];
+let CATS=[];
+function refreshCats(){CATS=[["fav","⭐ Sevimlilər"],...S.cats.map(c=>[c.id,c.name])];if(!CATS.some(c=>c[0]===cat))cat="fav"}
 const REASONS=["Printer kağızı tutdu","Rəng səhv çıxdı","Kəsim səhvi","Müştəri faylı səhv","Test çapı","Digər"];
 
 // ---------- Saxlama ----------
@@ -228,9 +243,9 @@ const KEY="fotoerp.v1";
 let S;
 try{ S=JSON.parse(localStorage.getItem(KEY)) }catch(e){}
 if(!S||!S.items) S=structuredClone(SEED);
-const APP_VERSION="0.3.0";
+const APP_VERSION="0.4.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
-function upgrade(){S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
+function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0})}
 upgrade();
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
@@ -247,7 +262,7 @@ const isToday=ts=>new Date(ts).toDateString()===new Date().toDateString();
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
 
 // ---------- Vəziyyət ----------
-let cat="fav", order=[], pay="nağd", zReason=REASONS[0], rtab="gun";
+let cat="fav", order=[], pay="nağd", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
 
 function renderHeader(){
   $("worker").innerHTML=S.workers.map(w=>`<option>${w}</option>`).join("");
@@ -256,6 +271,7 @@ function renderHeader(){
   $("chips").innerHTML=S.materials.map(m=>`<span class="chip ${m.stock<=m.min?"low":""}">${m.name}: <b>${m.stock}</b>${m.stock<=m.min?" ⚠":""}</span>`).join("");
 }
 function renderTabs(){
+  refreshCats();
   $("tabs").innerHTML=CATS.map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${l}</button>`).join("");
 }
 function renderGrid(){
@@ -308,9 +324,12 @@ function saveZay(){
 }
 
 // ---------- Hesabat ----------
-const RT=[["gun","Bu gün"],["mal","Məhsul + mənfəət"],["zay","Zay"],["anbar","Anbar / Sayım"],["admin","⚙ Məhsullar"],["mat","⚙ Materiallar / İşçilər"],["backup","💾 Ehtiyat nüsxə"]];
+const RT_REP=[["gun","Bu gün"],["mal","Məhsul + mənfəət"],["zay","Zay"],["anbar","Anbar / Sayım"]];
+const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["mat","Materiallar / İşçilər"],["backup","💾 Ehtiyat nüsxə"]];
 function renderRep(){
-  $("rtabs").innerHTML=RT.map(([k,l])=>`<button class="tab ${k===rtab?"on":""}" data-rt="${k}">${l}</button>`).join("");
+  refreshCats();
+  $("rt").textContent=mode==="set"?"⚙️ Ayarlar":"📊 Hesabat / Anbar";
+  $("rtabs").innerHTML=(mode==="set"?RT_SET:RT_REP).map(([k,l])=>`<button class="tab ${k===rtab?"on":""}" data-rt="${k}">${l}</button>`).join("");
   const sales=S.sales.filter(s=>isToday(s.ts)), waste=S.waste.filter(w=>isToday(w.ts));
   let h="";
   if(rtab==="gun"){
@@ -352,6 +371,7 @@ function renderRep(){
       <td>${m.stock<=m.min?`<span class="pill warn">Az qalıb (min ${m.min})</span>`:`<span class="pill ok">Normal</span>`}</td></tr>`).join("")}</table></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="stSave">Yadda saxla</button></div>`;
   }
+  if(rtab==="bolme") h=renderCats();
   if(rtab==="admin") h=renderAdmin();
   if(rtab==="mat") h=renderMatAdmin();
   if(rtab==="backup") h=renderBackup();
@@ -366,26 +386,32 @@ let draft=null, delArm=null, pendingImport=null;
 
 function draftCost(d){return d.recipe.reduce((s,[m,q])=>s+(mat(m)?.cost||0)*(+q||0),0)+(+d.ink||0)}
 function renderAdmin(){
-  let h=`<p class="sub">Burada məhsul əlavə edir, qiyməti, say pillələrini və resepti dəyişirsiniz. Dəyişiklik dərhal satış ekranında görünür. Keçmiş satışlar dəyişmir.</p>
-  <div class="tw"><table><tr><th>Məhsul</th><th>Bölmə</th><th>Resept</th><th>Qiymət pillələri</th><th class="n">Maya / əd</th><th class="n">Mənfəət (1 əd)</th><th></th></tr>
-  ${S.items.map(it=>`<tr><td>${esc(it.icon)} ${esc(it.name)}${it.fav?" ⭐":""}</td><td>${CATS.find(c=>c[0]===it.cat)?.[1]||""}</td>
+  const list=S.items.filter(it=>setCat==="all"||(setCat==="fav"?it.fav:it.cat===setCat));
+  let h=`<p class="sub">Satış ekranındakı rəngli düymələr. Bölməni seçin, düyməni ↑ ↓ ilə yerini dəyişin, "Redaktə" ilə adını, rəngini, qiymətini və reseptini dəyişin.</p>
+  <div class="frow">${[["all","Hamısı"],...CATS].map(([k,l])=>`<button class="tab sm ${k===setCat?"on":""}" data-act="scat" data-c="${k}">${esc(l)} <span class="sub">${k==="all"?S.items.length:S.items.filter(it=>k==="fav"?it.fav:it.cat===k).length}</span></button>`).join("")}</div>
+  <div class="tw"><table><tr><th></th><th>Düymə</th><th>Bölmə</th><th>Resept</th><th>Qiymət pillələri</th><th class="n">Maya / əd</th><th class="n">Mənfəət (1 əd)</th><th></th></tr>
+  ${list.map((it,i)=>`<tr><td class="arrows">${setCat!=="all"?`<button class="btn ghost sm" data-act="up" data-id="${it.id}" ${i===0?"disabled":""} aria-label="yuxarı">↑</button><button class="btn ghost sm" data-act="down" data-id="${it.id}" ${i===list.length-1?"disabled":""} aria-label="aşağı">↓</button>`:""}</td>
+    <td><span class="mini" style="background:${esc(it.color)}">${esc(it.icon)} ${esc(it.name)}</span>${it.fav?" ⭐":""}</td><td>${esc(CATS.find(c=>c[0]===it.cat)?.[1]||"—")}</td>
     <td>${it.recipe.map(([m,q])=>`${q}× ${esc(matName(m))}`).join(", ")||"material yoxdur"}${it.ink?` + mürəkkəb ${m2(it.ink)}`:""}</td>
     <td>${it.tiers.map(([t,v])=>`${t}+ → ${m2(v)}`).join(" · ")}</td><td class="n">${m2(unitCost(it))}</td>
-    <td class="n">${m2(it.tiers[0][1]-unitCost(it))}</td><td><button class="btn ghost sm" data-act="edit" data-id="${it.id}">Redaktə</button></td></tr>`).join("")}
+    <td class="n">${m2(it.tiers[0][1]-unitCost(it))}</td><td><button class="btn ghost sm" data-act="edit" data-id="${it.id}">Redaktə</button></td></tr>`).join("")||`<tr><td colspan="8" class="sub">Bu bölmədə hələ düymə yoxdur.</td></tr>`}
   </table></div>
-  <div><button class="btn" data-act="new">+ Yeni məhsul</button></div>`;
+  ${setCat==="all"?"":`<p class="sub">Sıranı dəyişmək üçün oxlardan istifadə edin.</p>`}
+  <div><button class="btn" data-act="new">+ Yeni düymə${setCat!=="all"&&setCat!=="fav"?` (${esc(CATS.find(c=>c[0]===setCat)?.[1]||"")})`:""}</button></div>`;
   if(draft){
     const d=draft, c=draftCost(d), p=+(d.tiers[0]?.[1])||0;
     h+=`<div class="editor" id="editor">
-      <h4>${d.isNew?"Yeni məhsul":"Redaktə: "+esc(d.name)}</h4>
+      <h4>${d.isNew?"Yeni düymə":"Redaktə: "+esc(d.name)}</h4>
       <div class="frow">
         <label class="f grow">Ad<input id="e_name" value="${esc(d.name)}" placeholder="məs. A3 rəngli çap"></label>
         <label class="f">Bölmə<select id="e_cat">${CATS.filter(c=>c[0]!=="fav").map(([k,l])=>`<option value="${k}" ${k===d.cat?"selected":""}>${l}</option>`).join("")}</select></label>
         <label class="f sm">İkon<input id="e_icon" value="${esc(d.icon)}" maxlength="4"></label>
         <label class="f sm">Rəng<input id="e_color" type="color" value="${esc(d.color)}"></label>
+        <div class="swatches">${SWATCHES.map(c=>`<button class="sw ${c===d.color?"on":""}" style="background:${c}" data-act="sw" data-c="${c}" aria-label="rəng ${c}"></button>`).join("")}</div>
         <label class="f sm">Mürəkkəb / əlavə xərc<input id="e_ink" type="number" step="0.01" min="0" value="${d.ink}"></label>
         <label class="chk"><input id="e_fav" type="checkbox" ${d.fav?"checked":""}> Sevimlilərdə göstər</label>
       </div>
+      <div class="frow"><span class="sub">Satış ekranında belə görünəcək:</span><span class="svc preview" style="background:${esc(d.color)}"><span class="ic">${esc(d.icon)}</span><span class="nm">${esc(d.name||"Düymənin adı")}</span><span class="pr">${m2(+(d.tiers[0]?.[1])||0)} ₼</span></span></div>
       <h4>Resept: 1 ədəd satışda anbardan nə silinir</h4>
       ${d.recipe.map(([m,q],i)=>`<div class="frow">
         <select id="r_m_${i}" aria-label="material">${S.materials.map(M=>`<option value="${M.id}" ${M.id===m?"selected":""}>${esc(M.name)}</option>`).join("")}</select>
@@ -402,7 +428,7 @@ function renderAdmin(){
       <div class="frow">
         <button class="btn" data-act="isave">Yadda saxla</button>
         <button class="btn ghost" data-act="icancel">Ləğv et</button>
-        ${d.isNew?"":`<button class="btn red" data-act="idel">${delArm===d.id?"Əminsiniz? Bəli, sil":"Məhsulu sil"}</button>`}
+        ${d.isNew?"":`<button class="btn red" data-act="idel">${delArm===d.id?"Əminsiniz? Bəli, sil":"Düyməni sil"}</button>`}
       </div></div>`;
   }
   return h;
@@ -413,6 +439,19 @@ function syncDraft(){
   draft.color=$("e_color").value; draft.ink=parseFloat($("e_ink").value)||0; draft.fav=$("e_fav").checked?1:0;
   draft.recipe=draft.recipe.map((r,i)=>[$("r_m_"+i).value,parseFloat($("r_q_"+i).value)||0]);
   draft.tiers=draft.tiers.map((t,i)=>[i===0?1:(parseInt($("t_min_"+i).value)||1),parseFloat($("t_p_"+i).value)||0]);
+}
+
+const SWATCHES=["#2563eb","#1d4ed8","#0e7490","#16a34a","#15803d","#ca8a04","#ea580c","#dc2626","#db2777","#7c3aed","#6d28d9","#475569"];
+function renderCats(){
+  return `<p class="sub">Satış ekranının yuxarısındakı bölmələr. Adı yazın və Enter basın, ↑ ↓ ilə sıranı dəyişin. "Sevimlilər" həmişə birinci olur. Düymələri bölməyə "Düymələr / Xidmətlər" tabından əlavə edirsiniz.</p>
+  <div class="tw"><table><tr><th></th><th>Bölmənin adı</th><th class="n">Düymə sayı</th><th></th></tr>
+  <tr><td></td><td>⭐ Sevimlilər <span class="sub">(düymədə "Sevimlilərdə göstər" işarəsi olanlar)</span></td><td class="n">${S.items.filter(i=>i.fav).length}</td><td></td></tr>
+  ${S.cats.map((c,i)=>{const n=S.items.filter(it=>it.cat===c.id).length;return `<tr>
+    <td class="arrows"><button class="btn ghost sm" data-act="cup" data-i="${i}" ${i===0?"disabled":""} aria-label="yuxarı">↑</button><button class="btn ghost sm" data-act="cdown" data-i="${i}" ${i===S.cats.length-1?"disabled":""} aria-label="aşağı">↓</button></td>
+    <td><input class="wide" data-cid="${c.id}" value="${esc(c.name)}" aria-label="bölmənin adı"></td><td class="n">${n}</td>
+    <td><button class="btn ghost sm" data-act="cbtn" data-c="${c.id}">Düymələrə bax</button> <button class="btn ghost sm" data-act="cdel" data-c="${c.id}">${delArm===c.id?"Əminsiniz? Sil":"Sil"}</button></td></tr>`}).join("")}
+  <tr><td></td><td><input id="nc_name" class="wide" placeholder="Yeni bölmə, məs. Möhür"></td><td></td><td><button class="btn sm" data-act="cadd">+ Bölmə əlavə et</button></td></tr>
+  </table></div>`;
 }
 
 // ---------- Admin: materiallar və işçilər ----------
@@ -457,9 +496,22 @@ function backupText(){return JSON.stringify({app:"EMGRAPHIC ERP",version:APP_VER
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
-  if(a!=="idel"&&a!=="mdel"&&a!=="reset")delArm=null;
-  if(a==="edit"){const it=item(t.dataset.id);draft={...structuredClone(it),isNew:false}}
-  else if(a==="new"){draft={id:newId("p"),name:"",cat:cat==="fav"?"cap":cat,icon:"🧾",color:"#2563eb",fav:0,ink:0,recipe:[],tiers:[[1,1]],isNew:true}}
+  if(!["idel","mdel","reset","cdel"].includes(a))delArm=null;
+  if(a==="scat"){setCat=t.dataset.c;draft=null}
+  else if(a==="up"||a==="down"){
+    const list=S.items.filter(it=>setCat==="fav"?it.fav:it.cat===setCat),k=list.findIndex(x=>x.id===t.dataset.id),o=list[a==="up"?k-1:k+1];
+    if(o){const i1=S.items.indexOf(list[k]),i2=S.items.indexOf(o);[S.items[i1],S.items[i2]]=[S.items[i2],S.items[i1]];save();renderGrid()}
+  }
+  else if(a==="sw"){syncDraft();draft.color=t.dataset.c}
+  else if(a==="cup"||a==="cdown"){const i=+t.dataset.i,j=a==="cup"?i-1:i+1;[S.cats[i],S.cats[j]]=[S.cats[j],S.cats[i]];save();renderTabs()}
+  else if(a==="cadd"){const n=$("nc_name").value.trim();if(!n){toast("Bölmənin adını yazın");return}
+    S.cats.push({id:newId("c"),name:n});save();renderTabs();toast(`"${n}" bölməsi əlavə olundu`)}
+  else if(a==="cbtn"){rtab="admin";setCat=t.dataset.c}
+  else if(a==="cdel"){const id=t.dataset.c,n=S.items.filter(it=>it.cat===id).length;
+    if(n){toast(`Bu bölmədə ${n} düymə var. Əvvəlcə onları başqa bölməyə köçürün və ya silin`);return}
+    if(delArm!==id)delArm=id;else{S.cats=S.cats.filter(c=>c.id!==id);delArm=null;save();renderTabs();toast("Bölmə silindi")}}
+  else if(a==="edit"){const it=item(t.dataset.id);draft={...structuredClone(it),isNew:false}}
+  else if(a==="new"){draft={id:newId("p"),name:"",cat:setCat!=="all"?setCat:(cat!=="fav"?cat:S.cats[0]?.id),icon:"🧾",color:"#2563eb",fav:0,ink:0,recipe:[],tiers:[[1,1]],isNew:true}}
   else if(a==="radd"){syncDraft();draft.recipe.push([S.materials[0]?.id,1])}
   else if(a==="rdel"){syncDraft();draft.recipe.splice(+t.dataset.i,1)}
   else if(a==="tadd"){syncDraft();const l=draft.tiers[draft.tiers.length-1];draft.tiers.push([l[0]+10,l[1]])}
@@ -503,11 +555,13 @@ document.addEventListener("click",e=>{
   }
   else if(a==="bcopy"){navigator.clipboard?.writeText(backupText()).then(()=>{S.lastBackup=Date.now();save();renderRep();toast("Kopyalandı, Notepad-a yapışdırıb saxlayın")},()=>toast("Kopyalamaq alınmadı, faylı istifadə edin"));return}
   else if(a==="bimp"){S=pendingImport;pendingImport=null;upgrade();save();order=[];renderAll();toast("Məlumat ehtiyat nüsxədən bərpa olundu")}
-  else if(a==="reset"){if(delArm!=="reset"){delArm="reset"}else{S=structuredClone(SEED);delArm=null;order=[];save();renderAll();toast("Nümunə məlumat bərpa olundu")}}
+  else if(a==="reset"){if(delArm!=="reset"){delArm="reset"}else{S=structuredClone(SEED);upgrade();delArm=null;order=[];save();renderAll();toast("Nümunə məlumat bərpa olundu")}}
   renderRep();
   if(draft&&(a==="edit"||a==="new"))$("editor")?.scrollIntoView({behavior:"smooth",block:"start",inline:"nearest"});
 });
 document.addEventListener("change",e=>{
+  const cid=e.target.dataset?.cid;
+  if(cid){const c=S.cats.find(x=>x.id===cid),n=e.target.value.trim();if(c&&n){c.name=n;save();renderTabs();toast("Bölmənin adı dəyişdi")}return}
   if(e.target.id!=="bfile")return;
   const f=e.target.files[0];if(!f)return;
   f.text().then(txt=>{const j=JSON.parse(txt),d=j.data||j;if(!d.items||!d.materials||!d.sales)throw new Error("bu EMGRAPHIC ERP ehtiyat faylı deyil");
@@ -530,7 +584,8 @@ document.addEventListener("click",e=>{
   else if(t.id==="btnClear"){order=[];renderGrid();renderOrder()}
   else if(t.id==="btnZay")openZay();
   else if(t.id==="zSave")saveZay();
-  else if(t.id==="btnRep"){renderRep();$("ovRep").hidden=false}
+  else if(t.id==="btnRep"){mode="rep";rtab="gun";draft=null;renderRep();$("ovRep").hidden=false}
+  else if(t.id==="btnSet"){mode="set";rtab="bolme";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="stSave"){
     let diff=[];
     S.materials.forEach(m=>{

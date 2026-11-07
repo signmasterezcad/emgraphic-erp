@@ -7,12 +7,15 @@ Foto, çap və xırda promo işləri üçün satış və anbar proqramı (Window
 - **Resept:** satışda kağız anbardan avtomatik silinir (eyni kağız fərqli xidmətlərdə)
 - **Zay qeydi:** material, say, səbəb, işçi
 - **Hesabat / Anbar:** günlük kassa, mənfəət, zay faizi, sayım fərqi
-- **Admin:** məhsul, resept, qiymət pillələri, materiallar və işçilər proqramın içindən dəyişir
+- **Ayarlar:** bölmələr (əlavə et, adını dəyiş, sırala, sil), rəngli düymələr (rəng, ikon, qiymət pillələri, resept, sıra), materiallar və işçilər
+- **Oflayn:** şrift proqramın içindədir, internet tələb olunmur
 - **Ehtiyat nüsxə:** bütün məlumatı fayla yazmaq və geri yükləmək
 
 ## Qovluqlar
 - `app/index.html` — proqramın özü (bütün ekran və məntiq)
 - `app/main.js`, `app/package.json` — Windows pəncərəsi (Electron)
+- `app/fonts/` — Noto Sans şrifti (oflayn)
+- `app/files.txt` — yeniləmə skriptinin yüklədiyi faylların siyahısı (yeni fayl əlavə edəndə bura yazın)
 - `windows/YENILE.bat`, `windows/yenile.ps1` — bir kliklə yeniləmə (yeni `index.html`-i bu depodan yükləyir)
 - `tests/smoke.js` — avtomatik test (Playwright): `node tests/smoke.js`
 
@@ -22,6 +25,6 @@ npx @electron/packager ./app "EMGRAPHIC ERP" --platform=win32 --arch=x64 --elect
 ```
 
 ## Yeniləmə
-Proqram qovluğundakı `YENILE.bat` faylına iki dəfə klikləyin. Skript proqramı bağlayır, köhnə `index.html`-i `index.evvelki.html` adı ilə saxlayır, yenisini yükləyir və proqramı yenidən açır.
+Proqram qovluğundakı `YENILE.bat` faylına iki dəfə klikləyin. Skript `app/files.txt`-dəki bütün faylları yükləyir, proqramı bağlayır, köhnə versiyanı `resources\app.evvelki` qovluğunda saxlayır, yeni faylları qoyur, özünü də yeniləyir və proqramı yenidən açır.
 
 Satış və anbar məlumatı yalnız istifadəçinin kompüterində saxlanır (`%APPDATA%\EMGRAPHIC ERP`), bu depoya düşmür.

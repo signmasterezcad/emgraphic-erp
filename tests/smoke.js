@@ -4,6 +4,7 @@ const path = require('path');
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1366, height: 768 }, acceptDownloads: true });
   const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const external = []; p.on('request', r => { if (!r.url().startsWith('file:') && !r.url().startsWith('data:') && !r.url().startsWith('blob:')) external.push(r.url()); });
   await p.goto('file://' + path.resolve(process.argv[2] || 'app/index.html'));
   const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
   const vis = id => p.isVisible('#' + id);
@@ -17,8 +18,12 @@ const path = require('path');
   await p.click('#btnDone');
   ok((await p.textContent('#chips')).includes('1188'), 'A4 80 qr qalığı 1200 → 1188');
 
-  // Admin: yeni məhsul
-  await p.click('#btnRep'); await p.click('[data-rt=admin]');
+  await p.evaluate(() => document.fonts.ready);
+  ok(await p.evaluate(() => document.fonts.check('700 16px "Noto Sans"', 'əğ₼')), 'şrift proqramın içindən yükləndi (ə, ğ, ₼)');
+
+  // Ayarlar: yeni məhsul
+  await p.click('#btnSet'); ok((await p.textContent('#rt')).includes('Ayarlar'), 'Ayarlar pəncərəsi açıldı');
+  await p.click('[data-rt=admin]');
   await p.click('[data-act=new]');
   await p.fill('#e_name', 'A3 rəngli çap');
   await p.click('[data-act=radd]'); await p.selectOption('#r_m_0', 'a4'); await p.fill('#r_q_0', '2');
@@ -34,8 +39,37 @@ const path = require('path');
   await p.click('#btnDone');
   ok((await p.textContent('#chips')).includes('1148'), 'yeni məhsulun resepti: 20 × 2 vərəq silindi');
 
+  // Bölmələr
+  await p.click('#btnSet');
+  ok(!(await p.textContent('#rtabs')).includes('Bu gün'), 'Ayarlarda hesabat tabları yoxdur');
+  await p.fill('#nc_name', 'Möhür'); await p.click('[data-act=cadd]');
+  ok((await p.textContent('#tabs')).includes('Möhür'), 'yeni bölmə satış ekranında');
+  const n = await p.locator('[data-act=cup]').count();
+  await p.locator('[data-act=cup]').nth(n - 1).click();
+  const tabs = await p.locator('#tabs .tab').allTextContents();
+  ok(tabs.indexOf('Möhür') === tabs.length - 2, 'bölmə ↑ ilə yuxarı keçdi');
+  const inp = p.locator('input[data-cid]').nth(n - 2); await inp.fill('Möhür və ştamp'); await inp.press('Enter');
+  ok((await p.textContent('#tabs')).includes('Möhür və ştamp'), 'bölmənin adı dəyişdi');
+  await p.locator('[data-act=cbtn]').nth(n - 2).click(); await p.click('[data-act=new]');
+  await p.fill('#e_name', 'Avtomat möhür'); await p.fill('#t_p_0', '15');
+  await p.locator('[data-act=sw]').nth(7).click();
+  ok((await p.inputValue('#e_name')) === 'Avtomat möhür', 'rəng seçəndə yazılan ad qalır');
+  await p.click('[data-act=isave]');
+  await p.click('[data-rt=bolme]'); await p.locator('[data-act=cdel]').nth(n - 2).click();
+  ok((await p.textContent('#toast')).includes('1 düymə var'), 'içində düymə olan bölmə silinmir');
+  await p.click('#ovRep [data-close]');
+  await p.locator('#tabs .tab', { hasText: 'Möhür və ştamp' }).click();
+  const mb = p.locator('.svc', { hasText: 'Avtomat möhür' });
+  ok(await mb.count() === 1 && (await mb.getAttribute('style')).includes('#dc2626'), 'yeni bölmədə yeni düymə, seçilmiş rənglə');
+  // Düymə sırası
+  await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=cap]');
+  await p.click('[data-act=down][data-id=a4bw]');
+  await p.click('#ovRep [data-close]'); await p.locator('#tabs .tab', { hasText: 'Çap' }).click();
+  const names = await p.locator('#grid .nm').allTextContents();
+  ok(names[0] === 'A4 rəngli' && names[1] === 'A4 ağ-qara', 'düymə ↓ ilə yer dəyişdi');
+
   // Materiallar
-  await p.click('#btnRep'); await p.click('[data-rt=mat]');
+  await p.click('#btnSet'); await p.click('[data-rt=mat]');
   await p.fill('#nm_name', 'A3 80 qr'); await p.fill('#nm_cost', '0.04'); await p.fill('#nm_stock', '500');
   await p.click('[data-act=madd]');
   ok((await p.textContent('#chips')).includes('A3 80 qr'), 'material əlavə olundu');
@@ -53,6 +87,7 @@ const path = require('path');
   await p.click('[data-act=bimp]');
   ok((await p.textContent('#chips')).includes('1148'), 'ehtiyat nüsxədən bərpa');
 
+  ok(external.length === 0, 'internetə heç bir sorğu getmir ' + external.join(' '));
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
 })();
