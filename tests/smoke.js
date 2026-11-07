@@ -68,8 +68,41 @@ const path = require('path');
   const names = await p.locator('#grid .nm').allTextContents();
   ok(names[0] === 'A4 rəngli' && names[1] === 'A4 ağ-qara', 'düymə ↓ ilə yer dəyişdi');
 
+  // Düzəliş rejimi: satış ekranından birbaşa əlavə et / sil
+  await p.click('#btnEdit');
+  ok(await p.isVisible('#editbar'), 'düzəliş rejimi açıldı');
+  await p.click('[data-cat=foto]', { position: { x: 12, y: 12 } });
+  const before = await p.locator('#grid .svc:not(.addtile)').count();
+  await p.click('#grid .svc:not(.addtile) >> nth=0');
+  ok((await p.textContent('#lines')).includes('Xidmət düyməsinə'), 'düzəliş rejimində düyməyə basmaq satışa əlavə etmir');
+  await p.click('[data-act=qnew]');
+  ok(await p.isVisible('#editor') && (await p.inputValue('#e_cat')) === 'foto', '+ Yeni düymə: redaktor açıldı, bölmə Foto');
+  await p.fill('#e_name', 'Sənəd şəkli 3x4'); await p.fill('#t_p_0', '4'); await p.click('[data-act=isave]');
+  await p.click('#ovRep [data-close]');
+  ok(await p.locator('#grid .svc:not(.addtile)').count() === before + 1, 'yeni düymə Foto bölməsində');
+  const tile = p.locator('#grid .svc', { hasText: 'Sənəd şəkli 3x4' });
+  await tile.locator('[data-act=qdel]').click();
+  ok((await tile.locator('[data-act=qdel]').textContent()) === 'Sil?', '🗑 birinci basışda təsdiq soruşur');
+  await tile.locator('[data-act=qdel]').click();
+  ok(await p.locator('#grid .svc', { hasText: 'Sənəd şəkli 3x4' }).count() === 0, '🗑 ikinci basışda düymə silindi');
+  await p.locator('#grid .svc', { hasText: '10x15 foto' }).locator('[data-act=qedit]').click();
+  ok((await p.inputValue('#e_name')) === '10x15 foto', '✏️ düyməni redaktə üçün açır');
+  await p.click('#ovRep [data-close]');
+  await p.click('[data-act=qcadd]'); await p.fill('#nc_name', 'Banner'); await p.click('[data-act=cadd]'); await p.click('#ovRep [data-close]');
+  const bt = p.locator('#tabs .tab', { hasText: 'Banner' });
+  ok(await bt.count() === 1, '+ Bölmə ilə yeni bölmə');
+  await bt.locator('[data-act=qcdel]').click(); await bt.locator('[data-act=qcdel]').click();
+  ok(await p.locator('#tabs .tab', { hasText: 'Banner' }).count() === 0, 'boş bölmə 🗑 ilə silindi');
+  await p.click('[data-act=editdone]');
+  ok(!(await p.isVisible('#editbar')) && await p.locator('[data-act=qnew]').count() === 0, 'Hazır: düzəliş rejimi bağlandı');
+
+  // Düymələr siyahısında Sil
+  await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=skan]');
+  await p.click('[data-act=ldel][data-id=kser]'); await p.click('[data-act=ldel][data-id=kser]');
+  ok(await p.locator('[data-act=ldel][data-id=kser]').count() === 0 && !(await p.textContent('#tabs')).includes('📑'), 'siyahıdan Sil ilə düymə silindi');
+
   // Materiallar
-  await p.click('#btnSet'); await p.click('[data-rt=mat]');
+  await p.click('[data-rt=mat]');
   await p.fill('#nm_name', 'A3 80 qr'); await p.fill('#nm_cost', '0.04'); await p.fill('#nm_stock', '500');
   await p.click('[data-act=madd]');
   ok((await p.textContent('#chips')).includes('A3 80 qr'), 'material əlavə olundu');

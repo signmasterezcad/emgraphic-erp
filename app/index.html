@@ -140,6 +140,18 @@ td.arrows .btn{padding:4px 8px;margin-right:2px}
 .sw{width:24px;height:24px;border-radius:50%;border:2px solid transparent}
 .sw.on{border-color:var(--fg)}
 .svc.preview{width:180px;min-height:96px;cursor:default}
+.banner{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding-block:10px;background:color-mix(in srgb,var(--accent) 14%,var(--panel));border-bottom:1px solid var(--line);font-size:13px}
+.banner.edit{background:color-mix(in srgb,var(--warn) 16%,var(--panel))}
+.hbtn.on{border-color:var(--warn);color:var(--warn)}
+body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline-offset:-6px;cursor:default}
+.svc .ed{position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between}
+.svc .ed span{background:rgba(0,0,0,.45);border-radius:8px;padding:3px 7px;font-size:14px;cursor:pointer}
+.svc .ed span:hover{background:rgba(0,0,0,.7)}
+.svc.addtile{background:transparent;border:2px dashed var(--muted);color:var(--fg)}
+.svc.addtile .ic{font-size:30px}
+.tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
+.tab.add{border-style:dashed;color:var(--accent)}
+.btn.del{color:var(--bad)}
 h4{margin:6px 0 0;font-size:14px}
 @media (prefers-reduced-motion:reduce){.svc{transition:none}}
 </style>
@@ -151,16 +163,19 @@ h4{margin:6px 0 0;font-size:14px}
   <select class="worker" id="worker" aria-label="İşçi"></select>
   <button class="hbtn" id="btnZay">🗑️ Zay</button>
   <button class="hbtn" id="btnRep">📊 Hesabat / Anbar</button>
+  <button class="hbtn" id="btnEdit">✏️ Düzəliş</button>
   <button class="hbtn" id="btnSet">⚙️ Ayarlar</button>
   <div class="today" id="today"></div>
 </header>
 <div class="chips wrap" id="chips"></div>
+<div class="banner wrap" id="banner" hidden><span>Köhnə versiyadan keçirsiniz? Satış və anbar məlumatınızı köçürmək üçün: <b>⚙️ Ayarlar → 💾 Ehtiyat nüsxə → Ehtiyat nüsxədən bərpa et</b>.</span> <button class="btn sm" data-act="bango">Ora keç</button> <button class="btn ghost sm" data-act="banx">Bağla</button></div>
+<div class="banner edit wrap" id="editbar" hidden><span>✏️ <b>Düzəliş rejimi.</b> Düymənin üstündəki ✏️ ilə dəyişin, 🗑 ilə silin, “+” ilə yenisini əlavə edin. Bölmə üçün də eyni. Bitirəndə “Hazır” basın.</span> <button class="btn sm" data-act="editdone">Hazır</button></div>
 
 <main class="wrap">
   <section style="min-width:0">
     <div class="tabs" id="tabs"></div>
     <div class="grid" id="grid"></div>
-    <p class="note">Düyməyə hər toxunuş sayı 1 artırır. Say artdıqca qiymət özü dəyişir (məsələn A4 çapında 1–10, 11–50, 51+). Satış bitəndə kağız anbardan avtomatik silinir. Məlumatlar nümunədir və yalnız bu brauzerdə saxlanır.</p>
+    <p class="note">Düyməyə hər toxunuş sayı 1 artırır. Say artdıqca qiymət özü dəyişir (məsələn A4 çapında 1–10, 11–50, 51+). Satış bitəndə kağız anbardan avtomatik silinir. Düymə və bölmə əlavə etmək və ya silmək üçün yuxarıda “✏️ Düzəliş” basın. Məlumat yalnız bu kompüterdə saxlanır.</p>
   </section>
 
   <aside class="order">
@@ -242,8 +257,9 @@ const REASONS=["Printer kağızı tutdu","Rəng səhv çıxdı","Kəsim səhvi",
 const KEY="fotoerp.v1";
 let S;
 try{ S=JSON.parse(localStorage.getItem(KEY)) }catch(e){}
-if(!S||!S.items) S=structuredClone(SEED);
-const APP_VERSION="0.4.0";
+let firstRun=false;
+if(!S||!S.items){S=structuredClone(SEED);firstRun=true}
+const APP_VERSION="0.5.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0})}
@@ -262,7 +278,7 @@ const isToday=ts=>new Date(ts).toDateString()===new Date().toDateString();
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
 
 // ---------- Vəziyyət ----------
-let cat="fav", order=[], pay="nağd", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
+let editMode=false, cat="fav", order=[], pay="nağd", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
 
 function renderHeader(){
   $("worker").innerHTML=S.workers.map(w=>`<option>${w}</option>`).join("");
@@ -272,16 +288,20 @@ function renderHeader(){
 }
 function renderTabs(){
   refreshCats();
-  $("tabs").innerHTML=CATS.map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${l}</button>`).join("");
+  $("tabs").innerHTML=CATS.map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${esc(l)}${editMode&&k!=="fav"?
+    `<span class="tx" role="button" data-act="qcren" data-c="${k}" title="Adını dəyiş">✏️</span><span class="tx" role="button" data-act="qcdel" data-c="${k}" title="Sil">${delArm===k?"Sil?":"🗑"}</span>`:""}</button>`).join("")
+    +(editMode?`<button class="tab add" data-act="qcadd">+ Bölmə</button>`:"");
 }
 function renderGrid(){
   const list=S.items.filter(i=>cat==="fav"?i.fav:i.cat===cat);
   $("grid").innerHTML=list.map(it=>{
     const inOrder=order.find(o=>o.id===it.id);
-    return `<button class="svc" style="background:${it.color}" data-add="${it.id}">
-      ${inOrder?`<span class="cnt">${inOrder.q}</span>`:""}
+    return `<button class="svc" style="background:${esc(it.color)}" data-add="${it.id}">
+      ${editMode?`<span class="ed"><span role="button" data-act="qedit" data-id="${it.id}" title="Dəyiş">✏️</span><span role="button" data-act="qdel" data-id="${it.id}" title="Sil">${delArm===it.id?"Sil?":"🗑"}</span></span>`:""}
+      ${inOrder&&!editMode?`<span class="cnt">${inOrder.q}</span>`:""}
       <span class="ic">${it.icon}</span><span class="nm">${it.name}</span>
-      <span class="pr">${m2(it.tiers[0][1])} ₼</span>${tierText(it)?`<span class="tier">${tierText(it)}</span>`:""}</button>`}).join("");
+      <span class="pr">${m2(it.tiers[0][1])} ₼</span>${tierText(it)?`<span class="tier">${tierText(it)}</span>`:""}</button>`}).join("")
+    +(editMode?`<button class="svc addtile" data-act="qnew"><span class="ic">＋</span><span class="nm">Yeni düymə</span><span class="pr">${cat==="fav"?"Sevimlilərə":esc(CATS.find(c=>c[0]===cat)?.[1]||"")}</span></button>`:"");
 }
 function renderOrder(){
   if(!order.length){$("lines").innerHTML=`<div class="empty">Xidmət düyməsinə toxunun</div>`}
@@ -394,7 +414,7 @@ function renderAdmin(){
     <td><span class="mini" style="background:${esc(it.color)}">${esc(it.icon)} ${esc(it.name)}</span>${it.fav?" ⭐":""}</td><td>${esc(CATS.find(c=>c[0]===it.cat)?.[1]||"—")}</td>
     <td>${it.recipe.map(([m,q])=>`${q}× ${esc(matName(m))}`).join(", ")||"material yoxdur"}${it.ink?` + mürəkkəb ${m2(it.ink)}`:""}</td>
     <td>${it.tiers.map(([t,v])=>`${t}+ → ${m2(v)}`).join(" · ")}</td><td class="n">${m2(unitCost(it))}</td>
-    <td class="n">${m2(it.tiers[0][1]-unitCost(it))}</td><td><button class="btn ghost sm" data-act="edit" data-id="${it.id}">Redaktə</button></td></tr>`).join("")||`<tr><td colspan="8" class="sub">Bu bölmədə hələ düymə yoxdur.</td></tr>`}
+    <td class="n">${m2(it.tiers[0][1]-unitCost(it))}</td><td class="arrows"><button class="btn ghost sm" data-act="edit" data-id="${it.id}">Redaktə</button> <button class="btn ghost sm del" data-act="ldel" data-id="${it.id}">${delArm===it.id?"Əminsiniz? Sil":"Sil"}</button></td></tr>`).join("")||`<tr><td colspan="8" class="sub">Bu bölmədə hələ düymə yoxdur.</td></tr>`}
   </table></div>
   ${setCat==="all"?"":`<p class="sub">Sıranı dəyişmək üçün oxlardan istifadə edin.</p>`}
   <div><button class="btn" data-act="new">+ Yeni düymə${setCat!=="all"&&setCat!=="fav"?` (${esc(CATS.find(c=>c[0]===setCat)?.[1]||"")})`:""}</button></div>`;
@@ -454,6 +474,10 @@ function renderCats(){
   </table></div>`;
 }
 
+function setEdit(on){editMode=on;delArm=null;document.body.classList.toggle("editing",on);$("editbar").hidden=!on;$("btnEdit").classList.toggle("on",on);
+  if(on){order=[];renderOrder()}renderTabs();renderGrid()}
+function openSet(tab,sc){mode="set";rtab=tab;if(sc)setCat=sc;$("ovRep").hidden=false}
+
 // ---------- Admin: materiallar və işçilər ----------
 function renderMatAdmin(){
   return `<p class="sub">Material adını, mayasını (1 vərəq / ədəd üçün alış qiyməti) və minimum qalığı dəyişin. Qalıq "Anbar / Sayım" bölməsindən dəyişir.</p>
@@ -496,8 +520,23 @@ function backupText(){return JSON.stringify({app:"EMGRAPHIC ERP",version:APP_VER
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
-  if(!["idel","mdel","reset","cdel"].includes(a))delArm=null;
-  if(a==="scat"){setCat=t.dataset.c;draft=null}
+  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel"].includes(a))delArm=null;
+  if(a==="editdone"){setEdit(false);return}
+  else if(a==="banx"){$("banner").hidden=true;return}
+  else if(a==="bango"){$("banner").hidden=true;mode="set";rtab="backup";$("ovRep").hidden=false}
+  else if(a==="qedit"){e.stopPropagation();openSet("admin",cat==="fav"?"all":cat);draft={...structuredClone(item(t.dataset.id)),isNew:false}}
+  else if(a==="qnew"){openSet("admin",cat==="fav"?"all":cat);
+    draft={id:newId("p"),name:"",cat:cat!=="fav"?cat:S.cats[0]?.id,icon:"🧾",color:"#2563eb",fav:cat==="fav"?1:0,ink:0,recipe:[],tiers:[[1,1]],isNew:true}}
+  else if(a==="qdel"){const id=t.dataset.id;if(delArm!==id){delArm=id;renderGrid();return}
+    const n=item(id)?.name;S.items=S.items.filter(x=>x.id!==id);order=order.filter(o=>o.id!==id);delArm=null;save();renderGrid();renderOrder();toast(`"${n}" silindi`);return}
+  else if(a==="qcadd"){openSet("bolme");setTimeout(()=>$("nc_name")?.focus(),50)}
+  else if(a==="qcren"){openSet("bolme");setTimeout(()=>{const i=document.querySelector(`input[data-cid="${t.dataset.c}"]`);i?.focus();i?.select()},50)}
+  else if(a==="qcdel"){const id=t.dataset.c,n=S.items.filter(it=>it.cat===id).length;
+    if(n){toast(`Bu bölmədə ${n} düymə var. Əvvəlcə düymələri silin və ya başqa bölməyə köçürün`);return}
+    if(delArm!==id){delArm=id;renderTabs();return}
+    S.cats=S.cats.filter(c=>c.id!==id);delArm=null;if(cat===id)cat="fav";save();renderTabs();renderGrid();toast("Bölmə silindi");return}
+  else if(a==="ldel"){const id=t.dataset.id;if(delArm!==id){delArm=id}else{const n=item(id)?.name;S.items=S.items.filter(x=>x.id!==id);order=order.filter(o=>o.id!==id);delArm=null;if(draft?.id===id)draft=null;save();renderAll();toast(`"${n}" silindi`)}}
+  else if(a==="scat"){setCat=t.dataset.c;draft=null}
   else if(a==="up"||a==="down"){
     const list=S.items.filter(it=>setCat==="fav"?it.fav:it.cat===setCat),k=list.findIndex(x=>x.id===t.dataset.id),o=list[a==="up"?k-1:k+1];
     if(o){const i1=S.items.indexOf(list[k]),i2=S.items.indexOf(o);[S.items[i1],S.items[i2]]=[S.items[i2],S.items[i1]];save();renderGrid()}
@@ -557,7 +596,7 @@ document.addEventListener("click",e=>{
   else if(a==="bimp"){S=pendingImport;pendingImport=null;upgrade();save();order=[];renderAll();toast("Məlumat ehtiyat nüsxədən bərpa olundu")}
   else if(a==="reset"){if(delArm!=="reset"){delArm="reset"}else{S=structuredClone(SEED);upgrade();delArm=null;order=[];save();renderAll();toast("Nümunə məlumat bərpa olundu")}}
   renderRep();
-  if(draft&&(a==="edit"||a==="new"))$("editor")?.scrollIntoView({behavior:"smooth",block:"start",inline:"nearest"});
+  if(draft&&["edit","new","qedit","qnew"].includes(a))$("editor")?.scrollIntoView({behavior:"smooth",block:"start",inline:"nearest"});
 });
 document.addEventListener("change",e=>{
   const cid=e.target.dataset?.cid;
@@ -570,14 +609,16 @@ document.addEventListener("change",e=>{
 
 // ---------- Hadisələr ----------
 document.addEventListener("click",e=>{
+  if(e.target.closest("[data-act]"))return;
   const t=e.target.closest("button");if(!t)return;
+  if(editMode&&t.dataset.add)return;
   if(t.dataset.cat){cat=t.dataset.cat;renderTabs();renderGrid()}
   else if(t.dataset.add)addItem(t.dataset.add,1);
   else if(t.dataset.inc)addItem(t.dataset.inc,1);
   else if(t.dataset.dec)addItem(t.dataset.dec,-1);
   else if(t.dataset.r){zReason=t.dataset.r;[...$("zReasons").children].forEach(b=>b.classList.toggle("on",b===t))}
   else if(t.dataset.rt){rtab=t.dataset.rt;renderRep()}
-  else if(t.hasAttribute("data-close"))t.closest(".ov").hidden=true;
+  else if(t.hasAttribute("data-close")){t.closest(".ov").hidden=true;draft=null;renderTabs();renderGrid()}
   else if(t.id==="payCash"){pay="nağd";renderOrder()}
   else if(t.id==="payCard"){pay="kart";renderOrder()}
   else if(t.id==="btnDone")finishSale();
@@ -585,6 +626,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="btnZay")openZay();
   else if(t.id==="zSave")saveZay();
   else if(t.id==="btnRep"){mode="rep";rtab="gun";draft=null;renderRep();$("ovRep").hidden=false}
+  else if(t.id==="btnEdit"){setEdit(!editMode)}
   else if(t.id==="btnSet"){mode="set";rtab="bolme";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="stSave"){
     let diff=[];
@@ -603,6 +645,7 @@ document.addEventListener("change",e=>{
 });
 document.querySelectorAll(".ov").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
 $("ver").textContent="v"+APP_VERSION;
+if(firstRun)$("banner").hidden=false;
 renderAll();
 </script>
 </body>

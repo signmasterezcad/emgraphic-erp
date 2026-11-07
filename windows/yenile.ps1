@@ -6,8 +6,10 @@ $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $root   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$appDir = Join-Path $root "resources\app"
-$oldDir = Join-Path $root "resources\app.evvelki"
+$appDir = Join-Path $root "app"
+$oldDir = Join-Path $root "app.evvelki"
+# Köhnə (Electron) quruluş
+if (-not (Test-Path $appDir) -and (Test-Path (Join-Path $root "resources\app"))) { $appDir = Join-Path $root "resources\app"; $oldDir = Join-Path $root "resources\app.evvelki" }
 $tmp    = Join-Path $env:TEMP "emgraphic-yeni"
 $exe    = Join-Path $root "EMGRAPHIC ERP.exe"
 $base   = "https://raw.githubusercontent.com/signmasterezcad/emgraphic-erp/main"
@@ -59,7 +61,7 @@ if ($newVer -and $newVer -eq $oldVer) {
   Copy-Item (Join-Path $tmp "_YENILE.bat") (Join-Path $root "YENILE.bat") -Force
   Copy-Item (Join-Path $tmp "_yenile.ps1") (Join-Path $root "yenile.ps1") -Force
   Write-Host "Hazırdır: v$oldVer -> v$newVer" -ForegroundColor Green
-  Write-Host "Satış və anbar məlumatınız toxunulmadı. Köhnə versiya: resources\app.evvelki"
+  Write-Host "Satış və anbar məlumatınız toxunulmadı. Köhnə versiya: $oldDir"
 }
 Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 if (Test-Path $exe) { Start-Process $exe }
