@@ -176,7 +176,7 @@ h4{margin:6px 0 0;font-size:14px}
   <button class="hbtn" id="btnSet">⚙️ Ayarlar</button>
   <div class="today" id="today"></div>
 </header>
-<div class="chips wrap" id="chips"></div>
+<div class="chips wrap" id="chips" hidden></div>
 <div class="banner wrap" id="banner" hidden><span>Köhnə versiyadan keçirsiniz? Satış və anbar məlumatınızı köçürmək üçün: <b>⚙️ Ayarlar → 💾 Ehtiyat nüsxə → Ehtiyat nüsxədən bərpa et</b>.</span> <button class="btn sm" data-act="bango">Ora keç</button> <button class="btn ghost sm" data-act="banx">Bağla</button></div>
 <div class="banner edit wrap" id="editbar" hidden><span>✏️ <b>Düzəliş rejimi.</b> Düymənin üstündəki ✏️ ilə dəyişin, 🗑 ilə silin, “+” ilə yenisini əlavə edin. Bölmə üçün də eyni. Bitirəndə “Hazır” basın.</span> <button class="btn sm" data-act="editdone">Hazır</button></div>
 
@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.7.0";
+const APP_VERSION="0.7.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
