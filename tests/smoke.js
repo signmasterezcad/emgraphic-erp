@@ -97,7 +97,7 @@ const path = require('path');
   await p.click('#btnClear'); await p.click('[data-add=a4s_60]'); await p.click('[data-add=a4s_100]');
   ok((await p.textContent('#total')).startsWith('0.90'), '60% (0.40) + 100% (0.50) = 0.90');
   const order5 = await p.locator('#grid [data-add] .nm').allTextContents();
-  ok(order5[3] === 'Qismən 60% rəngli çap' && order5[4] === 'Qismən 100% rəngli çap', 'yeni düymələr siyahının sonunda, sıra ilə');
+  ok(order5.join('|') === 'Sadə yazı ağ-qara|30% rəngli çap|40% rəngli çap|60% rəngli çap|100% rəngli çap', 'A4 Sadə: adlarda "Qismən" yoxdur, sıra düzgündür');
   await p.click('#btnClear'); await p.click('[data-back]');
   ok(await p.locator('#grid .svc.grpt').count() === 4 && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 4 qrup, köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');

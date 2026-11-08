@@ -14,8 +14,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   İçindəki düymələrdə `parent: <qrup id>` olur. Yalnız bir səviyyə (qrupun içində qrup yoxdur).
 - **ÇAP bölməsi** (id `cap`): 4 qrup — A4 Sadə (`g_a4`), A3 Sadə (`g_a3`), Sertifikat Kağızı (`g_sert`), Foto Kağızlar (`g_foto`).
   - A4 Sadə (`S.mig.a4Sade`, hər biri 1 vərəq A4 80 qr): Sadə yazı ağ-qara 0.10 / 101+ 0.05 (`a4s_bw`),
-    Qismən 30% rəngli çap 0.20 (`a4s_30`), Qismən 40% rəngli çap 0.30 (`a4s_40`),
-    Qismən 60% rəngli çap 0.40 (`a4s_60`), Qismən 100% rəngli çap 0.50 (`a4s_100`; `S.mig.a4Sade2`).
+    30% rəngli çap 0.20 (`a4s_30`), 40% rəngli çap 0.30 (`a4s_40`),
+    60% rəngli çap 0.40 (`a4s_60`), 100% rəngli çap 0.50 (`a4s_100`; `S.mig.a4Sade2`). "Qismən" sözü çıxarılıb (`S.mig.qismenYox`).
   - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar: istifadəçi içini yazacaq.
 
 ## İstifadəçinin məlumatını dəyişmək

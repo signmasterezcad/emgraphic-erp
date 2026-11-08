@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.8.1";
+const APP_VERSION="0.8.2";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
@@ -302,6 +302,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
       ["a4s_100","Qismən 100% rəngli çap","🌟","#dc2626",[[1,0.50]]],
     ].filter(([id])=>!S.items.some(i=>i.id===id))
      .map(([id,name,icon,color,tiers])=>({id,name,cat:g.cat,parent:g.id,icon,color,fav:0,ink:0,recipe:a4?[[a4,1]]:[],tiers})));
+  }
+  // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
+  if(!S.mig.qismenYox){S.mig.qismenYox=1;
+    S.items.forEach(i=>{if(/^qismən\s+/i.test(i.name))i.name=i.name.replace(/^qismən\s+/i,"")});
   }
 }
 function parseData(txt){try{const j=JSON.parse(txt);const d=j&&j.data&&j.app?j.data:j;return d&&d.items&&d.materials?d:null}catch(e){return null}}
