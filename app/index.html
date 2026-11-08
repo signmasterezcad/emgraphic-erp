@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.10.2";
+const APP_VERSION="0.10.3";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -359,6 +359,13 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
   if(!S.mig.telQiymet){S.mig.telQiymet=1;
     const it=S.items.find(i=>i.id==="ks_tel");
     if(it&&!(+it.tiers?.[0]?.[1]))it.tiers=[[1,0.30]];
+  }
+  // v0.10.3: A3 Sadə (0.50) və Sertifikat Kağızı (1.00) qrup yox, birbaşa satış düyməsi olur (içi boşdursa)
+  if(!S.mig.a3Sert){S.mig.a3Sert=1;
+    [["g_a3",0.50],["g_sert",1.00]].forEach(([id,price])=>{
+      const it=S.items.find(i=>i.id===id);
+      if(it&&it.group&&!kidsOf(id).length){it.group=0;it.tiers=[[1,price]];it.recipe=[]}
+    });
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;

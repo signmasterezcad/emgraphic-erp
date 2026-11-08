@@ -86,6 +86,9 @@ const path = require('path');
 
   // ÇAP bölməsi: 4 qrup düyməsi, içində düymələr
   ok((await p.textContent('#tabs')).includes('ÇAP'), 'bölmənin adı ÇAP');
+  await p.click('[data-add=g_a3]'); await p.click('[data-add=g_sert]');
+  ok((await p.textContent('#total')).startsWith('1.50'), 'A3 Sadə (0.50) + Sertifikat Kağızı (1.00) birbaşa satılır = 1.50');
+  await p.click('#btnClear');
   await p.click('[data-grp=g_a4]');
   ok((await p.locator('#grid [data-add]').allTextContents()).join('|').includes('Sadə yazı ağ-qara') && await p.locator('#grid [data-add]').count() === 8, 'A4 Sadə: içində 8 düymə');
   await p.click('[data-add=a4s_bw]'); await p.fill('.line input', '100'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50);
@@ -131,7 +134,7 @@ const path = require('path');
   await p.click('#btnClear'); await p.click('[data-add=ks_tel]');
   ok((await p.textContent('#total')).startsWith('0.30'), 'Telefondan sənəd surəti: 0.30');
   await p.click('#btnClear'); await p.click('[data-back]');
-  ok(await p.locator('#grid .svc.grpt').count() === 5 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 5 qrup (sonuncu Sənəd Surəti), köhnə 3 düymə silinib');
+  ok(await p.locator('#grid .svc.grpt').count() === 3 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 3 qrup (A4 Sadə, Foto, Sənəd Surəti), köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
   ok(await p.isVisible('#crumb') && (await p.textContent('#grid')).includes('hələ düymə yoxdur'), 'boş qrup açılır, izah görünür');
   await p.click('#btnEdit'); await p.click('[data-act=qnew]');
