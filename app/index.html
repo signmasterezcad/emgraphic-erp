@@ -270,7 +270,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.11.3";
+const APP_VERSION="0.11.4";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -402,6 +402,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
     if(c)S.items.push(...[["sb_acar","Açarlıq","🔑","#0e7490",[[1,8]]],["sb_koynek","Köynək","👕","#16a34a",[[1,15],[6,12]]]]
       .filter(([id])=>!S.items.some(i=>i.id===id))
       .map(([id,name,icon,color,tiers])=>({id,name,cat:c.id,icon,color,fav:0,ink:0,recipe:[],tiers})));
+  }
+  // v0.11.4: Sublim — "Yaxa kartı" qrupu (içindəki növləri istifadəçi yazacaq)
+  if(!S.mig.yaxaQrup){S.mig.yaxaQrup=1;
+    const c=S.cats.find(x=>x.id===S.items.find(i=>i.id==="fc_sade")?.cat)||S.cats.find(x=>x.name.trim().toLocaleLowerCase("az")==="sublim");
+    if(c&&!S.items.some(i=>i.id==="g_yaxa"))S.items.push({id:"g_yaxa",name:"Yaxa kartı",cat:c.id,icon:"🪪",color:"#db2777",group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]});
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;
