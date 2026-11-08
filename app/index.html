@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.9.1";
+const APP_VERSION="0.10.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
@@ -332,6 +332,14 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
       ["ks_tel","Telefondan sənəd surəti","📱","#0e7490",[[1,0]],A4],
     ].filter(([id])=>!S.items.some(i=>i.id===id))
      .map(([id,name,icon,color,tiers,recipe])=>({id,name,cat:g.cat,parent:g.id,icon,color,fav:0,ink:0,recipe,tiers})));
+  }
+  // v0.10.0: ÇAP-ın yanında yeni bölmə "Poliqrafiya Xidmətləri" və 4 qrup (içini istifadəçi yazacaq)
+  if(!S.mig.poliBolme){S.mig.poliBolme=1;
+    let c=S.cats.find(x=>x.id==="poli");
+    if(!c){c={id:"poli",name:"Poliqrafiya Xidmətləri"};const k=S.cats.findIndex(x=>x.id==="cap");S.cats.splice(k<0?S.cats.length:k+1,0,c)}
+    S.items.push(...[["g_skan","Skan Etmə","🖨️","#7c3aed"],["g_spiral","Spiral Cildləmə","📓","#ea580c"],["g_lamA4","Laminasiya A4","✨","#0e7490"],["g_lamA3","Laminasiya A3","💎","#16a34a"]]
+      .filter(([id])=>!S.items.some(i=>i.id===id))
+      .map(([id,name,icon,color])=>({id,name,cat:c.id,icon,color,group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]})));
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;

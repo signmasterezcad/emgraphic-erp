@@ -23,7 +23,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
     A3 ağ-qara surət (2 üzlü) 1.00 (`ks_a3bw2`) — A3 materialı hələ yoxdur, resept boşdur;
     Telefondan sənəd surəti (`ks_tel`, 1 vərəq A4) — istifadəçi qiyməti 0.0 yazıb, dəqiqləşdirmək lazımdır.
   - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar: istifadəçi içini yazacaq.
-- İstifadəçi başqa bölmələri (Foto, Skan…) özü silib; indi yalnız Sevimlilər və ÇAP var.
+- **Poliqrafiya Xidmətləri** (id `poli`, ÇAP-ın yanında; `S.mig.poliBolme`): 4 qrup — Skan Etmə (`g_skan`), Spiral Cildləmə (`g_spiral`),
+  Laminasiya A4 (`g_lamA4`), Laminasiya A3 (`g_lamA3`). İçini istifadəçi yazacaq.
+- İstifadəçi köhnə bölmələri (Foto, Skan…) özü silib; indi Sevimlilər, ÇAP və Poliqrafiya Xidmətləri var.
 
 ## İstifadəçinin məlumatını dəyişmək
 Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.
