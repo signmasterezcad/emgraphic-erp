@@ -36,7 +36,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Qruplar (`S.mig.sublimQruplar`, hamısı boş, istifadəçi zamanla yazacaq): Plaket (`g_plaket`), Suvenir (`g_suvenir`),
   Bayraq təkli/ikili/üçlü (`g_bayraq1/2/3`), Medal (`g_medal`), Alışqan (`g_alisqan`), Body (`g_body`).
 - Qiyməti 0 olan düymə "⚠ qiymət yoxdur" göstərir və satılmır.
-- İndi bölmələr: Sevimlilər, ÇAP, Poliqrafiya Xidmətləri, Sublim.
+- **Kəsim Plotter** (id `plotter`) və **Fiber Lazer** (id `lazer`) bölmələri (`S.mig.plotterLazer`) — hələ boşdur.
+- İndi bölmələr: Sevimlilər, ÇAP, Poliqrafiya Xidmətləri, Sublim, Kəsim Plotter, Fiber Lazer.
 
 ## İstifadəçinin məlumatını dəyişmək
 Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.

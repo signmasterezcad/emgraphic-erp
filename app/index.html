@@ -270,7 +270,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.11.5";
+const APP_VERSION="0.12.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -416,6 +416,12 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
       ["g_alisqan","Alışqan","🪔","#475569"],["g_body","Body","👶","#7c3aed"]]
       .filter(([id])=>!S.items.some(i=>i.id===id))
       .map(([id,name,icon,color])=>({id,name,cat:c.id,icon,color,group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]})));
+  }
+  // v0.12.0: iki yeni bölmə (sonda): "Kəsim Plotter" və "Fiber Lazer" (düymələrini istifadəçi yazacaq)
+  if(!S.mig.plotterLazer){S.mig.plotterLazer=1;
+    const has=n=>S.cats.some(x=>x.name.trim().toLocaleLowerCase("az")===n.toLocaleLowerCase("az"));
+    if(!has("Kəsim Plotter"))S.cats.push({id:"plotter",name:"Kəsim Plotter"});
+    if(!has("Fiber Lazer"))S.cats.push({id:"lazer",name:"Fiber Lazer"});
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;
