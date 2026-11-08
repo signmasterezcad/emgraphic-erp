@@ -24,7 +24,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
     Telefondan sənəd surəti (`ks_tel`, 1 vərəq A4) — istifadəçi qiyməti 0.0 yazıb, dəqiqləşdirmək lazımdır.
   - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar: istifadəçi içini yazacaq.
 - **Poliqrafiya Xidmətləri** (id `poli`, ÇAP-ın yanında; `S.mig.poliBolme`): 4 qrup — Skan Etmə (`g_skan`), Spiral Cildləmə (`g_spiral`),
-  Laminasiya A4 (`g_lamA4`), Laminasiya A3 (`g_lamA3`). İçini istifadəçi yazacaq.
+  Laminasiya A4 (`g_lamA4`), Laminasiya A3 (`g_lamA3`). İçi (`S.mig.poliIci`):
+  - Skan Etmə: A4 skan 0.50 (`sk_a4`), A3 skan 0.50 (`sk_a3`). Spiral: 50/100/200/300 vərəqə qədər — 3/5/7/10 (`sp_50`…`sp_300`).
+  - Laminasiya A4 (1.00, 1 Laminasiya A4 plyonka) və A3 (2.00, material yoxdur) qrup deyil, birbaşa satış düyməsidir (id-ləri `g_` ilə qalıb).
 - İstifadəçi köhnə bölmələri (Foto, Skan…) özü silib; indi Sevimlilər, ÇAP və Poliqrafiya Xidmətləri var.
 
 ## İstifadəçinin məlumatını dəyişmək

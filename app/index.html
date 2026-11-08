@@ -269,8 +269,9 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.10.0";
+const APP_VERSION="0.10.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
+const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
   // v0.7.0: ÇAP bölməsi = 4 qrup düyməsi (içində düymələr açılır), köhnə 3 çap düyməsi silinir
@@ -340,6 +341,19 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
     S.items.push(...[["g_skan","Skan Etmə","🖨️","#7c3aed"],["g_spiral","Spiral Cildləmə","📓","#ea580c"],["g_lamA4","Laminasiya A4","✨","#0e7490"],["g_lamA3","Laminasiya A3","💎","#16a34a"]]
       .filter(([id])=>!S.items.some(i=>i.id===id))
       .map(([id,name,icon,color])=>({id,name,cat:c.id,icon,color,group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]})));
+  }
+  // v0.10.1: Poliqrafiya Xidmətlərinin içi. Laminasiya A4/A3 qrup yox, birbaşa satış düyməsi olur.
+  if(!S.mig.poliIci){S.mig.poliIci=1;
+    const add=(gid,rows)=>{const g=S.items.find(i=>i.id===gid);if(!g)return;
+      S.items.push(...rows.filter(([id])=>!S.items.some(i=>i.id===id))
+        .map(([id,name,icon,color,price])=>({id,name,cat:g.cat,parent:g.id,icon,color,fav:0,ink:0,recipe:[],tiers:[[1,price]]})))};
+    add("g_skan",[["sk_a4","A4 skan","📄","#7c3aed",0.50],["sk_a3","A3 skan","📃","#6d28d9",0.50]]);
+    add("g_spiral",[["sp_50","50 vərəqə qədər","📓","#ea580c",3],["sp_100","100 vərəqə qədər","📔","#dc2626",5],["sp_200","200 vərəqə qədər","📒","#db2777",7],["sp_300","300 vərəqə qədər","📚","#7c3aed",10]]);
+    const lam=S.materials.find(m=>m.id==="lam")?.id;
+    [["g_lamA4",1,lam?[[lam,1]]:[]],["g_lamA3",2,[]]].forEach(([id,price,recipe])=>{
+      const it=S.items.find(i=>i.id===id);
+      if(it&&!kidsOf(id).length){it.group=0;it.tiers=[[1,price]];it.recipe=recipe}
+    });
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;
