@@ -270,7 +270,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.11.1";
+const APP_VERSION="0.11.2";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -390,6 +390,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
     [["fc_sade",[[1,8],[11,6]]],["fc_termo",[[1,10]]],["fc_reng",[[1,10]]],["fc_toplu",[[1,13],[11,6]]]].forEach(([id,tiers])=>{
       const it=S.items.find(i=>i.id===id);if(it&&!it.tiers.some(t=>+t[1]))it.tiers=tiers;
     });
+  }
+  // v0.11.2: "Fincan toplu" — 10-dan çox pilləsi ləğv: yalnız 13 (istifadəçi özü başqa cür dəyişibsə, toxunmur)
+  if(!S.mig.topluPille){S.mig.topluPille=1;
+    const it=S.items.find(i=>i.id==="fc_toplu");
+    if(it&&JSON.stringify(it.tiers)==="[[1,13],[11,6]]")it.tiers=[[1,13]];
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;

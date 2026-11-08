@@ -115,6 +115,8 @@ const path = require('path');
   ok((await p.textContent('#total')).startsWith('66.00'), '10-dan çox: 11 × 6 = 66.00');
   await p.click('#btnClear'); await p.click('[data-add=fc_termo]'); await p.click('[data-add=fc_reng]'); await p.click('[data-add=fc_toplu]');
   ok((await p.textContent('#total')).startsWith('33.00'), 'Termo 10 + rəngli 10 + toplu 13 = 33.00');
+  await p.click('#btnClear'); await p.click('[data-add=fc_toplu]'); await p.fill('.line input', '11'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50);
+  ok((await p.textContent('#total')).startsWith('143.00'), 'Fincan toplu: endirim yoxdur, 11 × 13 = 143.00');
   await p.click('#btnClear');
   await p.click('#btnEdit'); await p.click('[data-act=qnew]'); await p.fill('#e_name', 'Qiymətsiz test'); await p.fill('#t_p_0', '0');
   await p.click('[data-act=isave]'); await p.click('#ovRep [data-close]'); await p.click('[data-act=editdone]');
