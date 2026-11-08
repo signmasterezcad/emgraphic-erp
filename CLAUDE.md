@@ -12,13 +12,15 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **Zay** ayrıca qeyd olunur (səbəb, işçi). **Sayım fərqi** = qeydə alınmayan itki.
 - **Qrup düyməsi** (`group:1`): basanda içində düymələr açılır, öz qiyməti/resepti yoxdur.
   İçindəki düymələrdə `parent: <qrup id>` olur. Yalnız bir səviyyə (qrupun içində qrup yoxdur).
-- **ÇAP bölməsi** (id `cap`): 4 qrup — A4 Sadə (`g_a4`), A3 Sadə (`g_a3`), Sertifikat Kağızı (`g_sert`), Foto Kağızlar (`g_foto`).
+- **ÇAP bölməsi** (id `cap`): 5 qrup — A4 Sadə (`g_a4`), A3 Sadə (`g_a3`), Sertifikat Kağızı (`g_sert`), Foto Kağızlar (`g_foto`),
+  Sənəd Surəti (Kserokopiya) (`g_kser`; `S.mig.kserQrup`).
   - A4 Sadə (`S.mig.a4Sade`, hər biri 1 vərəq A4 80 qr): Sadə yazı ağ-qara 0.10 / 101+ 0.05 (`a4s_bw`),
     30% rəngli çap 0.20 (`a4s_30`), 40% rəngli çap 0.30 (`a4s_40`),
     60% rəngli çap 0.40 (`a4s_60`), 100% rəngli çap 0.50 (`a4s_100`; `S.mig.a4Sade2`). "Qismən" sözü çıxarılıb (`S.mig.qismenYox`).
     İki tərəfli çap 0.15 (`a4s_2t`), Elan hazırlanması 0.50 (`a4s_elan`; `S.mig.a4Sade3`).
     İki tərəfli rəngli çap 0.25 (`a4s_2tr`; `S.mig.a4Sade4`).
-  - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar: istifadəçi içini yazacaq.
+  - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar, Sənəd Surəti: istifadəçi içini yazacaq (Sənəd Surəti: A4 və A3 surət qiymətləri).
+- İstifadəçi başqa bölmələri (Foto, Skan…) özü silib; indi yalnız Sevimlilər və ÇAP var.
 
 ## İstifadəçinin məlumatını dəyişmək
 Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.
@@ -43,7 +45,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)
 
 ## Açıq məsələlər
-- `yenile.ps1` Windows-da hələ işlədilməyib (bu mühitdə PowerShell yoxdur). İstifadəçidən qara pəncərənin nəticəsini soruş.
+- `YENILE.bat` Windows-da işləyir (istifadəçi v0.8.4-ə yenilənib, ekran şəklində görünür).
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
 - Təklif olunub, hələ edilməyib: işçi girişi (şifrə; işçi maya/mənfəət görməsin), ehtiyat nüsxənin Google Drive qovluğuna da yazılması.
 

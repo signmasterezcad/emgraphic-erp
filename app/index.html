@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.8.4";
+const APP_VERSION="0.9.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
@@ -316,6 +316,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
   if(!S.mig.a4Sade4){S.mig.a4Sade4=1;
     const g=S.items.find(i=>i.id==="g_a4"),a4=S.materials.find(m=>m.id==="a4")?.id;
     if(g&&!S.items.some(i=>i.id==="a4s_2tr"))S.items.push({id:"a4s_2tr",name:"İki tərəfli rəngli çap",cat:g.cat,parent:g.id,icon:"🔄",color:"#6d28d9",fav:0,ink:0,recipe:a4?[[a4,1]]:[],tiers:[[1,0.25]]});
+  }
+  // v0.9.0: ÇAP bölməsinə 5-ci qrup: "Sənəd Surəti (Kserokopiya)" (içini istifadəçi yazacaq)
+  if(!S.mig.kserQrup){S.mig.kserQrup=1;
+    const c=S.cats.find(x=>x.id==="cap");
+    if(c&&!S.items.some(i=>i.id==="g_kser"))S.items.push({id:"g_kser",name:"Sənəd Surəti (Kserokopiya)",cat:c.id,icon:"📑",color:"#0e7490",group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]});
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;

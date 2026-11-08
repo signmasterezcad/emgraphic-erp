@@ -103,7 +103,7 @@ const path = require('path');
   const order5 = await p.locator('#grid [data-add] .nm').allTextContents();
   ok(order5.join('|') === 'Sadə yazı ağ-qara|30% rəngli çap|40% rəngli çap|60% rəngli çap|100% rəngli çap|İki tərəfli çap|Elan hazırlanması|İki tərəfli rəngli çap', 'A4 Sadə: adlarda "Qismən" yoxdur, sıra düzgündür');
   await p.click('#btnClear'); await p.click('[data-back]');
-  ok(await p.locator('#grid .svc.grpt').count() === 4 && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 4 qrup, köhnə 3 düymə silinib');
+  ok(await p.locator('#grid .svc.grpt').count() === 5 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 5 qrup (sonuncu Sənəd Surəti), köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
   ok(await p.isVisible('#crumb') && (await p.textContent('#grid')).includes('hələ düymə yoxdur'), 'boş qrup açılır, izah görünür');
   await p.click('#btnEdit'); await p.click('[data-act=qnew]');
