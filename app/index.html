@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.10.3";
+const APP_VERSION="0.10.4";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -366,6 +366,15 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
       const it=S.items.find(i=>i.id===id);
       if(it&&it.group&&!kidsOf(id).length){it.group=0;it.tiers=[[1,price]];it.recipe=[]}
     });
+  }
+  // v0.10.4: "Foto Kağızlar" qrupunun içi (ölçülər). Yalnız 10x15-in materialı anbarda var.
+  if(!S.mig.fotoIci){S.mig.fotoIci=1;
+    const g=S.items.find(i=>i.id==="g_foto"),f15=S.materials.find(m=>m.id==="f1015")?.id;
+    const C=["#16a34a","#15803d","#0e7490","#2563eb","#1d4ed8","#7c3aed","#6d28d9","#db2777","#dc2626"];
+    if(g&&g.group)S.items.push(...[["1015",0.40],["1318",0.80],["1521",1],["2025",3],["2130",3],["2538",8],["3040",12],["3042",12],["3045",15]]
+      .map(([z,price],k)=>{const name=z.slice(0,2)+"x"+z.slice(2);return {id:"fk_"+z,name,cat:g.cat,parent:g.id,icon:"🖼️",color:C[k],fav:0,ink:0,
+        recipe:z==="1015"&&f15?[[f15,1]]:[],tiers:[[1,price]]}})
+      .filter(it=>!S.items.some(i=>i.id===it.id)));
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;

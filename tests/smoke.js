@@ -136,9 +136,17 @@ const path = require('path');
   await p.click('#btnClear'); await p.click('[data-back]');
   ok(await p.locator('#grid .svc.grpt').count() === 3 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 3 qrup (A4 Sadə, Foto, Sənəd Surəti), köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
+  ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === '10x15|13x18|15x21|20x25|21x30|25x38|30x40|30x42|30x45', 'Foto Kağızlar: 9 ölçü');
+  await p.click('[data-add=fk_1015]'); await p.click('[data-add=fk_3045]'); await p.click('[data-add=fk_2538]');
+  ok((await p.textContent('#total')).startsWith('23.40'), '10x15 (0.40) + 30x45 (15) + 25x38 (8) = 23.40');
+  await p.click('#btnClear'); await p.click('[data-back]');
+  // boş qrup üçün yeni qrup yarat
+  await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=cap]'); await p.click('[data-act=new]');
+  await p.selectOption('#e_type', 'group'); await p.fill('#e_name', 'Test qrupu'); await p.click('[data-act=isave]'); await p.click('#ovRep [data-close]');
+  await p.locator('#grid .svc.grpt', { hasText: 'Test qrupu' }).click();
   ok(await p.isVisible('#crumb') && (await p.textContent('#grid')).includes('hələ düymə yoxdur'), 'boş qrup açılır, izah görünür');
   await p.click('#btnEdit'); await p.click('[data-act=qnew]');
-  ok((await p.textContent('#editor h4')).includes('Foto Kağızlar'), 'qrupun içində + Yeni düymə: qrup seçilib');
+  ok((await p.textContent('#editor h4')).includes('Test qrupu'), 'qrupun içində + Yeni düymə: qrup seçilib');
   await p.fill('#e_name', '10x15 parlaq'); await p.fill('#t_p_0', '0.40'); await p.click('[data-act=radd]'); await p.selectOption('#r_m_0', 'f1015');
   await p.click('[data-act=isave]'); await p.click('#ovRep [data-close]'); await p.click('[data-act=editdone]');
   ok(await p.locator('#grid [data-add]', { hasText: '10x15 parlaq' }).count() === 1, 'yeni düymə qrupun içində');
@@ -146,7 +154,7 @@ const path = require('path');
   ok((await p.textContent('#chips')).includes('10x15 foto kağızı: 499'), 'qrupdakı düymə ilə satış: foto kağız 500 → 499');
   await p.click('[data-back]');
   ok(!(await p.isVisible('#crumb')) && await p.locator('#grid [data-add]', { hasText: '10x15 parlaq' }).count() === 0, '← geri: bölməyə qayıtdı, içdəki düymə burada görünmür');
-  ok((await p.textContent('[data-grp=g_foto]')).includes('1 düymə'), 'qrup düyməsində içindəki say görünür');
+  ok((await p.textContent('.svc.grpt:has-text("Test qrupu")')).includes('1 düymə') && (await p.textContent('[data-grp=g_foto]')).includes('9 düymə'), 'qrup düyməsində içindəki say görünür (1 və 9)');
   // Ayarlarda yeni qrup yaratmaq
   await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=cap]'); await p.click('[data-act=new]');
   await p.selectOption('#e_type', 'group'); await p.fill('#e_name', 'Laminasiya qrupu'); await p.click('[data-act=isave]');
@@ -154,11 +162,12 @@ const path = require('path');
   ok(await p.locator('#grid .svc.grpt', { hasText: 'Laminasiya qrupu' }).count() === 1, 'Ayarlardan yeni qrup yaradıldı');
   // qrupu içindəkilərlə birlikdə silmək
   await p.click('#btnEdit');
-  const fg = p.locator('[data-grp=g_foto]');
+  await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } });
+  const fg = p.locator('.svc.grpt', { hasText: 'Test qrupu' });
   await fg.locator('[data-act=qdel]').click();
   ok((await fg.locator('[data-act=qdel]').textContent()) === '1 düymə ilə sil?', 'qrup 🗑: içindəki say ilə soruşur');
   await fg.locator('[data-act=qdel]').click();
-  ok(await p.locator('[data-grp=g_foto]').count() === 0 && !(await p.evaluate(() => S.items.some(i => i.name === '10x15 parlaq'))), 'qrup içindəki düymə ilə birlikdə silindi');
+  ok(await p.locator('.svc.grpt', { hasText: 'Test qrupu' }).count() === 0 && !(await p.evaluate(() => S.items.some(i => i.name === '10x15 parlaq'))), 'qrup içindəki düymə ilə birlikdə silindi');
   await p.click('[data-act=editdone]');
 
   // Düzəliş rejimi: satış ekranından birbaşa əlavə et / sil
