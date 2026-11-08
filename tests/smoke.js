@@ -87,13 +87,17 @@ const path = require('path');
   // ÇAP bölməsi: 4 qrup düyməsi, içində düymələr
   ok((await p.textContent('#tabs')).includes('ÇAP'), 'bölmənin adı ÇAP');
   await p.click('[data-grp=g_a4]');
-  ok((await p.locator('#grid [data-add]').allTextContents()).join('|').includes('Sadə yazı ağ-qara') && await p.locator('#grid [data-add]').count() === 3, 'A4 Sadə: içində 3 düymə');
+  ok((await p.locator('#grid [data-add]').allTextContents()).join('|').includes('Sadə yazı ağ-qara') && await p.locator('#grid [data-add]').count() === 5, 'A4 Sadə: içində 5 düymə');
   await p.click('[data-add=a4s_bw]'); await p.fill('.line input', '100'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50);
   ok((await p.textContent('#total')).startsWith('10.00'), 'Sadə yazı ağ-qara: 100 × 0.10 = 10.00');
   await p.fill('.line input', '101'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50);
   ok((await p.textContent('#total')).startsWith('5.05'), '100-dən çox: 101 × 0.05 = 5.05');
   await p.click('#btnClear'); await p.click('[data-add=a4s_40]');
   ok((await p.textContent('#total')).startsWith('0.30'), 'Qismən 40% rəngli: 0.30');
+  await p.click('#btnClear'); await p.click('[data-add=a4s_60]'); await p.click('[data-add=a4s_100]');
+  ok((await p.textContent('#total')).startsWith('0.90'), '60% (0.40) + 100% (0.50) = 0.90');
+  const order5 = await p.locator('#grid [data-add] .nm').allTextContents();
+  ok(order5[3] === 'Qismən 60% rəngli çap' && order5[4] === 'Qismən 100% rəngli çap', 'yeni düymələr siyahının sonunda, sıra ilə');
   await p.click('#btnClear'); await p.click('[data-back]');
   ok(await p.locator('#grid .svc.grpt').count() === 4 && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 4 qrup, köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
