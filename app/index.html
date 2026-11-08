@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.8.2";
+const APP_VERSION="0.8.3";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
@@ -300,6 +300,15 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
     if(g)S.items.push(...[
       ["a4s_60","Qismən 60% rəngli çap","🖌️","#db2777",[[1,0.40]]],
       ["a4s_100","Qismən 100% rəngli çap","🌟","#dc2626",[[1,0.50]]],
+    ].filter(([id])=>!S.items.some(i=>i.id===id))
+     .map(([id,name,icon,color,tiers])=>({id,name,cat:g.cat,parent:g.id,icon,color,fav:0,ink:0,recipe:a4?[[a4,1]]:[],tiers})));
+  }
+  // v0.8.3: "A4 Sadə" — iki tərəfli çap və elan hazırlanması (hər biri 1 vərəq A4)
+  if(!S.mig.a4Sade3){S.mig.a4Sade3=1;
+    const g=S.items.find(i=>i.id==="g_a4"),a4=S.materials.find(m=>m.id==="a4")?.id;
+    if(g)S.items.push(...[
+      ["a4s_2t","İki tərəfli çap","🔁","#0e7490",[[1,0.15]]],
+      ["a4s_elan","Elan hazırlanması","📢","#ea580c",[[1,0.50]]],
     ].filter(([id])=>!S.items.some(i=>i.id===id))
      .map(([id,name,icon,color,tiers])=>({id,name,cat:g.cat,parent:g.id,icon,color,fav:0,ink:0,recipe:a4?[[a4,1]]:[],tiers})));
   }

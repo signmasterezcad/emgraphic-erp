@@ -16,6 +16,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - A4 Sadə (`S.mig.a4Sade`, hər biri 1 vərəq A4 80 qr): Sadə yazı ağ-qara 0.10 / 101+ 0.05 (`a4s_bw`),
     30% rəngli çap 0.20 (`a4s_30`), 40% rəngli çap 0.30 (`a4s_40`),
     60% rəngli çap 0.40 (`a4s_60`), 100% rəngli çap 0.50 (`a4s_100`; `S.mig.a4Sade2`). "Qismən" sözü çıxarılıb (`S.mig.qismenYox`).
+    İki tərəfli çap 0.15 (`a4s_2t`), Elan hazırlanması 0.50 (`a4s_elan`; `S.mig.a4Sade3`).
   - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar: istifadəçi içini yazacaq.
 
 ## İstifadəçinin məlumatını dəyişmək
