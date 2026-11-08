@@ -13,7 +13,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **Qrup düyməsi** (`group:1`): basanda içində düymələr açılır, öz qiyməti/resepti yoxdur.
   İçindəki düymələrdə `parent: <qrup id>` olur. Yalnız bir səviyyə (qrupun içində qrup yoxdur).
 - **ÇAP bölməsi** (id `cap`): 4 qrup — A4 Sadə (`g_a4`), A3 Sadə (`g_a3`), Sertifikat Kağızı (`g_sert`), Foto Kağızlar (`g_foto`).
-  İstifadəçi qrupların içindəki düymələrin adlarını və qiymətlərini yazacaq.
+  - A4 Sadə (`S.mig.a4Sade`, hər biri 1 vərəq A4 80 qr): Sadə yazı ağ-qara 0.10 / 101+ 0.05 (`a4s_bw`),
+    Qismən 30% rəngli çap 0.20 (`a4s_30`), Qismən 40% rəngli çap 0.30 (`a4s_40`). 5-ci bənd hələ gəlməyib.
+  - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar: istifadəçi içini yazacaq.
 
 ## İstifadəçinin məlumatını dəyişmək
 Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.
