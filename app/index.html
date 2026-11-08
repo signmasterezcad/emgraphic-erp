@@ -270,7 +270,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.11.0";
+const APP_VERSION="0.11.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -384,6 +384,12 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
     S.items.push(...[["fc_sade","Fincan Sadə","☕","#475569"],["fc_termo","Fincan Termo","🔥","#dc2626"],["fc_reng","Fincan rəngli","🎨","#7c3aed"],["fc_toplu","Fincan toplu","📦","#ca8a04"]]
       .filter(([id])=>!S.items.some(i=>i.id===id))
       .map(([id,name,icon,color])=>({id,name,cat:c.id,icon,color,fav:0,ink:0,recipe:[],tiers:[[1,0]]})));
+  }
+  // v0.11.1: fincan qiymətləri ("10-dan çox" = 11-ci ədəddən). İstifadəçi qiyməti özü yazıbsa, toxunmur.
+  if(!S.mig.fincanQiymet){S.mig.fincanQiymet=1;
+    [["fc_sade",[[1,8],[11,6]]],["fc_termo",[[1,10]]],["fc_reng",[[1,10]]],["fc_toplu",[[1,13],[11,6]]]].forEach(([id,tiers])=>{
+      const it=S.items.find(i=>i.id===id);if(it&&!it.tiers.some(t=>+t[1]))it.tiers=tiers;
+    });
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;
