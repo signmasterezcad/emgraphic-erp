@@ -106,6 +106,17 @@ const path = require('path');
   const order5 = await p.locator('#grid [data-add] .nm').allTextContents();
   ok(order5.join('|') === 'Sadə yazı ağ-qara|30% rəngli çap|40% rəngli çap|60% rəngli çap|100% rəngli çap|İki tərəfli çap|Elan hazırlanması|İki tərəfli rəngli çap', 'A4 Sadə: adlarda "Qismən" yoxdur, sıra düzgündür');
   await p.click('#btnClear'); await p.click('[data-back]');
+  // Sublim: qiymətsiz fincan düymələri satılmır
+  await p.click('[data-cat=sublim]', { position: { x: 12, y: 12 } });
+  ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === 'Fincan Sadə|Fincan Termo|Fincan rəngli|Fincan toplu', 'Sublim: 4 fincan düyməsi');
+  ok((await p.textContent('[data-add=fc_sade]')).includes('qiymət yoxdur'), 'qiymətsiz düymədə xəbərdarlıq');
+  await p.click('[data-add=fc_sade]');
+  ok((await p.textContent('#lines')).includes('Xidmət düyməsinə') && (await p.textContent('#toast')).includes('qiyməti yazılmayıb'), 'qiymətsiz düymə satışa əlavə olunmur');
+  await p.click('#btnEdit'); await p.locator('[data-add=fc_sade] [data-act=qedit]').click();
+  await p.fill('#t_p_0', '8'); await p.click('[data-act=isave]'); await p.click('#ovRep [data-close]'); await p.click('[data-act=editdone]');
+  await p.click('[data-add=fc_sade]');
+  ok((await p.textContent('#total')).startsWith('8.00'), 'qiymət yazılandan sonra satılır: 8.00');
+  await p.click('#btnClear'); await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } });
   const tabNames = await p.locator('#tabs .tab').allTextContents();
   ok(tabNames[1].startsWith('ÇAP') && tabNames[2].startsWith('Poliqrafiya Xidmətləri'), 'Poliqrafiya Xidmətləri bölməsi ÇAP-ın yanında');
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });

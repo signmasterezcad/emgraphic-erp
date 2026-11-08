@@ -152,6 +152,7 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+.svc .pr.noprice{background:rgba(0,0,0,.35);border-radius:999px;padding:1px 10px}
 .crumb{display:flex;gap:12px;align-items:center;margin-top:12px}
 .crumb .mini{font-size:15px;padding:6px 12px}
 .svc.grpt{box-shadow:inset 0 -6px 0 rgba(0,0,0,.18)}
@@ -269,7 +270,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.10.4";
+const APP_VERSION="0.11.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -376,6 +377,14 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
         recipe:z==="1015"&&f15?[[f15,1]]:[],tiers:[[1,price]]}})
       .filter(it=>!S.items.some(i=>i.id===it.id)));
   }
+  // v0.11.0: istifadəçinin yaratdığı "Sublim" bölməsinə 4 fincan düyməsi (qiymətləri hələ yoxdur)
+  if(!S.mig.sublimFincan){S.mig.sublimFincan=1;
+    let c=S.cats.find(x=>x.name.trim().toLocaleLowerCase("az")==="sublim");
+    if(!c){c={id:"sublim",name:"Sublim"};S.cats.push(c)}
+    S.items.push(...[["fc_sade","Fincan Sadə","☕","#475569"],["fc_termo","Fincan Termo","🔥","#dc2626"],["fc_reng","Fincan rəngli","🎨","#7c3aed"],["fc_toplu","Fincan toplu","📦","#ca8a04"]]
+      .filter(([id])=>!S.items.some(i=>i.id===id))
+      .map(([id,name,icon,color])=>({id,name,cat:c.id,icon,color,fav:0,ink:0,recipe:[],tiers:[[1,0]]})));
+  }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;
     S.items.forEach(i=>{if(/^qismən\s+/i.test(i.name))i.name=i.name.replace(/^qismən\s+/i,"")});
@@ -475,7 +484,7 @@ function renderGrid(){
       ${ed}
       ${inOrder&&!editMode?`<span class="cnt">${inOrder.q}</span>`:""}
       <span class="ic">${it.icon}</span><span class="nm">${it.name}</span>
-      <span class="pr">${m2(it.tiers[0][1])} ₼</span>${tierText(it)?`<span class="tier">${tierText(it)}</span>`:""}</button>`}).join("")
+      ${+it.tiers[0][1]?`<span class="pr">${m2(it.tiers[0][1])} ₼</span>`:`<span class="pr noprice">⚠ qiymət yoxdur</span>`}${tierText(it)?`<span class="tier">${tierText(it)}</span>`:""}</button>`}).join("")
     +(editMode?`<button class="svc addtile" data-act="qnew"><span class="ic">＋</span><span class="nm">Yeni düymə</span><span class="pr">${g?"“"+esc(g.name)+"” qrupuna":cat==="fav"?"Sevimlilərə":esc(cn)}</span></button>`:"");
 }
 function renderOrder(){
@@ -492,6 +501,8 @@ function renderOrder(){
 function renderAll(){renderHeader();renderTabs();renderGrid();renderOrder()}
 
 function addItem(id,d=1){
+  const it=item(id);
+  if(d>0&&it&&!it.tiers.some(t=>+t[1])){toast(`"${it.name}" düyməsinin qiyməti yazılmayıb. ✏️ Düzəliş → ✏️ ilə qiyməti yazın`);return}
   const o=order.find(x=>x.id===id);
   if(o){o.q=Math.max(0,o.q+d);if(!o.q)order=order.filter(x=>x!==o)} else if(d>0) order.push({id,q:d});
   renderGrid();renderOrder();
