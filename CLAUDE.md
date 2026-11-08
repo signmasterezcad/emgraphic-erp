@@ -33,6 +33,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Fincan rəngli (`fc_reng`), Fincan toplu (`fc_toplu`). Qiymətlər (`S.mig.fincanQiymet`): Sadə 8 / 11+ 6, Termo 10, rəngli 10, toplu 13 (11+ pilləsi ləğv edilib; `S.mig.topluPille`).
   Açarlıq 8 (`sb_acar`), Köynək 15 / 6+ 12 (`sb_koynek`; `S.mig.acarKoynek`).
   Yaxa kartı — qrup (`g_yaxa`; `S.mig.yaxaQrup`), içindəki növləri istifadəçi yazacaq.
+  Qruplar (`S.mig.sublimQruplar`, hamısı boş, istifadəçi zamanla yazacaq): Plaket (`g_plaket`), Suvenir (`g_suvenir`),
+  Bayraq təkli/ikili/üçlü (`g_bayraq1/2/3`), Medal (`g_medal`), Alışqan (`g_alisqan`), Body (`g_body`).
 - Qiyməti 0 olan düymə "⚠ qiymət yoxdur" göstərir və satılmır.
 - İndi bölmələr: Sevimlilər, ÇAP, Poliqrafiya Xidmətləri, Sublim.
 

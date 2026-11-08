@@ -124,7 +124,7 @@ const path = require('path');
   await p.fill('.line input', '6'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50);
   ok((await p.textContent('#total')).startsWith('72.00'), 'Köynək 5-dən çox: 6 × 12 = 72.00');
   await p.click('#btnClear');
-  ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Yaxa kartı' && (await p.textContent('[data-grp=g_yaxa]')).includes('boşdur'), 'Sublim: Yaxa kartı qrupu (boş)');
+  ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Yaxa kartı|Plaket|Suvenir|Bayraq təkli|Bayraq ikili|Bayraq üçlü|Medal|Alışqan|Body' && (await p.textContent('[data-grp=g_body]')).includes('boşdur'), 'Sublim: 9 qrup (Yaxa kartı … Body), boş');
   await p.click('#btnClear');
   await p.click('#btnEdit'); await p.click('[data-act=qnew]'); await p.fill('#e_name', 'Qiymətsiz test'); await p.fill('#t_p_0', '0');
   await p.click('[data-act=isave]'); await p.click('#ovRep [data-close]'); await p.click('[data-act=editdone]');
