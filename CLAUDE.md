@@ -31,6 +31,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - Laminasiya A4 (1.00, 1 Laminasiya A4 plyonka) və A3 (2.00, material yoxdur) qrup deyil, birbaşa satış düyməsidir (id-ləri `g_` ilə qalıb).
 - **Sublim** bölməsini istifadəçi özü yaradıb (id təsadüfi, adla tapılır; `S.mig.sublimFincan`): Fincan Sadə (`fc_sade`), Fincan Termo (`fc_termo`),
   Fincan rəngli (`fc_reng`), Fincan toplu (`fc_toplu`). Qiymətlər (`S.mig.fincanQiymet`): Sadə 8 / 11+ 6, Termo 10, rəngli 10, toplu 13 (11+ pilləsi ləğv edilib; `S.mig.topluPille`).
+  Açarlıq 8 (`sb_acar`), Köynək 15 / 6+ 12 (`sb_koynek`; `S.mig.acarKoynek`).
 - Qiyməti 0 olan düymə "⚠ qiymət yoxdur" göstərir və satılmır.
 - İndi bölmələr: Sevimlilər, ÇAP, Poliqrafiya Xidmətləri, Sublim.
 
