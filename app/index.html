@@ -269,7 +269,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.9.0";
+const APP_VERSION="0.9.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
@@ -321,6 +321,17 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
   if(!S.mig.kserQrup){S.mig.kserQrup=1;
     const c=S.cats.find(x=>x.id==="cap");
     if(c&&!S.items.some(i=>i.id==="g_kser"))S.items.push({id:"g_kser",name:"Sənəd Surəti (Kserokopiya)",cat:c.id,icon:"📑",color:"#0e7490",group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]});
+  }
+  // v0.9.1: "Sənəd Surəti (Kserokopiya)" qrupunun içi. A3 kağızı anbarda olmadığı üçün A3 düymələrində material yoxdur.
+  if(!S.mig.kserIci){S.mig.kserIci=1;
+    const g=S.items.find(i=>i.id==="g_kser"),a4=S.materials.find(m=>m.id==="a4")?.id,A4=a4?[[a4,1]]:[];
+    if(g)S.items.push(...[
+      ["ks_a4bw","A4 ağ-qara surət","📄","#475569",[[1,0.20],[51,0.15]],A4],
+      ["ks_a3bw","A3 ağ-qara surət","📃","#334155",[[1,0.50]],[]],
+      ["ks_a3bw2","A3 ağ-qara surət (2 üzlü)","🔁","#1e293b",[[1,1.00]],[]],
+      ["ks_tel","Telefondan sənəd surəti","📱","#0e7490",[[1,0]],A4],
+    ].filter(([id])=>!S.items.some(i=>i.id===id))
+     .map(([id,name,icon,color,tiers,recipe])=>({id,name,cat:g.cat,parent:g.id,icon,color,fav:0,ink:0,recipe,tiers})));
   }
   // v0.8.2: "Qismən" sözü adlardan çıxarılır (məs. "Qismən 30% rəngli çap" → "30% rəngli çap")
   if(!S.mig.qismenYox){S.mig.qismenYox=1;

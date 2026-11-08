@@ -19,7 +19,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
     60% rəngli çap 0.40 (`a4s_60`), 100% rəngli çap 0.50 (`a4s_100`; `S.mig.a4Sade2`). "Qismən" sözü çıxarılıb (`S.mig.qismenYox`).
     İki tərəfli çap 0.15 (`a4s_2t`), Elan hazırlanması 0.50 (`a4s_elan`; `S.mig.a4Sade3`).
     İki tərəfli rəngli çap 0.25 (`a4s_2tr`; `S.mig.a4Sade4`).
-  - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar, Sənəd Surəti: istifadəçi içini yazacaq (Sənəd Surəti: A4 və A3 surət qiymətləri).
+  - Sənəd Surəti (`S.mig.kserIci`): A4 ağ-qara surət 0.20 / 51+ 0.15 (`ks_a4bw`, 1 vərəq A4), A3 ağ-qara surət 0.50 (`ks_a3bw`),
+    A3 ağ-qara surət (2 üzlü) 1.00 (`ks_a3bw2`) — A3 materialı hələ yoxdur, resept boşdur;
+    Telefondan sənəd surəti (`ks_tel`, 1 vərəq A4) — istifadəçi qiyməti 0.0 yazıb, dəqiqləşdirmək lazımdır.
+  - A3 Sadə, Sertifikat Kağızı, Foto Kağızlar: istifadəçi içini yazacaq.
 - İstifadəçi başqa bölmələri (Foto, Skan…) özü silib; indi yalnız Sevimlilər və ÇAP var.
 
 ## İstifadəçinin məlumatını dəyişmək
