@@ -128,6 +128,8 @@ const path = require('path');
   ok((await p.textContent('#total')).startsWith('7.65'), '50-dən çox: 51 × 0.15 = 7.65');
   await p.click('#btnClear'); await p.click('[data-add=ks_a3bw]'); await p.click('[data-add=ks_a3bw2]');
   ok((await p.textContent('#total')).startsWith('1.50'), 'A3 surət 0.50 + A3 2 üzlü 1.00 = 1.50');
+  await p.click('#btnClear'); await p.click('[data-add=ks_tel]');
+  ok((await p.textContent('#total')).startsWith('0.30'), 'Telefondan sənəd surəti: 0.30');
   await p.click('#btnClear'); await p.click('[data-back]');
   ok(await p.locator('#grid .svc.grpt').count() === 5 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 5 qrup (sonuncu Sənəd Surəti), köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
