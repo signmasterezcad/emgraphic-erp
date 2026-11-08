@@ -13,10 +13,11 @@ const path = require('path');
   await p.click('#btnZay'); ok(await p.locator('#zMat option').count() === 5, 'zay: material siyahısı');
   await p.click('#ovZay [data-close]'); ok(!(await vis('ovZay')), 'zay: Bağla işləyir');
 
-  await p.click('[data-add=a4bw]'); for (let i = 0; i < 11; i++) await p.click('[data-inc=a4bw]');
-  ok((await p.textContent('#total')).startsWith('3.60'), '12 × A4 ağ-qara = 3.60 (pillə 11+)');
+  await p.click('[data-cat=skan]');
+  await p.click('[data-add=kser]'); for (let i = 0; i < 20; i++) await p.click('[data-inc=kser]');
+  ok((await p.textContent('#total')).startsWith('2.10'), '21 × Kserokopiya = 2.10 (pillə 21+)');
   await p.click('#btnDone');
-  ok((await p.textContent('#chips')).includes('1188'), 'A4 80 qr qalığı 1200 → 1188');
+  ok((await p.textContent('#chips')).includes('1179'), 'A4 80 qr qalığı 1200 → 1179');
 
   await p.evaluate(() => document.fonts.ready);
   ok(await p.evaluate(() => document.fonts.check('700 16px "Noto Sans"', 'əğ₼')), 'şrift proqramın içindən yükləndi (ə, ğ, ₼)');
@@ -37,7 +38,7 @@ const path = require('path');
   await btn.click(); await p.fill('.line input', '20'); await p.dispatchEvent('.line input', 'change');
   ok((await p.textContent('#total')).startsWith('30.00'), 'yeni məhsul: 20 × 1.50 = 30.00');
   await p.click('#btnDone');
-  ok((await p.textContent('#chips')).includes('1148'), 'yeni məhsulun resepti: 20 × 2 vərəq silindi');
+  ok((await p.textContent('#chips')).includes('1139'), 'yeni məhsulun resepti: 20 × 2 vərəq silindi');
 
   // Bölmələr
   await p.click('#btnSet');
@@ -78,10 +79,39 @@ const path = require('path');
   await p.click('#ovRep [data-close]');
   // Düymə sırası
   await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=cap]');
-  await p.click('[data-act=down][data-id=a4bw]');
-  await p.click('#ovRep [data-close]'); await p.locator('#tabs .tab', { hasText: 'Çap' }).click();
+  await p.click('[data-act=down][data-id=g_a4]');
+  await p.click('#ovRep [data-close]'); await p.click('[data-cat=cap]');
   const names = await p.locator('#grid .nm').allTextContents();
-  ok(names[0] === 'A4 rəngli' && names[1] === 'A4 ağ-qara', 'düymə ↓ ilə yer dəyişdi');
+  ok(names[0] === 'A3 Sadə' && names[1] === 'A4 Sadə', 'düymə ↓ ilə yer dəyişdi');
+
+  // ÇAP bölməsi: 4 qrup düyməsi, içində düymələr
+  ok((await p.textContent('#tabs')).includes('ÇAP'), 'bölmənin adı ÇAP');
+  ok(await p.locator('#grid .svc.grpt').count() === 4 && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 4 qrup, köhnə 3 düymə silinib');
+  await p.click('[data-grp=g_foto]');
+  ok(await p.isVisible('#crumb') && (await p.textContent('#grid')).includes('hələ düymə yoxdur'), 'boş qrup açılır, izah görünür');
+  await p.click('#btnEdit'); await p.click('[data-act=qnew]');
+  ok((await p.textContent('#editor h4')).includes('Foto Kağızlar'), 'qrupun içində + Yeni düymə: qrup seçilib');
+  await p.fill('#e_name', '10x15 parlaq'); await p.fill('#t_p_0', '0.40'); await p.click('[data-act=radd]'); await p.selectOption('#r_m_0', 'f1015');
+  await p.click('[data-act=isave]'); await p.click('#ovRep [data-close]'); await p.click('[data-act=editdone]');
+  ok(await p.locator('#grid [data-add]', { hasText: '10x15 parlaq' }).count() === 1, 'yeni düymə qrupun içində');
+  await p.click('#grid [data-add]'); await p.click('#btnDone');
+  ok((await p.textContent('#chips')).includes('10x15 foto kağızı: 499'), 'qrupdakı düymə ilə satış: foto kağız 500 → 499');
+  await p.click('[data-back]');
+  ok(!(await p.isVisible('#crumb')) && await p.locator('#grid [data-add]', { hasText: '10x15 parlaq' }).count() === 0, '← geri: bölməyə qayıtdı, içdəki düymə burada görünmür');
+  ok((await p.textContent('[data-grp=g_foto]')).includes('1 düymə'), 'qrup düyməsində içindəki say görünür');
+  // Ayarlarda yeni qrup yaratmaq
+  await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=cap]'); await p.click('[data-act=new]');
+  await p.selectOption('#e_type', 'group'); await p.fill('#e_name', 'Laminasiya qrupu'); await p.click('[data-act=isave]');
+  await p.click('#ovRep [data-close]');
+  ok(await p.locator('#grid .svc.grpt', { hasText: 'Laminasiya qrupu' }).count() === 1, 'Ayarlardan yeni qrup yaradıldı');
+  // qrupu içindəkilərlə birlikdə silmək
+  await p.click('#btnEdit');
+  const fg = p.locator('[data-grp=g_foto]');
+  await fg.locator('[data-act=qdel]').click();
+  ok((await fg.locator('[data-act=qdel]').textContent()) === '1 düymə ilə sil?', 'qrup 🗑: içindəki say ilə soruşur');
+  await fg.locator('[data-act=qdel]').click();
+  ok(await p.locator('[data-grp=g_foto]').count() === 0 && !(await p.evaluate(() => S.items.some(i => i.name === '10x15 parlaq'))), 'qrup içindəki düymə ilə birlikdə silindi');
+  await p.click('[data-act=editdone]');
 
   // Düzəliş rejimi: satış ekranından birbaşa əlavə et / sil
   await p.click('#btnEdit');
@@ -133,12 +163,12 @@ const path = require('path');
   await p.click('[data-rt=backup]');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('[data-act=bexp]')]);
   const file = await dl.path(); const j = JSON.parse(require('fs').readFileSync(file, 'utf8'));
-  ok(j.app === 'EMGRAPHIC ERP' && j.data.sales.length === 2, 'ehtiyat faylı: 2 satış');
+  ok(j.app === 'EMGRAPHIC ERP' && j.data.sales.length === 3, 'ehtiyat faylı: 3 satış');
   await p.click('[data-act=reset]'); await p.click('[data-act=reset]');
   ok((await p.textContent('#today')).includes('0'), 'sıfırlama (iki addımla)');
   await p.setInputFiles('#bfile', file); await p.waitForSelector('[data-act=bimp]');
   await p.click('[data-act=bimp]');
-  ok((await p.textContent('#chips')).includes('1148'), 'ehtiyat nüsxədən bərpa');
+  ok((await p.textContent('#chips')).includes('1139'), 'ehtiyat nüsxədən bərpa');
 
   ok(external.length === 0, 'internetə heç bir sorğu getmir ' + external.join(' '));
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));

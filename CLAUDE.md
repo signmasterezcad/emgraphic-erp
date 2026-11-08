@@ -10,6 +10,15 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - Eyni kağız fərqli düymələrdə fərqli qiymətə satılır (boş A4 0.05, A4 rəngli çap 1.00).
 - **Qiymət pillələri**: say artdıqca 1 ədədin qiyməti dəyişir (1+, 11+, 51+…).
 - **Zay** ayrıca qeyd olunur (səbəb, işçi). **Sayım fərqi** = qeydə alınmayan itki.
+- **Qrup düyməsi** (`group:1`): basanda içində düymələr açılır, öz qiyməti/resepti yoxdur.
+  İçindəki düymələrdə `parent: <qrup id>` olur. Yalnız bir səviyyə (qrupun içində qrup yoxdur).
+- **ÇAP bölməsi** (id `cap`): 4 qrup — A4 Sadə (`g_a4`), A3 Sadə (`g_a3`), Sertifikat Kağızı (`g_sert`), Foto Kağızlar (`g_foto`).
+  İstifadəçi qrupların içindəki düymələrin adlarını və qiymətlərini yazacaq.
+
+## İstifadəçinin məlumatını dəyişmək
+Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.
+Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köçürmə yaz və `S.mig.<ad>` bayrağı qoy
+(nümunə: `S.mig.capQrup`). Satışlara, anbara toxunma.
 
 ## Quruluş
 - `app/index.html` — bütün proqram (ekranlar + məntiq, bir fayl, kitabxanasız)

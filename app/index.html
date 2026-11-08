@@ -152,6 +152,12 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+.crumb{display:flex;gap:12px;align-items:center;margin-top:12px}
+.crumb .mini{font-size:15px;padding:6px 12px}
+.svc.grpt{box-shadow:inset 0 -6px 0 rgba(0,0,0,.18)}
+.svc.grpt .pr{background:rgba(0,0,0,.22);border-radius:999px;padding:1px 10px}
+.empty-grp{grid-column:1/-1;padding:18px 0}
+tr.child td{background:color-mix(in srgb,var(--panel2) 55%,transparent)}
 tr.confirm td{background:color-mix(in srgb,var(--bad) 10%,var(--panel));border-bottom:1px solid var(--bad)}
 .pathbox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 12px}
 .pathbox code{font-size:12px;overflow-wrap:anywhere}
@@ -177,6 +183,7 @@ h4{margin:6px 0 0;font-size:14px}
 <main class="wrap">
   <section style="min-width:0">
     <div class="tabs" id="tabs"></div>
+    <div class="crumb" id="crumb" hidden></div>
     <div class="grid" id="grid"></div>
     <p class="note">Düyməyə hər toxunuş sayı 1 artırır. Say artdıqca qiymət özü dəyişir (məsələn A4 çapında 1–10, 11–50, 51+). Satış bitəndə kağız anbardan avtomatik silinir. Düymə və bölmə əlavə etmək və ya silmək üçün yuxarıda “✏️ Düzəliş” basın. Məlumat yalnız bu kompüterdə saxlanır.</p>
   </section>
@@ -262,10 +269,22 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.6.1";
+const APP_VERSION="0.7.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
-  S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0})}
+  S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
+  // v0.7.0: ÇAP bölməsi = 4 qrup düyməsi (içində düymələr açılır), köhnə 3 çap düyməsi silinir
+  S.mig=S.mig||{};
+  if(!S.mig.capQrup){S.mig.capQrup=1;
+    let c=S.cats.find(x=>x.id==="cap")||S.cats.find(x=>x.name.trim().toLocaleLowerCase("az")==="çap");
+    if(!c){c={id:"cap",name:"ÇAP"};S.cats.unshift(c)}
+    c.name="ÇAP";
+    S.items=S.items.filter(i=>!["a4bw","a4c","a4qc"].includes(i.id));
+    S.items.unshift(...[["g_a4","A4 Sadə","📄","#2563eb"],["g_a3","A3 Sadə","📃","#1d4ed8"],["g_sert","Sertifikat Kağızı","📜","#ca8a04"],["g_foto","Foto Kağızlar","🖼️","#16a34a"]]
+      .filter(([id])=>!S.items.some(i=>i.id===id))
+      .map(([id,name,icon,color])=>({id,name,cat:c.id,icon,color,group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]})));
+  }
+}
 function parseData(txt){try{const j=JSON.parse(txt);const d=j&&j.data&&j.app?j.data:j;return d&&d.items&&d.materials?d:null}catch(e){return null}}
 async function loadData(){
   if(NATIVE){
@@ -319,7 +338,7 @@ const isToday=ts=>new Date(ts).toDateString()===new Date().toDateString();
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
 
 // ---------- Vəziyyət ----------
-let editMode=false, cat="fav", order=[], pay="nağd", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
+let editMode=false, grp=null, cat="fav", order=[], pay="nağd", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
 
 function renderHeader(){
   $("worker").innerHTML=S.workers.map(w=>`<option>${w}</option>`).join("");
@@ -333,16 +352,35 @@ function renderTabs(){
     `<span class="tx" role="button" data-act="qcren" data-c="${k}" title="Adını dəyiş">✏️</span><span class="tx" role="button" data-act="qcdel" data-c="${k}" title="Sil">${delArm===k?(S.items.some(it=>it.cat===k)?`${S.items.filter(it=>it.cat===k).length} düymə ilə sil?`:"Sil?"):"🗑"}</span>`:""}</button>`).join("")
     +(editMode?`<button class="tab add" data-act="qcadd">+ Bölmə</button>`:"");
 }
+const isGroup=it=>!!it?.group;
+const kids=id=>S.items.filter(i=>i.parent===id);
+// düyməni (qrupdursa içindəkilərlə birlikdə) sil; silinən içdəki düymə sayını qaytarır
+function removeItem(id){
+  const ids=new Set([id,...kids(id).map(k=>k.id)]);
+  if(NATIVE&&ids.size>1)window.erpBackup(backupText(),"el").catch(()=>{});
+  S.items=S.items.filter(i=>!ids.has(i.id));order=order.filter(o=>!ids.has(o.id));
+  if(ids.has(grp))grp=null;if(draft&&ids.has(draft.id))draft=null;
+  return ids.size-1;
+}
+const delLabel=(it,yes,no)=>delArm===it.id?(isGroup(it)&&kids(it.id).length?`${kids(it.id).length} düymə ilə sil?`:yes):no;
 function renderGrid(){
-  const list=S.items.filter(i=>cat==="fav"?i.fav:i.cat===cat);
-  $("grid").innerHTML=list.map(it=>{
+  const g=grp&&item(grp);if(grp&&!g)grp=null;
+  const cn=cat==="fav"?"⭐ Sevimlilər":(CATS.find(c=>c[0]===cat)?.[1]||"");
+  $("crumb").hidden=!g;
+  if(g)$("crumb").innerHTML=`<button class="btn ghost" data-back>← ${esc(cn)}</button><span class="mini" style="background:${esc(g.color)}">${esc(g.icon)} ${esc(g.name)}</span>`;
+  const list=g?kids(g.id):S.items.filter(i=>cat==="fav"?i.fav:(i.cat===cat&&!i.parent));
+  $("grid").innerHTML=(g&&!list.length&&!editMode?`<p class="sub empty-grp">“${esc(g.name)}” qrupunda hələ düymə yoxdur. Yuxarıda ✏️ Düzəliş basın və “+ Yeni düymə” ilə əlavə edin.</p>`:"")+list.map(it=>{
+    const ed=editMode?`<span class="ed"><span role="button" data-act="qedit" data-id="${it.id}" title="Dəyiş">✏️</span><span role="button" data-act="qdel" data-id="${it.id}" title="Sil">${delLabel(it,"Sil?","🗑")}</span></span>`:"";
+    if(isGroup(it)){const n=kids(it.id).length;
+      return `<button class="svc grpt" style="background:${esc(it.color)}" data-grp="${it.id}">${ed}
+      <span class="ic">${esc(it.icon)}</span><span class="nm">${esc(it.name)}</span><span class="pr">📂 ${n?n+" düymə":"boşdur"}</span></button>`}
     const inOrder=order.find(o=>o.id===it.id);
     return `<button class="svc" style="background:${esc(it.color)}" data-add="${it.id}">
-      ${editMode?`<span class="ed"><span role="button" data-act="qedit" data-id="${it.id}" title="Dəyiş">✏️</span><span role="button" data-act="qdel" data-id="${it.id}" title="Sil">${delArm===it.id?"Sil?":"🗑"}</span></span>`:""}
+      ${ed}
       ${inOrder&&!editMode?`<span class="cnt">${inOrder.q}</span>`:""}
       <span class="ic">${it.icon}</span><span class="nm">${it.name}</span>
       <span class="pr">${m2(it.tiers[0][1])} ₼</span>${tierText(it)?`<span class="tier">${tierText(it)}</span>`:""}</button>`}).join("")
-    +(editMode?`<button class="svc addtile" data-act="qnew"><span class="ic">＋</span><span class="nm">Yeni düymə</span><span class="pr">${cat==="fav"?"Sevimlilərə":esc(CATS.find(c=>c[0]===cat)?.[1]||"")}</span></button>`:"");
+    +(editMode?`<button class="svc addtile" data-act="qnew"><span class="ic">＋</span><span class="nm">Yeni düymə</span><span class="pr">${g?"“"+esc(g.name)+"” qrupuna":cat==="fav"?"Sevimlilərə":esc(cn)}</span></button>`:"");
 }
 function renderOrder(){
   if(!order.length){$("lines").innerHTML=`<div class="empty">Xidmət düyməsinə toxunun</div>`}
@@ -448,32 +486,39 @@ let draft=null, delArm=null, pendingImport=null;
 
 function draftCost(d){return d.recipe.reduce((s,[m,q])=>s+(mat(m)?.cost||0)*(+q||0),0)+(+d.ink||0)}
 function renderAdmin(){
-  const list=S.items.filter(it=>setCat==="all"||(setCat==="fav"?it.fav:it.cat===setCat));
-  let h=`<p class="sub">Satış ekranındakı rəngli düymələr. Bölməni seçin, düyməni ↑ ↓ ilə yerini dəyişin, "Redaktə" ilə adını, rəngini, qiymətini və reseptini dəyişin.</p>
+  const base=S.items.filter(it=>setCat==="all"||(setCat==="fav"?it.fav:it.cat===setCat));
+  const list=[];base.filter(i=>!i.parent||!base.some(b=>b.id===i.parent)).forEach(i=>{list.push(i);if(isGroup(i))kids(i.id).forEach(k=>{if(base.includes(k))list.push(k)})});
+  const sib=it=>list.filter(x=>(x.parent||"")===(it.parent||""));
+  let h=`<p class="sub">Satış ekranındakı rəngli düymələr. 📂 qrup düyməsinə basanda içindəki düymələr açılır. Bölməni seçin, düyməni ↑ ↓ ilə yerini dəyişin, "Redaktə" ilə adını, rəngini, qiymətini və reseptini dəyişin.</p>
   <div class="frow">${[["all","Hamısı"],...CATS].map(([k,l])=>`<button class="tab sm ${k===setCat?"on":""}" data-act="scat" data-c="${k}">${esc(l)} <span class="sub">${k==="all"?S.items.length:S.items.filter(it=>k==="fav"?it.fav:it.cat===k).length}</span></button>`).join("")}</div>
   <div class="tw"><table><tr><th></th><th>Düymə</th><th>Bölmə</th><th>Resept</th><th>Qiymət pillələri</th><th class="n">Maya / əd</th><th class="n">Mənfəət (1 əd)</th><th></th></tr>
-  ${list.map((it,i)=>`<tr><td class="arrows">${setCat!=="all"?`<button class="btn ghost sm" data-act="up" data-id="${it.id}" ${i===0?"disabled":""} aria-label="yuxarı">↑</button><button class="btn ghost sm" data-act="down" data-id="${it.id}" ${i===list.length-1?"disabled":""} aria-label="aşağı">↓</button>`:""}</td>
-    <td><span class="mini" style="background:${esc(it.color)}">${esc(it.icon)} ${esc(it.name)}</span>${it.fav?" ⭐":""}</td><td>${esc(CATS.find(c=>c[0]===it.cat)?.[1]||"—")}</td>
-    <td>${it.recipe.map(([m,q])=>`${q}× ${esc(matName(m))}`).join(", ")||"material yoxdur"}${it.ink?` + mürəkkəb ${m2(it.ink)}`:""}</td>
+  ${list.map(it=>{const sb=sib(it),i=sb.indexOf(it),G=isGroup(it);return `<tr class="${it.parent?"child":""}"><td class="arrows">${setCat!=="all"?`<button class="btn ghost sm" data-act="up" data-id="${it.id}" ${i===0?"disabled":""} aria-label="yuxarı">↑</button><button class="btn ghost sm" data-act="down" data-id="${it.id}" ${i===sb.length-1?"disabled":""} aria-label="aşağı">↓</button>`:""}</td>
+    <td>${it.parent?'<span class="sub">↳</span> ':""}<span class="mini" style="background:${esc(it.color)}">${esc(it.icon)} ${esc(it.name)}</span>${it.fav?" ⭐":""}</td><td>${esc(CATS.find(c=>c[0]===it.cat)?.[1]||"—")}${it.parent?` <span class="sub">› ${esc(item(it.parent)?.name||"")}</span>`:""}</td>
+    ${G?`<td colspan="4" class="sub">📂 qrup · içində ${kids(it.id).length} düymə</td>`:`<td>${it.recipe.map(([m,q])=>`${q}× ${esc(matName(m))}`).join(", ")||"material yoxdur"}${it.ink?` + mürəkkəb ${m2(it.ink)}`:""}</td>
     <td>${it.tiers.map(([t,v])=>`${t}+ → ${m2(v)}`).join(" · ")}</td><td class="n">${m2(unitCost(it))}</td>
-    <td class="n">${m2(it.tiers[0][1]-unitCost(it))}</td><td class="arrows"><button class="btn ghost sm" data-act="edit" data-id="${it.id}">Redaktə</button> <button class="btn ghost sm del" data-act="ldel" data-id="${it.id}">${delArm===it.id?"Əminsiniz? Sil":"Sil"}</button></td></tr>`).join("")||`<tr><td colspan="8" class="sub">Bu bölmədə hələ düymə yoxdur.</td></tr>`}
+    <td class="n">${m2(it.tiers[0][1]-unitCost(it))}</td>`}<td class="arrows"><button class="btn ghost sm" data-act="edit" data-id="${it.id}">Redaktə</button> <button class="btn ghost sm del" data-act="ldel" data-id="${it.id}">${delLabel(it,"Əminsiniz? Sil","Sil")}</button></td></tr>`}).join("")||`<tr><td colspan="8" class="sub">Bu bölmədə hələ düymə yoxdur.</td></tr>`}
   </table></div>
   ${setCat==="all"?"":`<p class="sub">Sıranı dəyişmək üçün oxlardan istifadə edin.</p>`}
   <div><button class="btn" data-act="new">+ Yeni düymə${setCat!=="all"&&setCat!=="fav"?` (${esc(CATS.find(c=>c[0]===setCat)?.[1]||"")})`:""}</button></div>`;
   if(draft){
     const d=draft, c=draftCost(d), p=+(d.tiers[0]?.[1])||0;
     h+=`<div class="editor" id="editor">
-      <h4>${d.isNew?"Yeni düymə":"Redaktə: "+esc(d.name)}</h4>
+      <h4>${d.isNew?(d.parent?`Yeni düymə: “${esc(item(d.parent)?.name||"")}” qrupuna`:"Yeni düymə"):"Redaktə: "+esc(d.name)}</h4>
+      <div class="frow">
+        <label class="f">Növ<select id="e_type">${d.parent?`<option value="sale">Satış düyməsi</option>`:`<option value="sale" ${d.group?"":"selected"}>Satış düyməsi</option><option value="group" ${d.group?"selected":""}>📂 Qrup (basanda içində düymələr açılır)</option>`}</select></label>
+        ${d.group?"":`<label class="f">Hansı qrupda<select id="e_parent"><option value="">— qrupsuz (birbaşa bölmədə) —</option>${S.items.filter(x=>isGroup(x)&&x.cat===d.cat&&x.id!==d.id).map(x=>`<option value="${x.id}" ${x.id===d.parent?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>`}
+      </div>
       <div class="frow">
         <label class="f grow">Ad<input id="e_name" value="${esc(d.name)}" placeholder="məs. A3 rəngli çap"></label>
         <label class="f">Bölmə<select id="e_cat">${CATS.filter(c=>c[0]!=="fav").map(([k,l])=>`<option value="${k}" ${k===d.cat?"selected":""}>${l}</option>`).join("")}</select></label>
         <label class="f sm">İkon<input id="e_icon" value="${esc(d.icon)}" maxlength="4"></label>
         <label class="f sm">Rəng<input id="e_color" type="color" value="${esc(d.color)}"></label>
         <div class="swatches">${SWATCHES.map(c=>`<button class="sw ${c===d.color?"on":""}" style="background:${c}" data-act="sw" data-c="${c}" aria-label="rəng ${c}"></button>`).join("")}</div>
-        <label class="f sm">Mürəkkəb / əlavə xərc<input id="e_ink" type="number" step="0.01" min="0" value="${d.ink}"></label>
+        ${d.group?"":`<label class="f sm">Mürəkkəb / əlavə xərc<input id="e_ink" type="number" step="0.01" min="0" value="${d.ink}"></label>`}
         <label class="chk"><input id="e_fav" type="checkbox" ${d.fav?"checked":""}> Sevimlilərdə göstər</label>
       </div>
-      <div class="frow"><span class="sub">Satış ekranında belə görünəcək:</span><span class="svc preview" style="background:${esc(d.color)}"><span class="ic">${esc(d.icon)}</span><span class="nm">${esc(d.name||"Düymənin adı")}</span><span class="pr">${m2(+(d.tiers[0]?.[1])||0)} ₼</span></span></div>
+      <div class="frow"><span class="sub">Satış ekranında belə görünəcək:</span><span class="svc preview" style="background:${esc(d.color)}"><span class="ic">${esc(d.icon)}</span><span class="nm">${esc(d.name||"Düymənin adı")}</span><span class="pr">${d.group?"📂 qrup":m2(+(d.tiers[0]?.[1])||0)+" ₼"}</span></span></div>
+      ${d.group?`<p class="sub">Qrupun qiyməti və resepti olmur. Satış qrupun içindəki düymələrdən olur. Yadda saxlayandan sonra satış ekranında qrupu açın və ✏️ Düzəliş → “+ Yeni düymə” ilə içinə düymə əlavə edin.</p>`:`
       <h4>Resept: 1 ədəd satışda anbardan nə silinir</h4>
       ${d.recipe.map(([m,q],i)=>`<div class="frow">
         <select id="r_m_${i}" aria-label="material">${S.materials.map(M=>`<option value="${M.id}" ${M.id===m?"selected":""}>${esc(M.name)}</option>`).join("")}</select>
@@ -486,11 +531,11 @@ function renderAdmin(){
         <span class="sub">başlayaraq 1 ədəd</span><input id="t_p_${i}" type="number" step="0.01" min="0" value="${v}" class="num" aria-label="qiymət"> <span class="sub">₼</span>
         ${i?`<button class="btn ghost sm" data-act="tdel" data-i="${i}">Sil</button>`:""}</div>`).join("")}
       <div><button class="btn ghost sm" data-act="tadd">+ Pillə əlavə et</button></div>
-      <p class="sub">1 ədədin mayası: <b>${m2(c)} ₼</b> · ilk pillədə mənfəət: <b style="color:${p-c<0?"var(--bad)":"var(--ok)"}">${m2(p-c)} ₼</b></p>
+      <p class="sub">1 ədədin mayası: <b>${m2(c)} ₼</b> · ilk pillədə mənfəət: <b style="color:${p-c<0?"var(--bad)":"var(--ok)"}">${m2(p-c)} ₼</b></p>`}
       <div class="frow">
         <button class="btn" data-act="isave">Yadda saxla</button>
         <button class="btn ghost" data-act="icancel">Ləğv et</button>
-        ${d.isNew?"":`<button class="btn red" data-act="idel">${delArm===d.id?"Əminsiniz? Bəli, sil":"Düyməni sil"}</button>`}
+        ${d.isNew?"":`<button class="btn red" data-act="idel">${delLabel(d,"Əminsiniz? Bəli, sil",d.group?"Qrupu sil":"Düyməni sil")}</button>`}
       </div></div>`;
   }
   return h;
@@ -498,9 +543,12 @@ function renderAdmin(){
 function syncDraft(){
   if(!draft||!$("e_name"))return;
   draft.name=$("e_name").value; draft.cat=$("e_cat").value; draft.icon=$("e_icon").value;
-  draft.color=$("e_color").value; draft.ink=parseFloat($("e_ink").value)||0; draft.fav=$("e_fav").checked?1:0;
-  draft.recipe=draft.recipe.map((r,i)=>[$("r_m_"+i).value,parseFloat($("r_q_"+i).value)||0]);
-  draft.tiers=draft.tiers.map((t,i)=>[i===0?1:(parseInt($("t_min_"+i).value)||1),parseFloat($("t_p_"+i).value)||0]);
+  draft.color=$("e_color").value; draft.fav=$("e_fav").checked?1:0;
+  if($("e_type"))draft.group=$("e_type").value==="group"?1:0;
+  if($("e_parent"))draft.parent=$("e_parent").value||undefined;
+  if($("e_ink"))draft.ink=parseFloat($("e_ink").value)||0;
+  if($("r_m_0"))draft.recipe=draft.recipe.map((r,i)=>[$("r_m_"+i).value,parseFloat($("r_q_"+i).value)||0]);
+  if($("t_p_0"))draft.tiers=draft.tiers.map((t,i)=>[i===0?1:(parseInt($("t_min_"+i).value)||1),parseFloat($("t_p_"+i).value)||0]);
 }
 
 const SWATCHES=["#2563eb","#1d4ed8","#0e7490","#16a34a","#15803d","#ca8a04","#ea580c","#dc2626","#db2777","#7c3aed","#6d28d9","#475569"];
@@ -604,19 +652,19 @@ document.addEventListener("click",e=>{
   else if(a==="banx"){$("banner").hidden=true;return}
   else if(a==="bango"){$("banner").hidden=true;mode="set";rtab="backup";$("ovRep").hidden=false}
   else if(a==="qedit"){e.stopPropagation();openSet("admin",cat==="fav"?"all":cat);draft={...structuredClone(item(t.dataset.id)),isNew:false}}
-  else if(a==="qnew"){openSet("admin",cat==="fav"?"all":cat);
-    draft={id:newId("p"),name:"",cat:cat!=="fav"?cat:S.cats[0]?.id,icon:"🧾",color:"#2563eb",fav:cat==="fav"?1:0,ink:0,recipe:[],tiers:[[1,1]],isNew:true}}
+  else if(a==="qnew"){const g=grp&&item(grp);openSet("admin",g?g.cat:cat==="fav"?"all":cat);
+    draft={id:newId("p"),name:"",cat:g?g.cat:cat!=="fav"?cat:S.cats[0]?.id,parent:g?g.id:undefined,icon:"🧾",color:g?g.color:"#2563eb",fav:cat==="fav"&&!g?1:0,ink:0,recipe:[],tiers:[[1,1]],isNew:true}}
   else if(a==="qdel"){const id=t.dataset.id;if(delArm!==id){delArm=id;renderGrid();return}
-    const n=item(id)?.name;S.items=S.items.filter(x=>x.id!==id);order=order.filter(o=>o.id!==id);delArm=null;save();renderGrid();renderOrder();toast(`"${n}" silindi`);return}
+    const n=item(id)?.name,k=removeItem(id);delArm=null;save();renderGrid();renderOrder();toast(`"${n}" silindi`+(k?` (içindəki ${k} düymə ilə)`:""));return}
   else if(a==="qcadd"){openSet("bolme");setTimeout(()=>$("nc_name")?.focus(),50)}
   else if(a==="qcren"){openSet("bolme");setTimeout(()=>{const i=document.querySelector(`input[data-cid="${t.dataset.c}"]`);i?.focus();i?.select()},50)}
   else if(a==="qcdel"){const id=t.dataset.c;
     if(delArm!==id){delArm=id;renderTabs();return}
     deleteCat(id);return}
-  else if(a==="ldel"){const id=t.dataset.id;if(delArm!==id){delArm=id}else{const n=item(id)?.name;S.items=S.items.filter(x=>x.id!==id);order=order.filter(o=>o.id!==id);delArm=null;if(draft?.id===id)draft=null;save();renderAll();toast(`"${n}" silindi`)}}
+  else if(a==="ldel"){const id=t.dataset.id;if(delArm!==id){delArm=id}else{const n=item(id)?.name,k=removeItem(id);delArm=null;save();renderAll();toast(`"${n}" silindi`+(k?` (içindəki ${k} düymə ilə)`:""))}}
   else if(a==="scat"){setCat=t.dataset.c;draft=null}
   else if(a==="up"||a==="down"){
-    const list=S.items.filter(it=>setCat==="fav"?it.fav:it.cat===setCat),k=list.findIndex(x=>x.id===t.dataset.id),o=list[a==="up"?k-1:k+1];
+    const me=item(t.dataset.id),list=S.items.filter(it=>(setCat==="fav"?it.fav:it.cat===setCat)&&(it.parent||"")===(me.parent||"")),k=list.findIndex(x=>x.id===me.id),o=list[a==="up"?k-1:k+1];
     if(o){const i1=S.items.indexOf(list[k]),i2=S.items.indexOf(o);[S.items[i1],S.items[i2]]=[S.items[i2],S.items[i1]];save();renderGrid()}
   }
   else if(a==="sw"){syncDraft();draft.color=t.dataset.c}
@@ -637,8 +685,12 @@ document.addEventListener("click",e=>{
   else if(a==="icancel"){draft=null}
   else if(a==="isave"){
     syncDraft();
-    if(!draft.name.trim()){toast("Məhsulun adını yazın");return}
+    if(!draft.name.trim()){toast("Düymənin adını yazın");return}
+    if(!draft.group&&!draft.isNew&&item(draft.id)?.group&&kids(draft.id).length){toast("Bu qrupun içində düymələr var. Əvvəlcə onları silin və ya başqa yerə köçürün");return}
     draft.name=draft.name.trim();
+    if(draft.group){draft.recipe=[];draft.tiers=[[1,0]];draft.ink=0;delete draft.parent}
+    if(draft.parent){const pg=item(draft.parent);if(pg)draft.cat=pg.cat;else delete draft.parent}
+    if(draft.group)kids(draft.id).forEach(k=>k.cat=draft.cat);
     draft.recipe=draft.recipe.filter(r=>r[0]&&r[1]>0);
     draft.tiers=draft.tiers.sort((x,y)=>x[0]-y[0]).filter((x,i,arr)=>i===0||x[0]!==arr[i-1][0]);draft.tiers[0][0]=1;
     const {isNew,...it}=draft;
@@ -647,7 +699,7 @@ document.addEventListener("click",e=>{
   }
   else if(a==="idel"){
     if(delArm!==draft.id){delArm=draft.id}
-    else{S.items=S.items.filter(x=>x.id!==draft.id);order=order.filter(o=>o.id!==draft.id);const n=draft.name;draft=null;delArm=null;save();renderAll();toast(`"${n}" silindi`)}
+    else{const n=draft.name,k=removeItem(draft.id);draft=null;delArm=null;save();renderAll();toast(`"${n}" silindi`+(k?` (içindəki ${k} düymə ilə)`:""))}
   }
   else if(a==="msave"){
     S.materials.forEach(m=>{const n=$("m_n_"+m.id).value.trim();if(n)m.name=n;
@@ -688,6 +740,7 @@ document.addEventListener("click",e=>{
   if(draft&&["edit","new","qedit","qnew"].includes(a))$("editor")?.scrollIntoView({behavior:"smooth",block:"start",inline:"nearest"});
 });
 document.addEventListener("change",e=>{
+  if(["e_type","e_cat"].includes(e.target.id)&&draft){syncDraft();if(e.target.id==="e_cat")draft.parent=undefined;renderRep();return}
   const cid=e.target.dataset?.cid;
   if(cid){const c=S.cats.find(x=>x.id===cid),n=e.target.value.trim();if(c&&n){c.name=n;save();renderTabs();toast("Bölmənin adı dəyişdi")}return}
   if(e.target.id!=="bfile")return;
@@ -701,7 +754,9 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-act]"))return;
   const t=e.target.closest("button");if(!t)return;
   if(editMode&&t.dataset.add)return;
-  if(t.dataset.cat){cat=t.dataset.cat;renderTabs();renderGrid()}
+  if(t.dataset.cat){cat=t.dataset.cat;grp=null;renderTabs();renderGrid()}
+  else if(t.dataset.grp){grp=t.dataset.grp;delArm=null;renderGrid()}
+  else if(t.hasAttribute("data-back")){grp=null;delArm=null;renderGrid()}
   else if(t.dataset.add)addItem(t.dataset.add,1);
   else if(t.dataset.inc)addItem(t.dataset.inc,1);
   else if(t.dataset.dec)addItem(t.dataset.dec,-1);
