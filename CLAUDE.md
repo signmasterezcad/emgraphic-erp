@@ -34,7 +34,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 2. Yeni fayl əlavə edirsənsə, `app/files.txt`-ə yaz.
 3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o "../EMGRAPHIC ERP.exe" .`
 4. Testlər: `node tests/smoke.js` (brauzer) və `node tests/native.js` (exe simulyasiyası) — hamısı OK olmalıdır.
-5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/emgraphic-erp/main/app/index.html` yeni versiyanı verir.
+5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/emgraphic-erp/main/app/index.html` yeni versiyanı verir (GitHub 5 dəqiqəyə qədər köhnəni göstərə bilər; yeni versiya görünənə qədər gözlə, sonra istifadəçiyə "hazırdır" de).
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)
 
 ## Açıq məsələlər
