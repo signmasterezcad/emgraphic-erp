@@ -305,7 +305,7 @@ h4{margin:6px 0 0;font-size:14px}
         <button id="payCash" class="on">💵 Nağd</button>
         <button id="payCard">💳 Kart</button>
       </div>
-      <button class="paydebt" id="payDebt">📝 Borca</button>
+      <button class="paydebt" id="payDebt">📝 Nisyə</button>
       <div class="custsel" id="custSel" hidden></div>
       <button class="done" id="btnDone" disabled>Ödənildi ✓</button>
       <p class="sub keyhint">⌨️ Klaviatura: <b>Space</b> və ya <b>Enter</b> iki dəfə — nağd ödəniş</p>
@@ -334,7 +334,7 @@ h4{margin:6px 0 0;font-size:14px}
         <button class="btn ghost sm" data-h="yday">Dünən</button>
         <button class="btn ghost sm" data-h="all">Bütün günlər</button>
         <span class="sub">Ödəniş:</span>
-        <button class="tab sm" data-hp="all">Hamısı</button><button class="tab sm" data-hp="nağd">💵 Nağd</button><button class="tab sm" data-hp="kart">💳 Kart</button><button class="tab sm" data-hp="borc">📝 Borca</button>
+        <button class="tab sm" data-hp="all">Hamısı</button><button class="tab sm" data-hp="nağd">💵 Nağd</button><button class="tab sm" data-hp="kart">💳 Kart</button><button class="tab sm" data-hp="borc">📝 Nisyə</button>
       </div>
       <div id="hBody"></div>
     </div>
@@ -448,7 +448,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.27.0";
+const APP_VERSION="0.27.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -907,7 +907,7 @@ document.addEventListener("keydown",e=>{if($("ovSrc").hidden)return;e.stopImmedi
 let keyArm=0,keyArmT=null;
 const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=doneTxt()}
-const doneTxt=()=>pay==="borc"?"Borca yaz ✓":DONE_TXT;
+const doneTxt=()=>pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
 const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden;
 function finishSale(){
@@ -1034,7 +1034,7 @@ function renderHist(){
       <div class="kpi"><span>Cəmi</span><b>${m2(sum(()=>1))} ₼</b></div>
       <div class="kpi"><span>💵 Nağd</span><b style="color:var(--ok)">${m2(sum(s=>s.pay==="nağd"))} ₼</b></div>
       <div class="kpi"><span>💳 Kart</span><b style="color:var(--accent)">${m2(sum(s=>s.pay==="kart"))} ₼</b></div>
-      <div class="kpi"><span>📝 Borca</span><b style="color:var(--warn)">${m2(sum(s=>s.pay==="borc"))} ₼</b></div></div>
+      <div class="kpi"><span>📝 Nisyə</span><b style="color:var(--warn)">${m2(sum(s=>s.pay==="borc"))} ₼</b></div></div>
     ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Saat</th><th>Ödəniş</th><th>Nə satılıb</th><th>İşçi</th><th class="n">Məbləğ</th><th></th></tr>
     ${list.slice(0,500).map(s=>{const k=saleKey(s);return `<tr class="${hDel===k?"confirm":""}">
       <td><b>${fmtDate(s.ts)}</b></td><td><b>${fmtTime(s.ts)}</b></td>
@@ -1046,7 +1046,7 @@ function renderHist(){
     ${list.length>500?`<p class="sub">Son 500 satış göstərilir. Konkret günü seçin.</p>`:""}`
     :`<p class="sub empty-grp">${hDay?"Bu gün":"Hələ"} satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
 }
-const salePill=s=>s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Borca: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>';
+const salePill=s=>s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>';
 async function deleteSale(k){
   if(!can("delSale"))return;
   const i=S.sales.findIndex(s=>saleKey(s)===k);if(i<0)return;
@@ -1291,7 +1291,7 @@ function renderCTiles(){
   $("ctiles").innerHTML=list.length?list.map(c=>{const o=custOwed(c.id);return `<button class="stile ctile" data-c="pick" data-id="${c.id}"><span class="ic">🏢</span>${esc(c.name)}<span class="sm2">${o>0.004?"borc "+m2(o)+" ₼":"borc yoxdur"}</span></button>`}).join("")
     :`<p class="sub">${S.customers.length?"Tapılmadı.":"Hələ müəssisə yoxdur. Aşağıda adını yazıb əlavə edin."}</p>`;
 }
-function pickCust(id){ordCust=id;pay="borc";$("ovCust").hidden=true;renderOrder();toast(`📝 ${custLabel(id)} seçildi. “Borca yaz ✓” basın`)}
+function pickCust(id){ordCust=id;pay="borc";$("ovCust").hidden=true;renderOrder();toast(`📝 ${custLabel(id)} seçildi. “Nisyəyə yaz ✓” basın`)}
 const cTabs=()=>[["debt","💳 Borclar"+(custDebtAll()>0.004?` (${m2(custDebtAll())} ₼)`:""),"custDebt"],["list","🏢 Müəssisələr","admin"]].filter(([,,p])=>p==="admin"?isAdmin():can(p));
 function openCDebt(){const T=cTabs();if(!T.length)return;if(!T.some(t=>t[0]===ctab))ctab=T[0][0];cDel=null;renderCDebt();$("ovCDebt").hidden=false}
 function renderCDebt(){
@@ -1310,11 +1310,11 @@ function renderCDebt(){
         ${o>0.004?`<div class="frow"><label class="f xs">Alınan ₼<input id="cp_${id}" type="number" min="0" step="0.01" value="${m2(o)}"></label>
           <button class="btn" data-c="cpay" data-id="${id}" data-by="nağd">💵 Nağd aldım</button><button class="btn ghost" data-c="cpay" data-id="${id}" data-by="kart">💳 Kartla aldım</button></div>`:""}
         <div class="tw"><table class="hist"><tr><th>Tarix</th><th>Nə</th><th>Kim</th><th class="n">Məbləğ</th><th></th></tr>
-        ${mv.slice(0,15).map(m=>m.t==="sale"?`<tr><td>${fmtDate(m.ts)} <span class="sub">${fmtTime(m.ts)}</span></td><td class="wrap">📝 Borca satış: ${m.s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")}</td><td>${esc(m.s.worker||"")}</td><td class="n" style="color:var(--warn)"><b>+${m2(m.s.total)} ₼</b></td><td></td></tr>`
+        ${mv.slice(0,15).map(m=>m.t==="sale"?`<tr><td>${fmtDate(m.ts)} <span class="sub">${fmtTime(m.ts)}</span></td><td class="wrap">📝 Nisyə satış: ${m.s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")}</td><td>${esc(m.s.worker||"")}</td><td class="n" style="color:var(--warn)"><b>+${m2(m.s.total)} ₼</b></td><td></td></tr>`
           :`<tr class="${cDel===m.y.id?"confirm":""}"><td>${fmtDate(m.ts)} <span class="sub">${fmtTime(m.ts)}</span></td><td>${m.y.by==="nağd"?"💵 Nağd alındı":"💳 Kartla alındı"}</td><td>${esc(m.y.worker||"")}</td><td class="n" style="color:var(--ok)"><b>−${m2(m.y.amount)} ₼</b></td>
             <td>${!isAdmin()?"":cDel===m.y.id?`<button class="btn red sm" data-c="ydel" data-id="${m.y.id}">Bəli, sil</button>`:`<button class="btn ghost sm del" data-c="yask" data-id="${m.y.id}">Sil</button>`}</td></tr>`).join("")}</table></div>
         ${mv.length>15?`<p class="sub">Son 15 hərəkət göstərilir.</p>`:""}
-      </div>`}).join(""):`<p class="sub empty-grp">Hələ borca satış yoxdur. Satışda “📝 Borca” düyməsini basıb müəssisəni seçsəniz, burada görünəcək.</p>`}`;
+      </div>`}).join(""):`<p class="sub empty-grp">Hələ nisyə satış yoxdur. Satışda “📝 Nisyə” düyməsini basıb müəssisəni seçsəniz, burada görünəcək.</p>`}`;
   }
   if(ctab==="list"){
     h=`<p class="sub">Adı dəyişsəniz, keçmiş borclar yeni adla görünür. Silsəniz, keçmiş satışları və borcu yerində qalır.</p>
@@ -1590,7 +1590,7 @@ function renderRep(){
     const byW={};sales.forEach(s=>byW[s.worker]=(byW[s.worker]||0)+s.total);
     h=`<div class="kpis">
       <div class="kpi"><span>Satış</span><b>${m2(tot)} ₼</b></div>
-      <div class="kpi"><span>Nağd / Kart / Borca</span><b>${m2(cash)} / ${m2(sales.filter(s=>s.pay==="kart").reduce((a,s)=>a+s.total,0))} / ${m2(sales.filter(s=>s.pay==="borc").reduce((a,s)=>a+s.total,0))}</b></div>
+      <div class="kpi"><span>Nağd / Kart / Nisyə</span><b>${m2(cash)} / ${m2(sales.filter(s=>s.pay==="kart").reduce((a,s)=>a+s.total,0))} / ${m2(sales.filter(s=>s.pay==="borc").reduce((a,s)=>a+s.total,0))}</b></div>
       ${can("cost")?`<div class="kpi"><span>Material + mürəkkəb mayası</span><b>${m2(cost)} ₼</b></div>
       <div class="kpi"><span>Zay itkisi</span><b style="color:var(--bad)">${m2(wc)} ₼</b></div>
       <div class="kpi"><span>Satışdan qazanc</span><b style="color:var(--ok)">${m2(tot-cost-wc)} ₼</b></div>`:""}</div>

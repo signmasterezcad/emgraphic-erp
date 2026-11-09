@@ -113,11 +113,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Basanda `#ovSrc` (1 = Özümüz, 2 = tədarükçü, Esc). Sifariş sətri `{id,q,from}`, açar `okey()` = "id@from"; satış qiyməti eynidir.
   Tədarükçü sətri: anbardan material silinmir, `cost:0` (alış xərclərdədir — iki dəfə çıxılmasın), `from`, `fromName`, `scost` = say × alış qiyməti.
   Hesabat: "Məhsul + mənfəət"də ayrı sətir (maya = scost); 📅 Aylıq-da `srcSection()`: özümüz satış, tədarükçü satışı / alış qiyməti ilə / qazanc, ölçü cədvəli.
-- **🏢 Borclular — müəssisələrə borca satış** (v0.25.0): "Cari sifariş"də `#payDebt` "📝 Borca" → `#ovCust` müəssisə seçimi
-  (yenisini orada əlavə etmək olar) → `pay="borc"`, `ordCust`; düymə "Borca yaz ✓". Satış: `pay:"borc", cust, custName`.
+- **🏢 Borclular — müəssisələrə nisyə satış** (v0.25.0; v0.27.1-də ekranda "Borca" → **"Nisyə"**, düymə "Nisyəyə yaz ✓"): "Cari sifariş"də `#payDebt` "📝 Nisyə" → `#ovCust` müəssisə seçimi
+  (yenisini orada əlavə etmək olar) → `pay="borc"` (daxili ad dəyişmir), `ordCust`. Satış: `pay:"borc", cust, custName`.
   `S.customers=[{id,name}]`, pul alınanda `S.custPays=[{id,cust,name,ts,amount,by,worker}]` (hissə-hissə). Borc = `custOwed(id)`.
   Satış həmin gün satış/mənfəət sayılır; kassaya yalnız nağd alınan pul düşür (`cashDay().custIn`, "+ Borclulardan alınan nağd").
-  Başlıqda `#btnCust` "🏢 Borclular" + `#custBadge`, pəncərə `#ovCDebt` (Borclar / Müəssisələr — admin). Tarixçədə "📝 Borca" süzgəci.
+  Başlıqda `#btnCust` "🏢 Borclular" + `#custBadge`, pəncərə `#ovCDebt` (Borclar / Müəssisələr — admin). Tarixçədə "📝 Nisyə" süzgəci.
   İcazələr: `custSale` (kassirə standart, `S.mig.custPerm`), `custDebt` (borcları görmək və pulu almaq, standart bağlı).
   Üstünə pul alınmış borca satışı silmək olmur.
 
