@@ -95,8 +95,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **🚚 Tədarükçü** (v0.23.0, başlıqda `#btnSupp`, pəncərə `#ovSupp`): hazır mal alınan yerlər `S.suppliers=[{id,name}]`
   (ilkin: Samir Foto `sp1`, Vəfa Foto `sp2`, Şamil Vinetka `sp3`, Samir Banner `sp4`; admin adını dəyişir/əlavə edir/silir).
   Alış **`S.expenses`-ə** düşür: `{cat: tədarükçünün adı, supp: id, amount, pay: nağd|kart, note: nə alınıb, worker}` — ayın xalis
-  mənfəətindən çıxılır, nağd olan kassa hesabından da. Ad dəyişəndə keçmiş qeydlərin `cat`-ı da dəyişir. Nisyə hələ yoxdur.
-  İcazələr: `supp` (alışı yazmaq; kassirlərə standart, `S.mig.suppPerm` mövcud kassirlərə verdi), `suppRep` (aylıq hesabat).
+  mənfəətindən çıxılır, nağd olan kassa hesabından da. Ad dəyişəndə keçmiş qeydlərin `cat`-ı da dəyişir.
+  **Nisyə** (v0.24.0): `pay:"nisyə"` — xərc alış günü sayılır, kassaya toxunmur. Ödənişlər `S.suppPays=[{id,supp,name,ts,amount,by:nağd|kart,worker}]`,
+  hissə-hissə olar (borcdan çox yox). Borc = `suppOwed(id)` = nisyə cəmi − ödənişlər. Nağd ödəniş `cashDay()`-də "borc ödənişi" kimi çıxılır.
+  "💳 Borclar" tabı + başlıqda `#suppBadge` — icazə `suppDebt` (kassirə standart bağlı). Ödənişi yalnız admin silir;
+  üstünə ödəniş olunmuş nisyə alışı silmək olmur.
+  İcazələr: `supp` (alışı yazmaq, nisyə daxil; kassirlərə standart, `S.mig.suppPerm` mövcud kassirlərə verdi), `suppRep` (aylıq hesabat).
   Kassir yalnız bu gün öz yazdığını silə bilər, admin hamısını; tarixi yalnız admin seçə bilir.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur

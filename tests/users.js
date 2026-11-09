@@ -140,6 +140,32 @@ let n = 0;
   ok((await p.textContent('#rbody')).includes('Samir Foto Studio'), 'aylıq mənfəət hesabatında xərc növü kimi görünür');
   await p.click('#ovRep [data-close]');
 
+  // 9) Nisyə: borc tədarükçünün adına yazılır, hissə-hissə ödənir
+  await p.click('#btnSupp'); await p.click('[data-s=tab][data-t=add]');
+  await p.click('.stile:has-text("Vəfa Foto")'); await p.fill('#s_amt', '100'); await p.click('[data-s=pay][data-p=nisyə]');
+  ok((await p.textContent('#suppBody')).includes('borc Vəfa Foto adına'), 'nisyə seçiləndə izah çıxır');
+  await p.click('[data-s=save]');
+  await p.click('.stile:has-text("Vəfa Foto")'); await p.fill('#s_amt', '50'); await p.click('[data-s=pay][data-p=nisyə]'); await p.click('[data-s=save]');
+  ok((await p.textContent('#suppBadge')).includes('150.00') && await p.isVisible('#suppBadge'), 'başlıqda borc nişanı: 150.00 ₼');
+  await p.click('[data-s=tab][data-t=debt]');
+  ok((await p.textContent('#suppBody')).includes('Borc: 150.00'), 'Borclar: Vəfa Foto 150.00');
+  await p.fill('#dp_sp2', '200'); await p.click('[data-s=dpay][data-id=sp2][data-by=nağd]');
+  ok((await p.textContent('#toast')).includes('Borcdan çox'), 'borcdan çox ödəmək olmur');
+  await p.fill('#dp_sp2', '60'); await p.click('[data-s=dpay][data-id=sp2][data-by=nağd]');
+  ok((await p.textContent('#toast')).includes('qalan borc 90.00') && (await p.textContent('#suppBadge')).includes('90.00'), 'hissəli ödəniş: 60 ödəndi, qalan 90');
+  await p.click('[data-s=dpay][data-id=sp2][data-by=kart]');
+  ok((await p.textContent('#toast')).includes('borc bağlandı') && await p.isHidden('#suppBadge'), 'qalanı kartla ödəndi: borc bağlandı, nişan getdi');
+  await p.click('#ovSupp [data-close]');
+  await p.click('#btnRep'); await p.click('[data-rt=gun]');
+  ok((await p.textContent('#rbody')).includes('60.00'), 'nağd borc ödənişi (60) kassadan çıxılır');
+  await p.click('#ovRep [data-close]');
+  const months = JSON.parse(fs.data).expenses.filter(x => x.supp === 'sp2' && x.pay === 'nisyə').reduce((a, x) => a + x.amount, 0);
+  ok(months === 150, 'nisyə alışlar xərc kimi alış günündə sayılır (150)');
+  await p.click('#btnUser'); await p.click(`[data-login="${leyla}"]`); await p.keyboard.type('2222'); await p.keyboard.press('Enter');
+  await p.click('#btnSupp');
+  ok(!(await p.textContent('#stabs')).includes('Borclar') && await p.isHidden('#suppBadge'), 'Leyla: borc icazəsi yoxdur — Borclar tabı və nişan görünmür');
+  await p.click('#ovSupp [data-close]');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
