@@ -554,7 +554,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.36.0";
+const APP_VERSION="0.36.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1348,8 +1348,8 @@ function renderGrid(){
 }
 function renderOrder(){
   if(!order.length){
-    // Bu günün nağd və kart cəmi; basanda Satış Tarixçəsi həmin ödəniş növü ilə açılır
-    if(me&&can("reports")){const ts=S.sales.filter(s=>isToday(s.ts)),sum=k=>ts.filter(s=>s.pay===k).reduce((a,s)=>a+s.total,0);
+    // Yalnız telefonda: bu günün nağd və kart cəmi; basanda Satış Tarixçəsi həmin ödəniş növü ilə açılır (kompüterdə yoxdur)
+    if(me&&can("reports")&&(PHONE_CLOUD||REMOTE)){const ts=S.sales.filter(s=>isToday(s.ts)),sum=k=>ts.filter(s=>s.pay===k).reduce((a,s)=>a+s.total,0);
       $("lines").innerHTML=`<div class="epay"><button class="c" data-epay="nağd" title="Bu günün nağd satışları">💵 Nağd<b>${m2(sum("nağd"))} ₼</b></button><button class="k" data-epay="kart" title="Bu günün kart satışları">💳 Kart<b>${m2(sum("kart"))} ₼</b></button></div>`}
     else $("lines").innerHTML=`<div class="empty">Xidmət düyməsinə toxunun</div>`}
   else $("lines").innerHTML=order.map(o=>{const it=item(o.id),p=lineUnit(o),k=okey(o);
