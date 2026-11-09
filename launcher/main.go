@@ -106,6 +106,33 @@ func main() {
 	w.Bind("erpOpenFolder", func() error { return exec.Command("explorer.exe", st.backupDir).Start() })
 
 	u := url.URL{Scheme: "file", Path: "/" + filepath.ToSlash(index)}
+	go ensureShortcuts(exe, filepath.Join(cfg, "EMGRAPHIC ERP"))
 	w.Navigate(u.String())
 	w.Run()
+}
+
+// ensureShortcuts proqram qovluğunda və iş masasında "KASSA" qısayolu yaradır.
+// Yalnız bir dəfə: alındıqdan sonra işarə faylı yazılır və istifadəçi qısayolu silsə, yenidən yaradılmır.
+// exe faylının adı dəyişmir (YENILE.bat onu bu adla tanıyır).
+func ensureShortcuts(exe, dataRoot string) {
+	marker := filepath.Join(dataRoot, "qisayol-yaradildi")
+	if _, err := os.Stat(marker); err == nil {
+		return
+	}
+	ps := `$s = New-Object -ComObject WScript.Shell
+foreach ($d in @($env:KASSA_DIR, [Environment]::GetFolderPath('Desktop'))) {
+  if (-not $d) { continue }
+  $l = $s.CreateShortcut((Join-Path $d 'KASSA.lnk'))
+  $l.TargetPath = $env:KASSA_EXE
+  $l.WorkingDirectory = $env:KASSA_DIR
+  $l.Description = 'KASSA'
+  $l.Save()
+}`
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", ps)
+	cmd.Env = append(os.Environ(), "KASSA_EXE="+exe, "KASSA_DIR="+filepath.Dir(exe))
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000} // pəncərəsiz
+	if cmd.Run() == nil {
+		os.MkdirAll(dataRoot, 0o755)
+		os.WriteFile(marker, []byte("ok"), 0o644)
+	}
 }
