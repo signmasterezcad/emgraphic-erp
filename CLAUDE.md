@@ -51,6 +51,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Qruplar (`S.mig.sublimQruplar`, hamısı boş, istifadəçi zamanla yazacaq): Plaket (`g_plaket`), Suvenir (`g_suvenir`),
   Bayraq təkli/ikili/üçlü (`g_bayraq1/2/3`), Medal (`g_medal`), Alışqan (`g_alisqan`), Body (`g_body`).
 - Qiyməti 0 olan düymə "⚠ qiymət yoxdur" göstərir və satılmır.
+- **✏️ Düzəliş** (v0.37.0): başlıqda yoxdur (`#btnEdit` gizli), **⚙️ Ayarlar**-ın yuxarısında "✏️ Düzəliş rejimini aç" (`data-act="goedit"`, `can("edit")`) —
+  Ayarlar bağlanır, `setEdit(true)`; çıxış əvvəlki kimi "Hazır" (`editdone`).
 - **Kəsim Plotter** (id `plotter`) və **Fiber Lazer** (id `lazer`) bölmələri (`S.mig.plotterLazer`) — hələ boşdur.
 - **🔍 Axtarış** (v0.13.0) Sevimlilər-in yerinə gəlib (daxili açar `"search"`, həmişə birinci tab, açılışda seçilir).
   Bütün bölmə və qruplarda düymə adı + qrup + bölmə adına görə axtarır; ə/ş/ç/ğ/ı/ö/ü hərfsiz yazmaq olar; Enter birinci nəticəni əlavə edir.

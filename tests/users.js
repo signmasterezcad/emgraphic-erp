@@ -31,7 +31,7 @@ let n = 0;
   ok((await p.textContent('#userName')).includes('Admin (admin)'), 'başlıqda: Admin (admin)');
   const d0 = JSON.parse(fs.data);
   ok(d0.users.length === 3 && d0.users.filter(u => u.role === 'admin').length === 1 && d0.users.find(u => u.name === 'Leyla').role === 'kassir', 'işçilər istifadəçiyə çevrildi: 1 admin + 2 kassir');
-  ok(await p.isVisible('#btnSet') && await p.isVisible('#btnExp') && await p.isVisible('#btnEdit'), 'admin bütün düymələri görür');
+  ok(await p.isVisible('#btnSet') && await p.isVisible('#btnExp') && await p.isHidden('#btnEdit'), 'admin bütün düymələri görür (Düzəliş Ayarların içində)');
 
   // 2) Hər əməliyyatdan sonra nüsxə; dəyişiklik yoxdursa, yazılmır
   const e0 = kinds('emel');

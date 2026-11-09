@@ -167,6 +167,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .blines{display:grid;gap:8px}
 /* Boş sifarişdə: bu günün nağd və kart cəmi (düymə) */
 .phone .note,.phone .srchint{display:none}
+.editgo{padding-bottom:12px;border-bottom:1px solid var(--line)}
 .epay{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 0}
 .epay button{border:2px solid var(--line);background:var(--panel2);border-radius:14px;padding:14px 10px;display:grid;gap:4px;justify-items:center;font-weight:800;font-size:15px}
 .epay button b{font-size:22px}
@@ -330,7 +331,7 @@ h4{margin:6px 0 0;font-size:14px}
   <button class="hbtn" id="btnExp">💸 Xərclər <span class="badge" id="debtBadge" hidden></span></button>
   <button class="hbtn" id="btnCust">🏢 Borclular <span class="badge" id="custBadge" hidden></span></button>
   <button class="hbtn" id="btnSupp">🚚 Tədarükçü <span class="badge" id="suppBadge" hidden></span></button>
-  <button class="hbtn" id="btnEdit">✏️ Düzəliş</button>
+  <button class="hbtn" id="btnEdit" hidden>✏️ Düzəliş</button>
   <button class="hbtn" id="btnSet">⚙️ Ayarlar</button>
   <button class="hbtn" id="btnCloud" hidden title="Bulud (Firebase) sinxronu">☁️ <span id="cloudTxt"></span></button>
   <div class="today" id="today"></div>
@@ -554,7 +555,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.36.1";
+const APP_VERSION="0.37.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1227,7 +1228,7 @@ const repTabs=()=>RT_REP.filter(([k])=>can(TAB_PERM[k]));
 const setTabs=()=>RT_SET.filter(([k])=>k==="users"||k==="phone"||k==="cloud"?isAdmin()&&(k!=="phone"||REMOTE||typeof window.erpPhoneInfo==="function")&&(k!=="cloud"||(!REMOTE&&(NATIVE||PHONE_CLOUD))):can(TAB_PERM[k]));
 function applyPerms(){
   const show=(id,on)=>{const el=$(id);if(el)el.hidden=!on};
-  show("btnZay",can("zay"));show("btnRep",repTabs().length>0);show("btnExp",can("exp"));show("btnEdit",can("edit"));
+  show("btnZay",can("zay"));show("btnRep",repTabs().length>0);show("btnExp",can("exp"));show("btnEdit",false); // v0.37.0: Düzəliş Ayarların içindədir
   show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("btnSupp",can("supp")||can("suppRep")||can("suppDebt"));renderSuppBadge();show("btnCust",can("custDebt"));renderCustBadge();show("today",can("reports"));
   $("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   if(editMode&&!can("edit"))setEdit(false);
@@ -2222,6 +2223,8 @@ function renderRep(){
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="stSave">Yadda saxla</button></div>`;
   }
   if(rtab==="bolme") h=renderCats();
+  // ✏️ Düzəliş rejimi (v0.37.0: başlıqdan Ayarların içinə köçdü)
+  if(mode==="set"&&can("edit"))h=`<div class="frow editgo"><button class="btn" data-act="goedit">✏️ Düzəliş rejimini aç</button><span class="sub">Satış ekranında düymələrin üstündə ✏️ (dəyiş) və 🗑 (sil) çıxır, “+” ilə yeni düymə və bölmə əlavə edirsiniz. Bitirəndə yuxarıda “Hazır” basın.</span></div>`+h;
   if(rtab==="admin") h=renderAdmin();
   if(rtab==="mat") h=renderMatAdmin();
   if(rtab==="backup") h=renderBackup();
@@ -2463,6 +2466,7 @@ document.addEventListener("click",e=>{
   const a=t.dataset.act;
   if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove","udel","cloff"].includes(a))delArm=null;
   if(a==="editdone"){setEdit(false);return}
+  else if(a==="goedit"){if(!can("edit"))return;$("ovRep").hidden=true;draft=null;setEdit(true);return}
   else if(a==="banx"){$("banner").hidden=true;return}
   else if(a==="bango"){$("banner").hidden=true;mode="set";rtab="backup";$("ovRep").hidden=false}
   else if(a==="qedit"){e.stopPropagation();openSet("admin",cat==="search"?"all":cat);draft={...structuredClone(item(t.dataset.id)),isNew:false}}
