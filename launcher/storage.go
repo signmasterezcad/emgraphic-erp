@@ -14,9 +14,14 @@ import (
 // Neçə ehtiyat nüsxə saxlanılsın (köhnələri silinir).
 const keepBackups = 30
 
+// Ehtiyat fayllarının adı: yenilər "kassa-", köhnələr "emgraphic-" ilə başlayır (ikisi də tanınır).
+const backupPrefix = "kassa-"
+
+var backupPrefixes = []string{"kassa-", "emgraphic-"}
+
 type store struct {
-	dataFile  string // %APPDATA%\EMGRAPHIC ERP\data\emgraphic-data.json
-	backupDir string // proqram qovluğu\ehtiyat (yazmaq olmasa: Sənədlər\EMGRAPHIC ERP ehtiyat)
+	dataFile  string // %APPDATA%\KASSA\data\kassa-data.json
+	backupDir string // proqram qovluğu\ehtiyat (yazmaq olmasa: Sənədlər\KASSA ehtiyat)
 }
 
 type backupInfo struct {
@@ -83,7 +88,7 @@ func chooseBackupDir(programDir, home string) string {
 	if usableDir(primary) {
 		return primary
 	}
-	return filepath.Join(home, "Documents", "EMGRAPHIC ERP ehtiyat")
+	return filepath.Join(home, "Documents", "KASSA ehtiyat")
 }
 
 func (s *store) backup(json, kind string, now time.Time) (string, error) {
@@ -93,7 +98,7 @@ func (s *store) backup(json, kind string, now time.Time) (string, error) {
 	if kind != "avto" {
 		kind = "el"
 	}
-	name := "emgraphic-" + now.Format("2006-01-02_15-04-05") + "-" + kind + ".json"
+	name := backupPrefix + now.Format("2006-01-02_15-04-05") + "-" + kind + ".json"
 	path := filepath.Join(s.backupDir, name)
 	if err := writeAtomic(path, []byte(json)); err != nil {
 		return "", err
@@ -113,15 +118,15 @@ func (s *store) list() ([]backupInfo, error) {
 	out := []backupInfo{}
 	for _, e := range entries {
 		n := e.Name()
-		if e.IsDir() || !strings.HasPrefix(n, "emgraphic-") || !strings.HasSuffix(n, ".json") {
+		if e.IsDir() || !hasBackupPrefix(n) || !strings.HasSuffix(n, ".json") {
 			continue
 		}
 		if fi, err := e.Info(); err == nil {
 			out = append(out, backupInfo{Name: n, Size: fi.Size(), Time: fi.ModTime().UnixMilli()})
 		}
 	}
-	// ən yenisi birinci (ad tarixlə başlayır, ona görə adla sıralamaq kifayətdir)
-	sort.Slice(out, func(i, j int) bool { return out[i].Name > out[j].Name })
+	// ən yenisi birinci (adda tarix var; prefiksi çıxarıb müqayisə edirik)
+	sort.Slice(out, func(i, j int) bool { return stripPrefix(out[i].Name) > stripPrefix(out[j].Name) })
 	return out, nil
 }
 
@@ -142,4 +147,41 @@ func (s *store) read(name string) (string, error) {
 	}
 	b, err := os.ReadFile(filepath.Join(s.backupDir, name))
 	return string(b), err
+}
+
+func hasBackupPrefix(n string) bool {
+	for _, p := range backupPrefixes {
+		if strings.HasPrefix(n, p) {
+			return true
+		}
+	}
+	return false
+}
+
+func stripPrefix(n string) string {
+	for _, p := range backupPrefixes {
+		if strings.HasPrefix(n, p) {
+			return n[len(p):]
+		}
+	}
+	return n
+}
+
+// migrateOld köhnə məlumat faylını (EMGRAPHIC ERP) yeni yerə (KASSA) bir dəfə köçürür.
+// Yeni fayl artıq varsa, heç nə etmir. Köhnə fayl silinmir, ehtiyat kimi qalır.
+func migrateOld(newFile, oldFile string) (bool, error) {
+	if _, err := os.Stat(newFile); err == nil {
+		return false, nil
+	}
+	b, err := os.ReadFile(oldFile)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if err := writeAtomic(newFile, b); err != nil {
+		return false, err
+	}
+	return true, nil
 }

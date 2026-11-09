@@ -1,10 +1,18 @@
-# EMGRAPHIC ERP — layihə qeydləri
+# KASSA — layihə qeydləri
 
-**Görünən ad: KASSA** (v0.16.0: `<title>`, başlıq, pəncərə adı). Daxili ad **EMGRAPHIC ERP** qalır və DƏYİŞMƏMƏLİDİR:
-`%APPDATA%\EMGRAPHIC ERP\` qovluğu, `EMGRAPHIC ERP.exe`, GitHub `emgraphic-erp`, ehtiyat faylında `app:"EMGRAPHIC ERP"`,
-və `yenile.ps1` yüklənən `index.html`-də "EMGRAPHIC ERP" sözünü axtarır (köhnə skriptlər də) — bu söz faylda qalmalıdır.
-Başladıcı (v0.16.1) ilk açılışda bir dəfə proqram qovluğunda və iş masasında `KASSA.lnk` qısayolu yaradır
-(işarə faylı: `%APPDATA%\EMGRAPHIC ERP\qisayol-yaradildi`; Windows-da hələ yoxlanmayıb).
+**Ad: KASSA** (v0.17.0-dan daxili adlar da): `KASSA.exe`, məlumat `%APPDATA%\KASSA\data\kassa-data.json`,
+ehtiyat faylları `kassa-...json`, ehtiyatda `app:"KASSA"`. Sahibi proqramı gələcəkdə başqalarına satmaq istəyir —
+"emgraphic" sözü alıcıya görünməməlidir.
+
+**Keçid dövrü (köhnə "EMGRAPHIC ERP" adlarından):**
+- `EMGRAPHIC ERP.exe` = eyni başladıcı; yanında `KASSA.exe` varsa, onu açır və çıxır. Yalnız köhnə `yenile.ps1` üçün `files.txt`-də qalır;
+  yeni `yenile.ps1` onu yükləmir və silir, qısayolları `KASSA.exe`-yə yönəldir.
+- `KASSA.exe` ilk açılışda `%APPDATA%\EMGRAPHIC ERP\data\emgraphic-data.json`-u yeni yerə köçürür (köhnə qalır); `emgraphic-` ehtiyatları da tanınır.
+- Köhnə skript yüklənən `index.html`-də "EMGRAPHIC ERP" sözünü axtarır — `backupText` üstündəki şərhdə saxlanıb. Sahibinin kompüteri
+  yeni skriptə keçəndən sonra (bir dəfə də YENILE edəndən sonra) bu şərhi, `files.txt`-dəki köhnə exe-ni və depodakı `EMGRAPHIC ERP.exe`-ni silmək olar.
+- Qalan iş (2-ci addım): GitHub layihəsinin adı (`emgraphic-erp`) və `yenile.ps1`-dəki ünvan; satış üçün təmiz paket, Private layihə.
+- Qısayol: `KASSA.exe` bir dəfə proqram qovluğunda və iş masasında `KASSA.lnk` yaradır/yönəldir (işarə: `%APPDATA%\KASSA\qisayol-kassa`);
+  istifadəçi iş masasındakını silibsə, yenidən yaratmır.
 
 Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sahibi proqramçı deyil:
 **həmişə Azərbaycan dilində, sadə və addım-addım yaz**, texniki termini izah et.
@@ -70,15 +78,15 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 - `app/index.html` — bütün proqram (ekranlar + məntiq, bir fayl, kitabxanasız)
 - `app/fonts/` — Noto Sans (oflayn). `app/files.txt` — yeniləmənin yüklədiyi fayllar
 - `launcher/` — Go + WebView2 başladıcı. `main.go` (yalnız Windows), `storage.go` (məlumat faylı, ehtiyat nüsxə)
-- `EMGRAPHIC ERP.exe` (depo kökündə) — hazır başladıcı; yeniləmə onu buradan yükləyir
+- `KASSA.exe` (depo kökündə) — hazır başladıcı; yeniləmə onu buradan yükləyir (`EMGRAPHIC ERP.exe` — keçid üçün eyni fayl)
 - `windows/YENILE.bat` + `yenile.ps1` — istifadəçi iki klik edir, files.txt-dəki hər şeyi (exe daxil, `../` ilə) və özünü yeniləyir
-- Məlumat: `%APPDATA%\EMGRAPHIC ERP\data\emgraphic-data.json`. Ehtiyat: proqram qovluğunda `ehtiyat\` (son 30, gündəlik avtomatik)
+- Məlumat: `%APPDATA%\KASSA\data\kassa-data.json`. Ehtiyat: proqram qovluğunda `ehtiyat\` (son 30, gündəlik avtomatik)
 - exe içində `window.erpLoad/erpSave/erpBackup/...` var (`NATIVE`); brauzerdə localStorage işlədilir
 
 ## Hər dəyişiklikdə qaydalar
 1. `app/index.html`-də `APP_VERSION`-u artır (yeniləmə skripti versiyanı müqayisə edir).
 2. Yeni fayl əlavə edirsənsə, `app/files.txt`-ə yaz.
-3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o "../EMGRAPHIC ERP.exe" .`
+3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o ../KASSA.exe . && cp ../KASSA.exe "../EMGRAPHIC ERP.exe"` (keçid dövründə ikisi eyni fayldır)
 4. Testlər: `node tests/smoke.js` (brauzer) və `node tests/native.js` (exe simulyasiyası) — hamısı OK olmalıdır.
 5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/emgraphic-erp/main/app/index.html` yeni versiyanı verir (GitHub 5 dəqiqəyə qədər köhnəni göstərə bilər; yeni versiya görünənə qədər gözlə, sonra istifadəçiyə "hazırdır" de).
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)

@@ -298,11 +298,11 @@ const REASONS=["Printer kağızı tutdu","Rəng səhv çıxdı","Kəsim səhvi",
 
 // ---------- Saxlama ----------
 const KEY="fotoerp.v1";
-// EMGRAPHIC ERP.exe içində məlumat ayrıca faylda saxlanır (həcm həddi yoxdur).
+// KASSA.exe içində məlumat ayrıca faylda saxlanır (həcm həddi yoxdur).
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.16.1";
+const APP_VERSION="0.17.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -896,8 +896,9 @@ async function fillBackupList(){
     <td><button class="btn ghost sm" data-act="brest" data-n="${esc(b.name)}">Bu nüsxəni bərpa et</button></td></tr>`).join("")}</table>`
     :`<p class="sub">Hələ ehtiyat nüsxə yoxdur. "İndi ehtiyat nüsxə yarat" basın.</p>`;
 }
-// "EMGRAPHIC ERP" daxili addır: ehtiyat fayllarında və YENILE.bat-ın yoxlamasında işlənir — DƏYİŞMƏ (görünən ad: KASSA)
-function backupText(){return JSON.stringify({app:"EMGRAPHIC ERP",version:APP_VERSION,exported:new Date().toISOString(),data:S},null,1)}
+// Keçid dövrü: v0.17.0-dan əvvəlki YENILE skriptləri yüklənən faylda "EMGRAPHIC ERP" sözünü axtarır.
+// Bütün quraşdırmalar yeni skriptə keçəndən sonra bu sətri silmək olar.
+function backupText(){return JSON.stringify({app:"KASSA",version:APP_VERSION,exported:new Date().toISOString(),data:S},null,1)}
 
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
@@ -975,7 +976,7 @@ document.addEventListener("click",e=>{
   else if(a==="wdel"){if(S.workers.length<2){toast("Ən azı bir işçi qalmalıdır");return}S.workers=S.workers.filter(w=>w!==t.dataset.w);save();renderHeader()}
   else if(a==="bexp"){
     try{const b=new Blob([backupText()],{type:"application/json"}),u=URL.createObjectURL(b),l=document.createElement("a");
-      l.href=u;l.download=`emgraphic-ehtiyat-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(l);l.click();l.remove();
+      l.href=u;l.download=`kassa-ehtiyat-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(l);l.click();l.remove();
       setTimeout(()=>URL.revokeObjectURL(u),5000);S.lastBackup=Date.now();save();toast("Ehtiyat nüsxə fayla yazıldı")}catch(err){toast("Fayl yazılmadı: "+err.message)}
   }
   else if(a==="bcopy"){navigator.clipboard?.writeText(backupText()).then(()=>{S.lastBackup=Date.now();save();renderRep();toast("Kopyalandı, Notepad-a yapışdırıb saxlayın")},()=>toast("Kopyalamaq alınmadı, faylı istifadə edin"));return}

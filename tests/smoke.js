@@ -269,7 +269,7 @@ const path = require('path');
   await p.click('[data-rt=backup]');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('[data-act=bexp]')]);
   const file = await dl.path(); const j = JSON.parse(require('fs').readFileSync(file, 'utf8'));
-  ok(j.app === 'EMGRAPHIC ERP' && j.data.sales.length === 4, 'ehtiyat faylı: 4 satış');
+  ok(j.app === 'KASSA' && j.data.sales.length === 4, 'ehtiyat faylı: 4 satış');
   await p.click('[data-act=reset]'); await p.click('[data-act=reset]');
   ok((await p.textContent('#today')).includes('0'), 'sıfırlama (iki addımla)');
   await p.setInputFiles('#bfile', file); await p.waitForSelector('[data-act=bimp]');

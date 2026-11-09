@@ -1,6 +1,6 @@
 //go:build windows
 
-// KASSA (daxili adı EMGRAPHIC ERP) başladıcısı.
+// KASSA başladıcısı.
 // Windows-un daxili WebView2 (Edge) mühərriki ilə app\index.html faylını açır.
 // Electron-dan fərqli olaraq öz brauzerini daşımır, ona görə kiçik və sürətlidir.
 package main
@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
@@ -17,8 +18,13 @@ import (
 	webview2 "github.com/jchv/go-webview2"
 )
 
-// Görünən ad. Daxili adlar ("EMGRAPHIC ERP" qovluğu, exe faylı, mutex) dəyişmir.
 const title = "KASSA"
+
+// Köhnə adlar: yalnız köçürmə üçün (v0.17.0-dan əvvəlki quraşdırmalar).
+const (
+	oldDirName  = "EMGRAPHIC ERP"
+	oldDataFile = "emgraphic-data.json"
+)
 
 var (
 	user32           = syscall.NewLazyDLL("user32.dll")
@@ -46,7 +52,7 @@ func message(text string) {
 
 // Proqram artıq açıqdırsa, ikinci nüsxəni açma, açıq olanı qabağa gətir.
 func alreadyRunning() bool {
-	procCreateMutex.Call(0, 0, uintptr(unsafe.Pointer(u16("EMGRAPHIC_ERP_TEK_NUSXE"))))
+	procCreateMutex.Call(0, 0, uintptr(unsafe.Pointer(u16("KASSA_TEK_NUSXE"))))
 	if e, _, _ := procGetLastError.Call(); e != errorAlreadyExists {
 		return false
 	}
@@ -58,19 +64,27 @@ func alreadyRunning() bool {
 }
 
 func main() {
+	exe, _ := os.Executable()
+	// Köhnə adlı fayl (EMGRAPHIC ERP.exe) yalnız keçiddir: yanında KASSA.exe varsa, onu açır.
+	if !strings.EqualFold(filepath.Base(exe), "KASSA.exe") {
+		if k := filepath.Join(filepath.Dir(exe), "KASSA.exe"); fileExists(k) {
+			exec.Command(k).Start()
+			return
+		}
+	}
 	if alreadyRunning() {
 		return
 	}
-	exe, _ := os.Executable()
 	index := filepath.Join(filepath.Dir(exe), "app", "index.html")
 	if _, err := os.Stat(index); err != nil {
-		message("Proqram faylı tapılmadı:\n" + index + "\n\nZIP-i tam çıxarın və proqramı EMGRAPHIC-ERP qovluğundan açın.")
+		message("Proqram faylı tapılmadı:\n" + index + "\n\nZIP-i tam çıxarın və proqramı öz qovluğundan açın.")
 		return
 	}
 
-	// Məlumat (satışlar, anbar) burada saxlanır: %APPDATA%\EMGRAPHIC ERP\WebView2
+	// Məlumat (satışlar, anbar): %APPDATA%\KASSA
 	cfg, _ := os.UserConfigDir()
-	data := filepath.Join(cfg, "EMGRAPHIC ERP", "WebView2")
+	root := filepath.Join(cfg, "KASSA")
+	data := filepath.Join(root, "WebView2")
 	os.MkdirAll(data, 0o755)
 
 	w := webview2.NewWithOptions(webview2.WebViewOptions{
@@ -92,9 +106,11 @@ func main() {
 	home, _ := os.UserHomeDir()
 	programDir := filepath.Dir(exe)
 	st := &store{
-		dataFile:  filepath.Join(cfg, "EMGRAPHIC ERP", "data", "emgraphic-data.json"),
+		dataFile:  filepath.Join(root, "data", "kassa-data.json"),
 		backupDir: chooseBackupDir(programDir, home),
 	}
+	// Köhnə quraşdırmadan bir dəfə köçür (köhnə fayl ehtiyat kimi qalır)
+	migrateOld(st.dataFile, filepath.Join(cfg, oldDirName, "data", oldDataFile))
 	w.Bind("erpLoad", st.load)
 	w.Bind("erpSave", st.save)
 	w.Bind("erpBackup", func(json, kind string) (string, error) { return st.backup(json, kind, time.Now()) })
@@ -106,30 +122,39 @@ func main() {
 	w.Bind("erpOpenFolder", func() error { return exec.Command("explorer.exe", st.backupDir).Start() })
 
 	u := url.URL{Scheme: "file", Path: "/" + filepath.ToSlash(index)}
-	go ensureShortcuts(exe, filepath.Join(cfg, "EMGRAPHIC ERP"))
+	go ensureShortcuts(exe, root, fileExists(filepath.Join(cfg, oldDirName, "qisayol-yaradildi")))
 	w.Navigate(u.String())
 	w.Run()
 }
 
-// ensureShortcuts proqram qovluğunda və iş masasında "KASSA" qısayolu yaradır.
-// Yalnız bir dəfə: alındıqdan sonra işarə faylı yazılır və istifadəçi qısayolu silsə, yenidən yaradılmır.
-// exe faylının adı dəyişmir (YENILE.bat onu bu adla tanıyır).
-func ensureShortcuts(exe, dataRoot string) {
-	marker := filepath.Join(dataRoot, "qisayol-yaradildi")
-	if _, err := os.Stat(marker); err == nil {
+func fileExists(p string) bool { _, err := os.Stat(p); return err == nil }
+
+// ensureShortcuts KASSA.exe üçün "KASSA" qısayolunu bir dəfə yaradır (və ya köhnəsini yeni fayla yönəldir):
+//   - proqram qovluğunda: həmişə;
+//   - iş masasında: əvvəllər heç yaradılmayıbsa, və ya orada KASSA qısayolu varsa (istifadəçi silibsə, yenidən yaradılmır).
+func ensureShortcuts(exe, dataRoot string, desktopDoneBefore bool) {
+	marker := filepath.Join(dataRoot, "qisayol-kassa")
+	if fileExists(marker) {
 		return
 	}
 	ps := `$s = New-Object -ComObject WScript.Shell
-foreach ($d in @($env:KASSA_DIR, [Environment]::GetFolderPath('Desktop'))) {
+$desk = [Environment]::GetFolderPath('Desktop')
+foreach ($d in @($env:KASSA_DIR, $desk)) {
   if (-not $d) { continue }
-  $l = $s.CreateShortcut((Join-Path $d 'KASSA.lnk'))
+  $p = Join-Path $d 'KASSA.lnk'
+  if ($d -eq $desk -and $env:KASSA_DESK_BEFORE -eq '1' -and -not (Test-Path $p)) { continue }
+  $l = $s.CreateShortcut($p)
   $l.TargetPath = $env:KASSA_EXE
   $l.WorkingDirectory = $env:KASSA_DIR
   $l.Description = 'KASSA'
   $l.Save()
 }`
+	before := "0"
+	if desktopDoneBefore {
+		before = "1"
+	}
 	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", ps)
-	cmd.Env = append(os.Environ(), "KASSA_EXE="+exe, "KASSA_DIR="+filepath.Dir(exe))
+	cmd.Env = append(os.Environ(), "KASSA_EXE="+exe, "KASSA_DIR="+filepath.Dir(exe), "KASSA_DESK_BEFORE="+before)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000} // pəncərəsiz
 	if cmd.Run() == nil {
 		os.MkdirAll(dataRoot, 0o755)
