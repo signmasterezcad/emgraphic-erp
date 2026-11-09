@@ -543,7 +543,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.31.0";
+const APP_VERSION="0.31.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1068,7 +1068,7 @@ function askCloudLogin(pre){
         <button class="btn" id="clgo">Daxil ol</button><p class="pinerr" id="clerr"></p></div>`;
     $("ovCloud").hidden=false;setTimeout(()=>$(pre?"clw":"cllink")?.focus(),0);
     if(!pre)$("cllink").addEventListener("input",()=>{const c=cloudLinkCfg($("cllink").value);if(!c)return;
-      $("clk").value=c.apiKey;$("clp").value=c.projectId;if(!$("cle").value)$("cle").value=c.email;f.urls=c.urls;$("clerr").textContent="";$("clw").focus()});
+      $("clk").value=c.apiKey;$("clp").value=c.projectId;$("cle").value=c.email;f.urls=c.urls;$("clerr").textContent="";$("clw").focus()});
     const go=async()=>{const k=pre?f.apiKey:$("clk").value.trim(),p=pre?f.projectId:$("clp").value.trim(),em=$("cle").value.trim(),pw=$("clw").value;
       if(!k||!p||!em||!pw){$("clerr").textContent="Bütün xanaları doldurun";return}
       $("clgo").disabled=true;$("clerr").textContent="Yoxlanır…";
