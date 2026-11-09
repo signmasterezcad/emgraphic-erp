@@ -166,7 +166,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .ctile{background:#b45309}
 .blines{display:grid;gap:8px}
 /* Boş sifarişdə: bu günün nağd və kart cəmi (düymə) */
-.phone .note{display:none}
+.phone .note,.phone .srchint{display:none}
 .epay{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 0}
 .epay button{border:2px solid var(--line);background:var(--panel2);border-radius:14px;padding:14px 10px;display:grid;gap:4px;justify-items:center;font-weight:800;font-size:15px}
 .epay button b{font-size:22px}
@@ -550,7 +550,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.34.0";
+const APP_VERSION="0.34.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1328,7 +1328,7 @@ function renderGrid(){
   $("crumb").hidden=!g;
   if(g)$("crumb").innerHTML=`<button class="btn ghost" data-back>← ${esc(cn)}</button><span class="mini" style="background:${esc(g.color)}">${esc(g.icon)} ${esc(g.name)}</span>`;
   const list=g?kids(g.id):S_?searchList():S.items.filter(i=>i.cat===cat&&!i.parent);
-  if(S_&&!list.length){$("grid").innerHTML=`<p class="sub empty-grp">${q.trim()?`“${esc(q)}” üzrə heç nə tapılmadı. Başqa söz yazın, məsələn “a4”, “fincan”, “10x15”.`:"Yuxarıdakı xanaya düymənin adından bir neçə hərf yazın. Məsələn: “surət”, “fincan”, “30x40”. Bütün bölmələrdə axtarılır."}</p>`;return}
+  if(S_&&!list.length){$("grid").innerHTML=`<p class="sub empty-grp${q.trim()?"":" srchint"}">${q.trim()?`“${esc(q)}” üzrə heç nə tapılmadı. Başqa söz yazın, məsələn “a4”, “fincan”, “10x15”.`:"Yuxarıdakı xanaya düymənin adından bir neçə hərf yazın. Məsələn: “surət”, “fincan”, “30x40”. Bütün bölmələrdə axtarılır."}</p>`;return}
   $("grid").innerHTML=(g&&!list.length&&!editMode?`<p class="sub empty-grp">“${esc(g.name)}” qrupunda hələ düymə yoxdur. Yuxarıda ✏️ Düzəliş basın və “+ Yeni düymə” ilə əlavə edin.</p>`:"")+list.map(it=>{
     const ed=editMode?`<span class="ed"><span role="button" data-act="qedit" data-id="${it.id}" title="Dəyiş">✏️</span><span role="button" data-act="qdel" data-id="${it.id}" title="Sil">${delLabel(it,"Sil?","🗑")}</span></span>`:"";
     if(isGroup(it)){const n=kids(it.id).length;

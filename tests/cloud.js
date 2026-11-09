@@ -116,7 +116,7 @@ const srv = http.createServer((req, res) => {
     ok(await Ph.evaluate(() => S.items.length) === pcItems, `telefon: bütün düymələr buluddan gəldi (${pcItems})`);
     ok(!(await Ph.evaluate(() => location.hash)).includes('bulud'), 'link ünvandan silindi (parol/açar ekranda qalmır)');
 
-    ok(await Ph.isHidden('main .note') && await PC.isVisible('main .note'), 'telefonda izah yazısı gizlidir, kompüterdə görünür');
+    ok(await Ph.isHidden('main .note') && await PC.isVisible('main .note') && await Ph.locator('.srchint').count() === 1 && await Ph.isHidden('.srchint'), 'telefonda izah yazısı gizlidir, kompüterdə görünür');
     await Ph.click('#btnUser');
     ok((await Ph.locator('.utile').allTextContents()).every(t => t.includes('Admin')) && await Ph.locator('.utile').count() >= 1 && await PC.evaluate(() => S.users.length) > 1, 'telefonda giriş ekranında yalnız admin');
     await Ph.click('.utile');
