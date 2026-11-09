@@ -152,6 +152,10 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+.done.armed{background:var(--warn);color:#111;animation:pulse .5s ease-in-out infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.03)}}
+@media (prefers-reduced-motion:reduce){.done.armed{animation:none}}
+.keyhint{text-align:center}
 .searchbar{display:flex;gap:8px;margin-top:12px}
 .searchbar input{flex:1;min-width:0;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
 .svc .tier.path{opacity:.85;font-weight:600}
@@ -203,6 +207,7 @@ h4{margin:6px 0 0;font-size:14px}
         <button id="payCard">💳 Kart</button>
       </div>
       <button class="done" id="btnDone" disabled>Ödənildi ✓</button>
+      <p class="sub keyhint">⌨️ Klaviatura: <b>Space</b> və ya <b>Enter</b> iki dəfə — nağd ödəniş</p>
       <button class="link" id="btnClear">Sifarişi ləğv et</button>
     </div>
   </aside>
@@ -274,7 +279,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.13.0";
+const APP_VERSION="0.14.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -567,7 +572,14 @@ function addItem(id,d=1){
   if(o){o.q=Math.max(0,o.q+d);if(!o.q)order=order.filter(x=>x!==o)} else if(d>0) order.push({id,q:d});
   renderGrid();renderOrder();
 }
+// Klaviatura ilə nağd ödəniş: Space və ya Enter iki dəfə (1.5 saniyə ərzində)
+let keyArm=0,keyArmT=null;
+const DONE_TXT="Ödənildi ✓";
+function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=DONE_TXT}
+const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden;
 function finishSale(){
+  disarmPay();
   const lines=order.map(o=>{const it=item(o.id),p=unitPrice(it,o.q);return{id:o.id,name:it.name,q:o.q,price:p,sum:p*o.q,cost:unitCost(it)*o.q}});
   const short=[];
   order.forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;if(M.stock<0)short.push(M.name)}));
@@ -924,7 +936,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="qClear"){q="";$("q").value="";$("qClear").hidden=true;renderGrid();$("q").focus()}
   else if(t.dataset.grp){grp=t.dataset.grp;delArm=null;renderGrid()}
   else if(t.hasAttribute("data-back")){grp=null;delArm=null;renderGrid()}
-  else if(t.dataset.add)addItem(t.dataset.add,1);
+  else if(t.dataset.add){addItem(t.dataset.add,1);t.blur()}
   else if(t.dataset.inc)addItem(t.dataset.inc,1);
   else if(t.dataset.dec)addItem(t.dataset.dec,-1);
   else if(t.dataset.r){zReason=t.dataset.r;[...$("zReasons").children].forEach(b=>b.classList.toggle("on",b===t))}
@@ -956,7 +968,25 @@ document.addEventListener("change",e=>{
 });
 document.querySelectorAll(".ov").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
 $("q").addEventListener("input",e=>{q=e.target.value;$("qClear").hidden=!q;renderGrid()});
-$("q").addEventListener("keydown",e=>{if(e.key==="Enter"){const b=document.querySelector("#grid [data-add],#grid [data-grp]");if(b)b.click()}else if(e.key==="Escape"){$("qClear").click()}});
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const b=document.querySelector("#grid [data-add],#grid [data-grp]");if(b){b.click();if(b.dataset.add)$("q").blur()}}else if(e.key==="Escape"){$("qClear").click()}});
+document.addEventListener("keydown",e=>{
+  const tgt=e.target,isSpace=e.code==="Space",isEnter=e.code==="Enter"||e.code==="NumpadEnter";
+  if(!isSpace&&!isEnter){
+    // Axtarışda: hərf yazmağa başlayanda xana özü seçilsin
+    if(cat==="search"&&!grp&&e.key.length===1&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!isTyping(tgt)&&noModal())$("q").focus();
+    return;
+  }
+  if(tgt.id==="q")return;
+  if(isEnter&&tgt.matches?.(".line input")){e.preventDefault();tgt.blur();return}
+  if(isTyping(tgt)||!noModal()||editMode||!order.length)return;
+  e.preventDefault();
+  if(e.repeat)return;
+  if(keyArm&&Date.now()-keyArm<1500){pay="nağd";renderOrder();finishSale();return}
+  keyArm=Date.now();const b=$("btnDone");b.classList.add("armed");b.textContent="Nağd: təsdiq üçün bir də basın";
+  clearTimeout(keyArmT);keyArmT=setTimeout(disarmPay,1500);
+});
+// Space düymənin üstündə "basılma" yaratmasın
+document.addEventListener("keyup",e=>{if(e.code==="Space"&&!isTyping(e.target)&&order.length&&noModal())e.preventDefault()});
 $("ver").textContent="v"+APP_VERSION;
 (async()=>{
   await loadData();
