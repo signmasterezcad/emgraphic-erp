@@ -76,6 +76,37 @@ header h1{font-size:18px;margin:0;font-weight:800;flex:1 1 auto}
 .stile .sm2{font-size:12px;font-weight:600;opacity:.9}
 .sform{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px;background:var(--panel2)}
 .sform h4{margin:0;font-size:17px}
+.syncbar{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:35;background:var(--bad);color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.phonebox{display:grid;gap:10px}
+.phonebox .addr{font-size:22px;font-weight:800;letter-spacing:.02em;user-select:all}
+.phonebox .code{font-size:30px;font-weight:800;letter-spacing:.2em}
+.phonebox ol{margin:0;padding-left:20px;display:grid;gap:6px;line-height:1.5}
+/* Telefon ekranı */
+@media (max-width:640px){
+  header{gap:6px 8px;padding-block:8px}
+  header h1{font-size:16px;flex-basis:100%}
+  header h1 .ver{display:none}
+  .hbtn{padding:6px 10px;font-size:13px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+  .svc{min-height:92px;padding:12px 6px}
+  .svc .nm{font-size:14px}
+  .modal{max-height:94vh}
+  .ov{padding:8px}
+  .keyhint{display:none}
+  .tabs{gap:6px}
+  .tabs .tab{padding:6px 10px;font-size:14px;border-radius:10px}
+  .syncbar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+}
+/* Telefonda sifariş paneli aşağıda qalır: sabit "cəmi · ödəniş" zolağı */
+.mobbar{display:none}
+@media (max-width:860px){
+  .mobbar:not([hidden]){display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;gap:10px;align-items:center;justify-content:space-between;
+    padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+    background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(0,0,0,.18)}
+  .mobbar b{font-size:20px}
+  body.hasorder main{padding-bottom:84px}
+  body.hasorder .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+}
 .warnbox{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel));border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5}
 
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px;border-bottom:1px solid var(--line)}
@@ -409,6 +440,19 @@ h4{margin:6px 0 0;font-size:14px}
   </div>
 </div>
 
+<div class="ov lock" id="ovKey" hidden>
+  <div class="modal login" role="dialog" aria-labelledby="kt">
+    <div class="mh"><h3 id="kt"><img src="kassa.svg" class="logo" alt="" width="24" height="24">KASSA · Telefon</h3></div>
+    <div class="mb">
+      <p class="sub" id="keyMsg">Kompüterdə <b>⚙️ Ayarlar → 📱 Telefon</b> bölməsində görünən 6 rəqəmli kodu yazın.</p>
+      <input id="keyIn" inputmode="numeric" maxlength="6" placeholder="məs. 482913" aria-label="Telefon kodu" style="font-size:28px;text-align:center;letter-spacing:.2em;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--panel2)">
+      <button class="btn" id="keyGo">Qoşul</button>
+    </div>
+  </div>
+</div>
+<div class="syncbar" id="syncBar" hidden></div>
+<div class="mobbar" id="mobBar" hidden><span><span class="sub" id="mobN"></span><br><b id="mobT"></b></span><button class="btn" id="mobGo">🧾 Ödənişə keç ↓</button></div>
+
 <div class="ov lock" id="ovLogin" hidden>
   <div class="modal login" role="dialog" aria-labelledby="lt">
     <div class="mh"><h3 id="lt"><img src="kassa.svg" class="logo" alt="" width="24" height="24">KASSA · Kim işləyir?</h3></div>
@@ -419,6 +463,26 @@ h4{margin:6px 0 0;font-size:14px}
 <div class="toast" id="toast" hidden></div>
 
 <script>
+// ---------- 📱 Telefon (Wi-Fi): məlumat kompüterdəki KASSA-dan gəlir ----------
+// Kompüterin telefon serveri index.html-ə <meta name="kassa-remote"> əlavə edir. Onda exe funksiyaları HTTP ilə qurulur.
+const REMOTE=!!document.querySelector('meta[name="kassa-remote"]');
+if(REMOTE){
+  const key=()=>{try{return localStorage.getItem("kassa.key")||""}catch(e){return ""}};
+  const api=async(path,opt={})=>{const r=await fetch(path,{...opt,cache:"no-store",headers:{"X-Kassa-Key":key(),"Content-Type":"application/json"}});
+    if(r.status===401)throw new Error("KOD");if(!r.ok)throw new Error(await r.text());return r.json()};
+  window.erpApi=api;
+  window.erpLoadV=()=>api("/api/state");
+  window.erpSaveV=(base,data)=>api("/api/save",{method:"POST",body:JSON.stringify({base,data})});
+  window.erpVer=()=>api("/api/ver").then(x=>x.ver);
+  window.erpLoad=()=>api("/api/state").then(x=>x.data);
+  window.erpSave=()=>Promise.reject("telefonda birbaşa yazılmır");
+  window.erpBackup=(data,kind)=>api("/api/backup",{method:"POST",body:JSON.stringify({data,kind})}).then(x=>x.path);
+  window.erpBackupList=()=>api("/api/backups");
+  window.erpBackupRead=n=>api("/api/backup?name="+encodeURIComponent(n)).then(x=>x.data);
+  window.erpBackupKinds=()=>api("/api/kinds");
+  window.erpPaths=()=>api("/api/paths");
+  window.erpOpenFolder=()=>Promise.reject("telefonda qovluq açılmır, kompüterdə açın");
+}
 // ---------- Nümunə məlumat (qiymətləri buradan dəyişin) ----------
 const SEED = {
   workers:["Admin","Leyla","Rəşad"],
@@ -459,7 +523,10 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.28.1";
+// Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
+const SYNC=typeof window.erpLoadV==="function";
+let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
+const APP_VERSION="0.29.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -662,14 +729,14 @@ function parseData(txt){try{const j=JSON.parse(txt);const d=j&&j.data&&j.app?j.d
 async function loadData(){
   if(NATIVE){
     let txt="",err=null;
-    try{txt=await window.erpLoad()}catch(e){err=e}
+    try{if(SYNC){const r=await window.erpLoadV();txt=r.data||"";syncVer=r.ver;syncBase=txt||null}else txt=await window.erpLoad()}catch(e){err=e}
     if(txt){S=parseData(txt);if(!S)err="fayl xarabdır"}
     if(err){ // fayl oxunmadı: ən son ehtiyat nüsxədən aç
       try{const l=await window.erpBackupList();if(l.length){S=parseData(await window.erpBackupRead(l[0].name));
         if(S)setTimeout(()=>toast(`Məlumat faylı oxunmadı (${err}). Ən son ehtiyat nüsxə açıldı: ${l[0].name}`),300)}}catch(e){}
       if(!S){loadBroken=true;setTimeout(()=>toast(`Məlumat faylı oxunmadı (${err}) və ehtiyat nüsxə yoxdur. Fayl qorunur, heç nə yazılmır. Proqramçıya müraciət edin.`),300)}
     }
-    if(!S&&!txt&&!err){ // ilk dəfə: köhnə yaddaşdan (v0.5.0) köçür
+    if(!S&&!txt&&!err&&!REMOTE){ // ilk dəfə: köhnə yaddaşdan (v0.5.0) köçür
       try{S=parseData(localStorage.getItem(KEY)||"");if(S)migrated=true}catch(e){}
     }
   }else{
@@ -688,6 +755,7 @@ const save=()=>{
   const txt=JSON.stringify(S);
   if(NATIVE){
     if(loadBroken){toast("Məlumat faylı xarab olduğu üçün yazılmır. Proqramçıya müraciət edin.");return}
+    if(SYNC){schedulePush();opBackupSoon();return}
     saving=saving.then(()=>window.erpSave(txt)).then(
       ()=>{if(saveFailed){saveFailed=false;toast("Məlumat yenidən diskə yazılır ✓")}},
       e=>{saveFailed=true;toast("Diqqət: məlumat diskə yazılmadı: "+e)});
@@ -701,7 +769,7 @@ const save=()=>{
 const OP_DELAY=2000;
 let opT=null, opSig=null;
 const dataSig=()=>JSON.stringify(S,(k,v)=>k==="lastAuto"||k==="lastBackup"?undefined:v);
-const opReady=()=>NATIVE&&typeof window.erpBackupKinds==="function"&&!loadBroken;
+const opReady=()=>NATIVE&&!REMOTE&&typeof window.erpBackupKinds==="function"&&!loadBroken; // telefonun dəyişikliyinin nüsxəsini kompüter yazır
 function opBackupSoon(){if(!opReady())return;clearTimeout(opT);opT=setTimeout(opBackup,OP_DELAY)}
 async function opBackup(){
   opT=null;const sig=dataSig();if(sig===opSig)return;
@@ -709,9 +777,109 @@ async function opBackup(){
     if(!$("ovRep").hidden&&rtab==="backup")renderRep()}
   catch(e){toast("Ehtiyat nüsxə yazılmadı: "+e)}
 }
+// ---------- Sinxron: göndər / al / birləşdir ----------
+function schedulePush(){clearTimeout(pushT);pushT=setTimeout(push,250)}
+async function push(){
+  if(!SYNC||loadBroken)return;
+  if(pushing){pushAgain=true;return}
+  pushing=true;
+  try{
+    for(let i=0;i<6;i++){
+      const local=JSON.stringify(S);if(local===syncBase)break;
+      const r=await window.erpSaveV(syncVer,local);
+      if(r.ok){syncVer=r.ver;syncBase=local;break}
+      applyRemote(r.ver,r.data);           // arada o biri cihaz yazıb: birləşdir və yenidən göndər
+    }
+    setOnline(true);
+  }catch(e){setOnline(false,e)}
+  finally{pushing=false;if(pushAgain){pushAgain=false;schedulePush()}}
+}
+async function pollSync(){
+  if(!SYNC||pushing||loadBroken)return;
+  try{
+    const v=await window.erpVer();setOnline(true);
+    if(v===syncVer)return;
+    const r=await window.erpLoadV();if(pushing)return;
+    applyRemote(r.ver,r.data);
+    if(JSON.stringify(S)!==syncBase)schedulePush();
+  }catch(e){setOnline(false,e)}
+}
+function setOnline(on,e){
+  if(String(e?.message||e)==="KOD"){askKey("Kompüterdə telefon kodu dəyişib. Yeni kodu yazın.");return}
+  if(on===syncOnline)return;syncOnline=on;
+  const b=$("syncBar");if(!b)return;
+  b.hidden=on;if(!on)b.textContent=REMOTE?"⚠ Kompüterlə əlaqə yoxdur. Kompüterdə KASSA açıqdırmı, telefon eyni Wi-Fi-dadırmı?":"⚠ Məlumat yazılmadı, yenidən cəhd edilir";
+  if(on&&REMOTE)toast("Kompüterlə əlaqə bərpa olundu ✓");
+}
+function applyRemote(ver,data){
+  let remote=null;try{remote=JSON.parse(data||"null")}catch(e){}
+  if(!remote||!remote.items){syncVer=ver;return}
+  const base=syncBase?JSON.parse(syncBase):null;
+  S=base?merge3(base,S,remote):remote;
+  syncBase=data;syncVer=ver;
+  upgrade();
+  if(me){me=S.users.find(u=>u.id===me.id)||null;if(!me){logout();return}}
+  order=order.filter(o=>item(o.id));
+  if(draft&&!item(draft.id)&&!draft.isNew)draft=null;
+  renderHeader();renderTabs();renderGrid();renderOrder();renderDebtBadge();if(me)applyPerms();
+  if(!REMOTE)opBackupSoon();                 // telefonun dəyişikliyinin də nüsxəsi kompüterdə qalsın
+}
+// Üç tərəfli birləşdirmə: base = son ortaq vəziyyət, l = bu cihaz, r = o biri cihaz.
+// Siyahılar (satış, xərc, düymə…) id ilə birləşir; anbar qalığı (stock) hər iki tərəfin dəyişikliyi toplanır;
+// eyni şeyi hər iki tərəf dəyişibsə, bu cihazınkı qalır.
+const isObj=x=>!!x&&typeof x==="object"&&!Array.isArray(x);
+const rkey=x=>isObj(x)?(x.id!=null?"i"+x.id:(x.ts!=null?"t"+x.ts:null)):null;
+const same=(a,b)=>a===b||JSON.stringify(a)===JSON.stringify(b);
+function merge3(b,l,r,k){
+  if(same(l,r))return l;if(same(l,b))return r;if(same(r,b))return l;
+  if(k==="lastAuto"||k==="lastBackup")return Math.max(+l||0,+r||0);
+  if(k==="stock"&&typeof b==="number"&&typeof l==="number"&&typeof r==="number")return b+(l-b)+(r-b);
+  if(isObj(l)&&isObj(r)){
+    const B=isObj(b)?b:{},o={};
+    new Set([...Object.keys(r),...Object.keys(l)]).forEach(x=>{const inL=x in l,inR=x in r,inB=x in B;
+      if(inL&&inR)o[x]=merge3(B[x],l[x],r[x],x);
+      else if(inL){if(!(inB&&same(B[x],l[x])))o[x]=l[x]}
+      else if(!(inB&&same(B[x],r[x])))o[x]=r[x]});
+    return o;
+  }
+  if(Array.isArray(l)&&Array.isArray(r)&&(l.length||r.length)&&[...l,...r].every(x=>rkey(x))){
+    const B=Array.isArray(b)?b.filter(x=>rkey(x)):[],bm=new Map(B.map(x=>[rkey(x),x])),lm=new Map(l.map(x=>[rkey(x),x])),rm=new Map(r.map(x=>[rkey(x),x]));
+    const pick=kk=>{const inL=lm.has(kk),inR=rm.has(kk),inB=bm.has(kk);
+      if(inL&&inR)return merge3(bm.get(kk),lm.get(kk),rm.get(kk));
+      if(inL)return inB&&same(bm.get(kk),lm.get(kk))?undefined:lm.get(kk);
+      return inB&&same(bm.get(kk),rm.get(kk))?undefined:rm.get(kk)};
+    const lOrd=!same(l.map(rkey).filter(x=>bm.has(x)),B.map(rkey).filter(x=>lm.has(x)));
+    const out=[],seen=new Set();
+    [...(lOrd?l:r),...(lOrd?r:l)].forEach(x=>{const kk=rkey(x);if(seen.has(kk))return;seen.add(kk);const v=pick(kk);if(v!==undefined)out.push(v)});
+    return out;
+  }
+  return l;
+}
+// Telefon kodu (yalnız telefonda)
+let keyWait=null;
+function askKey(msg){
+  if(!REMOTE)return Promise.resolve();
+  if(!$("ovKey").hidden&&keyWait)return keyWait.p;
+  if(msg)$("keyMsg").innerHTML=esc(msg);
+  $("ovKey").hidden=false;setTimeout(()=>$("keyIn").focus(),0);
+  let res;const p=new Promise(r=>res=r);keyWait={p,res};return p;
+}
+async function tryKey(){
+  const k=$("keyIn").value.trim();if(!/^\d{4,8}$/.test(k)){toast("Kodu rəqəmlə yazın");return}
+  try{localStorage.setItem("kassa.key",k)}catch(e){}
+  try{await window.erpVer();$("ovKey").hidden=true;toast("Kompüterə qoşuldu ✓");const w=keyWait;keyWait=null;w?.res()}
+  catch(e){$("keyMsg").textContent=String(e.message||e)==="KOD"?"Kod səhvdir. Kompüterdə ⚙️ Ayarlar → 📱 Telefon bölməsindəki kodu yazın.":"Kompüterə qoşulmaq olmadı: "+(e.message||e);$("keyIn").select()}
+}
+async function ensureKey(){
+  if(!REMOTE)return;
+  for(;;){
+    try{await window.erpVer();return}
+    catch(e){if(String(e.message||e)==="KOD")await askKey();else{setOnline(false,e);await new Promise(r=>setTimeout(r,3000))}}
+  }
+}
 // Gündə bir dəfə avtomatik ehtiyat nüsxə: proqram qovluğunda "ehtiyat" papkası
 async function autoBackup(){
-  if(!NATIVE||loadBroken)return;
+  if(!NATIVE||loadBroken||REMOTE)return;
   if(S.lastAuto&&new Date(S.lastAuto).toDateString()===new Date().toDateString())return;
   try{await window.erpBackup(backupText(),"avto");S.lastAuto=S.lastBackup=Date.now();backups=null;save()}
   catch(e){toast("Avtomatik ehtiyat nüsxə alınmadı: "+e)}
@@ -762,7 +930,7 @@ const pinOk=p=>/^\d{4,6}$/.test(p);
 const openAdmin=()=>S.users.find(u=>u.role==="admin"&&!u.pin);
 function syncWorkers(){S.workers=S.users.map(u=>u.name)}
 const repTabs=()=>RT_REP.filter(([k])=>can(TAB_PERM[k]));
-const setTabs=()=>RT_SET.filter(([k])=>k==="users"?isAdmin():can(TAB_PERM[k]));
+const setTabs=()=>RT_SET.filter(([k])=>k==="users"||k==="phone"?isAdmin()&&(k!=="phone"||REMOTE||typeof window.erpPhoneInfo==="function"):can(TAB_PERM[k]));
 function applyPerms(){
   const show=(id,on)=>{const el=$(id);if(el)el.hidden=!on};
   show("btnZay",can("zay"));show("btnRep",repTabs().length>0);show("btnExp",can("exp"));show("btnEdit",can("edit"));
@@ -890,6 +1058,8 @@ function renderOrder(){
       <div class="sum">${m2(p*o.q)} ₼</div></div>`}).join("");
   const t=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);
   $("total").textContent=m2(t)+" ₼";
+  $("mobBar").hidden=!order.length;document.body.classList.toggle("hasorder",!!order.length);
+  if(order.length){$("mobN").textContent=`Sifariş: ${order.reduce((a,o)=>a+o.q,0)} ədəd`;$("mobT").textContent=m2(t)+" ₼"}
   $("btnDone").disabled=!order.length;
   $("payCash").classList.toggle("on",pay==="nağd");$("payCard").classList.toggle("on",pay==="kart");
   $("payDebt").hidden=!can("custSale");$("payDebt").classList.toggle("on",pay==="borc");
@@ -1652,7 +1822,7 @@ function saveZay(){
 
 // ---------- Hesabat ----------
 const RT_REP=[["gun","Bu gün"],["ay","📅 Aylıq"],["mal","Məhsul + mənfəət"],["zay","Zay"],["anbar","Anbar / Sayım"]];
-const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["mat","Materiallar"],["users","👥 Kassirlər"],["backup","💾 Ehtiyat nüsxə"]];
+const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["mat","Materiallar"],["users","👥 Kassirlər"],["phone","📱 Telefon"],["backup","💾 Ehtiyat nüsxə"]];
 function renderRep(){
   refreshCats();
   $("rt").textContent=mode==="set"?"⚙️ Ayarlar":"📊 Hesabat / Anbar";
@@ -1721,8 +1891,10 @@ function renderRep(){
   if(rtab==="mat") h=renderMatAdmin();
   if(rtab==="backup") h=renderBackup();
   if(rtab==="users") h=renderUsers();
+  if(rtab==="phone") h=`<div id="phoneBox" class="phonebox"><p class="sub">Yüklənir…</p></div>`;
   $("rbody").innerHTML=h;
   if(rtab==="backup")fillBackupList();
+  if(rtab==="phone")fillPhone();
 }
 
 // ---------- Admin: məhsullar ----------
@@ -1881,6 +2053,33 @@ function userCard(u){
   </div>`;
 }
 
+// ---------- 📱 Telefon ayarı (yalnız admin) ----------
+async function fillPhone(){
+  const box=$("phoneBox");if(!box)return;
+  if(REMOTE){box.innerHTML=`<p>📱 Bu telefon kompüterdəki KASSA-ya Wi-Fi ilə qoşulub: <b>${esc(location.host)}</b>. Burada və kompüterdə edilən hər dəyişiklik o biri tərəfə özü keçir.</p>
+    <p class="sub">Kompüter sönülüdürsə və ya telefon başqa Wi-Fi-dadırsa, telefon işləmir. Ekranın aşağısında qırmızı xəbərdarlıq çıxır.</p>
+    <div><button class="btn ghost" data-act="pkeyx">Bu telefonu ayır (kodu unut)</button></div>`;return}
+  let I;try{I=await window.erpPhoneInfo()}catch(e){box.innerHTML=`<p class="sub">Oxunmadı: ${esc(e)}</p>`;return}
+  if(!$("phoneBox"))return;
+  const urls=(I.ips||[]).map(ip=>`http://${ip}:${I.port}`);
+  box.innerHTML=`<p>Telefonda da KASSA ilə işləyin: satış, xərc, hesabat, ayarlar. Telefon və bu kompüter <b>eyni Wi-Fi-da</b> olmalıdır, kompüterdə KASSA açıq olmalıdır. Hər iki tərəfdə edilən dəyişiklik o biri tərəfə özü keçir.</p>
+    <div class="frow"><span class="pill ${I.on?"ok":"warn"}">${I.on?"✓ Telefon üçün açıqdır":"Bağlıdır"}</span>
+      <button class="btn ${I.on?"ghost":""}" data-act="${I.on?"phoff":"phon"}">${I.on?"Bağla":"📱 Telefon üçün aç"}</button></div>
+    ${I.error?`<p class="pill bad">${esc(I.error)}</p>`:""}
+    ${I.on?`<h4>Telefonda necə açmaq</h4>
+    <ol>
+      <li>Telefonu işyerinin Wi-Fi-ına qoşun.</li>
+      <li>Telefonda <b>Chrome</b> açın və yuxarıdakı ünvan xanasına bunu yazın:<br>${urls.length?urls.map(u=>`<span class="addr">${esc(u)}</span>`).join("<br>"):`<span class="pill bad">Kompüter heç bir Wi-Fi / şəbəkəyə qoşulmayıb</span>`}
+        ${urls.length>1?`<br><span class="sub">Bir neçə ünvan var: birincisi açılmasa, o birini yoxlayın.</span>`:""}</li>
+      <li>Telefon kod soruşacaq. Bunu yazın: <span class="code">${esc(I.code)}</span></li>
+      <li>Sonra adınızı seçib PIN-inizi yazın (kompüterdəki kimi).</li>
+      <li>Rahat olsun deyə: Chrome menyusu (⋮) → <b>“Ana ekrana əlavə et”</b>. Telefonda KASSA ikonu yaranacaq.</li>
+    </ol>
+    <p class="sub">İlk dəfə açanda Windows “Firewall” pəncərəsi çıxa bilər: <b>“Allow access” / “İcazə ver”</b> basın (Private / Şəxsi şəbəkə). Basmasanız, telefon qoşula bilməz.</p>
+    <h4>Qoşulan cihazlar</h4>
+    ${(I.seen||[]).length?`<div class="tw"><table>${I.seen.map(x=>`<tr><td>📱 ${esc(x.ip)}</td><td class="sub">${x.ago<60?"indi":Math.round(x.ago/60)+" dəq əvvəl"}</td></tr>`).join("")}</table></div>`:`<p class="sub">Hələ heç bir telefon qoşulmayıb.</p>`}
+    <div class="frow"><button class="btn ghost" data-act="phcode">Kodu dəyiş</button><span class="sub">Kodu dəyişsəniz, qoşulmuş telefonlar yeni kodu yazmalı olacaq (məs. işçi işdən çıxanda).</span></div>`:""}`;
+}
 // ---------- Ehtiyat nüsxə ----------
 function renderBackup(){
   const last=S.lastBackup?new Date(S.lastBackup).toLocaleString("az"):"heç vaxt";
@@ -2018,6 +2217,9 @@ document.addEventListener("click",e=>{
     (NATIVE?window.erpBackup(backupText(),"el").catch(()=>{}):Promise.resolve()).then(()=>{
       S=next;upgrade();save();order=[];backups=null;renderAll();renderRep();toast("Məlumat ehtiyat nüsxədən bərpa olundu")});return}
   else if(a==="bimpx"){pendingImport=null}
+  else if(a==="phon"||a==="phoff"){if(!isAdmin())return;window.erpPhone(a==="phon").then(()=>{renderRep();toast(a==="phon"?"Telefon üçün açıldı":"Telefon üçün bağlandı")},e=>{toast("Alınmadı: "+e);renderRep()});return}
+  else if(a==="phcode"){if(!isAdmin())return;window.erpPhoneNewCode().then(()=>{renderRep();toast("Yeni kod yaradıldı")});return}
+  else if(a==="pkeyx"){try{localStorage.removeItem("kassa.key")}catch(e){}location.reload();return}
   else if(a==="bkind"){bKind=t.dataset.k;fillBackupList();return}
   else if(a==="bnow"){window.erpBackup(backupText(),"el").then(p=>{S.lastBackup=Date.now();backups=null;save();renderRep();toast("Ehtiyat nüsxə yaradıldı ✓")},e=>toast("Alınmadı: "+e));return}
   else if(a==="bopen"){window.erpOpenFolder().catch(e=>toast("Qovluq açılmadı: "+e));return}
@@ -2150,13 +2352,18 @@ document.addEventListener("keydown",e=>{
 // Space düymənin üstündə "basılma" yaratmasın
 document.addEventListener("keyup",e=>{if(e.code==="Space"&&!isTyping(e.target)&&order.length&&noModal())e.preventDefault()});
 $("ver").textContent="v"+APP_VERSION;
+$("keyGo").addEventListener("click",tryKey);
+$("mobGo").addEventListener("click",()=>document.querySelector(".order").scrollIntoView({behavior:"smooth",block:"end"}));
+$("keyIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryKey()}});
 (async()=>{
+  await ensureKey();
   await loadData();
   if(NATIVE){try{PATHS=await window.erpPaths()}catch(e){}}
   if(firstRun)$("banner").hidden=false;
   startSession();renderDebtBadge();
   if(migrated)toast("Məlumat yeni fayl yaddaşına köçürüldü ✓");
   autoBackup();
+  if(SYNC){setInterval(pollSync,2000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollSync()})}
 })();
 </script>
 </body>

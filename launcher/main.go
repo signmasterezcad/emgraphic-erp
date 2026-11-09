@@ -6,6 +6,7 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"os/exec"
@@ -126,6 +127,45 @@ func main() {
 	}
 	// Köhnə quraşdırmadan bir dəfə köçür (köhnə fayl ehtiyat kimi qalır)
 	migrateOld(st.dataFile, filepath.Join(cfg, oldDirName, "data", oldDataFile))
+	// Kompüter və telefon eyni məlumatı versiya ilə oxuyub yazır (server.go)
+	ss := newSyncStore(st)
+	ps := newPhoneServer(ss, filepath.Join(filepath.Dir(exe), "app"), root)
+	phoneFlag := filepath.Join(root, "telefon-acik")
+	if fileExists(phoneFlag) {
+		ps.start(fmt.Sprintf(":%d", phonePort))
+	}
+	defer ps.stop()
+	w.Bind("erpLoadV", func() (map[string]any, error) {
+		v, d, err := ss.get()
+		return map[string]any{"ver": v, "data": d}, err
+	})
+	w.Bind("erpSaveV", func(base int64, data string) (map[string]any, error) {
+		ok, v, cur, err := ss.put(base, data)
+		if err != nil {
+			return nil, err
+		}
+		res := map[string]any{"ok": ok, "ver": v}
+		if !ok {
+			res["data"] = cur
+		}
+		return res, nil
+	})
+	w.Bind("erpVer", ss.version)
+	w.Bind("erpPhoneInfo", func() map[string]any { return ps.info() })
+	w.Bind("erpPhone", func(on bool) (map[string]any, error) {
+		if on {
+			if err := ps.start(fmt.Sprintf(":%d", phonePort)); err != nil {
+				return nil, err
+			}
+			os.MkdirAll(root, 0o755)
+			os.WriteFile(phoneFlag, []byte("1"), 0o644)
+		} else {
+			ps.stop()
+			os.Remove(phoneFlag)
+		}
+		return ps.info(), nil
+	})
+	w.Bind("erpPhoneNewCode", func() map[string]any { ps.newCode(); return ps.info() })
 	w.Bind("erpLoad", st.load)
 	w.Bind("erpSave", st.save)
 	w.Bind("erpBackup", func(json, kind string) (string, error) { return st.backup(json, kind, time.Now()) })

@@ -129,6 +129,20 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   İcazələr: `custSale` (kassirə standart, `S.mig.custPerm`), `custDebt` (borcları görmək və pulu almaq, standart bağlı).
   Üstünə pul alınmış borca satışı silmək olmur.
 
+- **📱 Telefon — Wi-Fi ilə, kompüterlə tam sinxron** (v0.29.0; istifadəçi seçim etmədi, tövsiyə olunan "əvvəl Wi-Fi, sonra internet" yolu).
+  `launcher/server.go`: `syncStore` (məlumat + versiya; `put(base,data)` yalnız versiya uyğundursa yazır, deyilsə ən son məlumatı qaytarır),
+  `phoneServer` (port **8765**, bütün ünvanlarda; `/api/state|ver|save|backup|backups|kinds|paths`, başlıq `X-Kassa-Key` = 6 rəqəmli kod
+  `%APPDATA%\KASSA\telefon-kodu`; `/` index.html-ə `<meta name="kassa-remote">` qoyur). Açıq/bağlı: `%APPDATA%\KASSA\telefon-acik`.
+  exe bağlamaları: `erpLoadV`, `erpSaveV(base,data)`, `erpVer`, `erpPhoneInfo`, `erpPhone(on)`, `erpPhoneNewCode`. Köhnə `erpLoad/erpSave` qalır.
+  `devserver_other.go` (yalnız Linux, sınaq): `go run . -app ../app -data DIR -addr 127.0.0.1:PORT -code 123456`.
+  index.html: `REMOTE` (telefon) — exe funksiyaları `fetch` ilə; kod `localStorage["kassa.key"]`, `#ovKey`. `SYNC` (exe və telefon):
+  `save()` → `schedulePush()` → `push()` (`erpSaveV`; toqquşmada `applyRemote()` → `merge3(base, S, remote)` və yenidən), `pollSync()` hər 2 san.
+  `merge3`: obyektlər açar üzrə, id/ts olan siyahılar element üzrə (silinən/əlavə olunan nəzərə alınır), `stock` — hər iki tərəfin fərqi toplanır,
+  `lastAuto/lastBackup` — max, qalan toqquşmada bu cihaz qalib. Telefon ehtiyat nüsxə yazmır — telefonun dəyişikliyinin nüsxəsini kompüter yazır.
+  Ayarlar → "📱 Telefon" (yalnız admin): aç/bağla, ünvanlar (http://IP:8765), kod, qoşulan cihazlar, "Kodu dəyiş"; telefonda "bu telefonu ayır".
+  Telefon ekranı: ≤640px kiçik düymələr, ≤860px aşağıda `#mobBar` ("Sifariş: n ədəd · cəmi · Ödənişə keç ↓"); əlaqə yoxdursa `#syncBar` (qırmızı).
+  Windows Firewall ilk dəfə icazə soruşur ("Allow access"). Sonrakı mərhələ (istəsə): internet üzərindən (Firebase).
+
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
   İstifadəçi "deyəndə" anbarı yenidən dolduracağıq və materialları düymələrə qoşacağıq.
@@ -152,14 +166,16 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 1. `app/index.html`-də `APP_VERSION`-u artır (yeniləmə skripti versiyanı müqayisə edir).
 2. Yeni fayl əlavə edirsənsə, `app/files.txt`-ə yaz.
 3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o ../KASSA.exe .`
-4. Testlər: `node tests/smoke.js` (brauzer), `node tests/native.js` (exe simulyasiyası) və `node tests/users.js` (kassirlər + əməliyyat nüsxəsi) — hamısı OK olmalıdır.
+4. Testlər: `node tests/smoke.js` (brauzer), `node tests/native.js` (exe simulyasiyası), `node tests/users.js` (kassirlər + əməliyyat nüsxəsi)
+   və `node tests/sync.js` (telefon serveri + iki cihazın sinxronu; Go lazımdır) — hamısı OK olmalıdır.
 5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/kassa/main/app/index.html` yeni versiyanı verir (GitHub 5 dəqiqəyə qədər köhnəni göstərə bilər; yeni versiya görünənə qədər gözlə, sonra istifadəçiyə "hazırdır" de).
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)
 
 ## Açıq məsələlər
 - `YENILE.bat` Windows-da işləyir (istifadəçi v0.8.4-ə yenilənib, ekran şəklində görünür).
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
-- Təklif olunub, hələ edilməyib: setup (quraşdırma) faylı, telefon versiyası + sinxronlaşma, ehtiyat nüsxənin Google Drive qovluğuna da yazılması.
+- Təklif olunub, hələ edilməyib: setup (quraşdırma) faylı, telefonun internet (bulud) versiyası. Google Disk-ə nüsxə — istifadəçi istəmədi.
+- Telefon Windows-da real Wi-Fi ilə hələ yoxlanmayıb (Firewall icazəsi, IP ünvanı).
 
 ## Brauzer versiyası (nümayiş üçün)
 https://claude.ai/artifact/5TkmNrGWJuyNTRNZoXi5vA — `app/index.html`-dən `<head>` və `<body>` teqləri çıxarılıb dərc olunur.
