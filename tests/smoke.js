@@ -473,7 +473,7 @@ const path = require('path');
   await p.click('#btnZay'); await p.click('#ovZay [data-max]');
   ok((await p.evaluate(() => document.querySelector('#ovZay .modal').getBoundingClientRect().width)) === 1366, 'kiçik Zay pəncərəsi də böyüyür');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
-  ok(await p.locator('.ov [data-max]').count() === 4, 'bütün 4 pəncərədə böyüt düyməsi var');
+  ok(await p.locator('.ov [data-max]').count() === 5, 'bütün 5 pəncərədə böyüt düyməsi var');
 
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();

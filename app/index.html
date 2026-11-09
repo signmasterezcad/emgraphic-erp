@@ -70,6 +70,12 @@ header h1{font-size:18px;margin:0;font-weight:800;flex:1 1 auto}
 .perms{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:6px 16px}
 .perm{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4}
 .perm input{margin-top:2px;width:16px;height:16px;flex:0 0 auto}
+.stiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.stile{border:0;border-radius:14px;padding:18px 10px;color:#fff;background:#0e7490;font-weight:800;font-size:16px;display:grid;gap:4px;justify-items:center;text-align:center;overflow-wrap:anywhere;min-height:92px}
+.stile .ic{font-size:26px;line-height:1}
+.stile .sm2{font-size:12px;font-weight:600;opacity:.9}
+.sform{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px;background:var(--panel2)}
+.sform h4{margin:0;font-size:17px}
 .warnbox{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel));border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5}
 
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px;border-bottom:1px solid var(--line)}
@@ -255,6 +261,7 @@ h4{margin:6px 0 0;font-size:14px}
   <button class="hbtn" id="btnZay">🗑️ Zay</button>
   <button class="hbtn" id="btnRep">📊 Hesabat / Anbar</button>
   <button class="hbtn" id="btnExp">💸 Xərclər <span class="badge" id="debtBadge" hidden></span></button>
+  <button class="hbtn" id="btnSupp">🚚 Tədarükçü</button>
   <button class="hbtn" id="btnEdit">✏️ Düzəliş</button>
   <button class="hbtn" id="btnSet">⚙️ Ayarlar</button>
   <div class="today" id="today"></div>
@@ -311,6 +318,16 @@ h4{margin:6px 0 0;font-size:14px}
         <button class="tab sm" data-hp="all">Hamısı</button><button class="tab sm" data-hp="nağd">💵 Nağd</button><button class="tab sm" data-hp="kart">💳 Kart</button>
       </div>
       <div id="hBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ovSupp" hidden>
+  <div class="modal" role="dialog" aria-labelledby="st">
+    <div class="mh"><h3 id="st">🚚 Tədarükçü</h3><button class="hbtn" data-close>Bağla</button></div>
+    <div class="mb">
+      <div class="rtabs" id="stabs"></div>
+      <div id="suppBody"></div>
     </div>
   </div>
 </div>
@@ -388,7 +405,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.22.0";
+const APP_VERSION="0.23.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -396,6 +413,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
   // v0.7.0: ÇAP bölməsi = 4 qrup düyməsi (içində düymələr açılır), köhnə 3 çap düyməsi silinir
   S.mig=S.mig||{};
+  // v0.23.0: tədarükçülər (hazır mal alınan yerlər); kassirlərə "Tədarükçü" icazəsi
+  if(!Array.isArray(S.suppliers))S.suppliers=["Samir Foto","Vəfa Foto","Şamil Vinetka","Samir Banner"].map((name,i)=>({id:"sp"+(i+1),name}));
+  if(!S.mig.suppPerm){S.mig.suppPerm=1;(S.users||[]).forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};u.perms.supp=1}})}
   if(!S.mig.capQrup){S.mig.capQrup=1;
     let c=S.cats.find(x=>x.id==="cap")||S.cats.find(x=>x.name.trim().toLocaleLowerCase("az")==="çap");
     if(!c){c={id:"cap",name:"ÇAP"};S.cats.unshift(c)}
@@ -646,8 +666,10 @@ const PERMS=[
   ["exp","💸 Xərclər: mal alışı, digər xərclər, borclar"],
   ["edit","✏️ Düymələri, qiymətləri və bölmələri dəyişmək"],
   ["backup","💾 Ehtiyat nüsxə və bərpa"],
+  ["supp","🚚 Tədarükçüdən alışı yazmaq"],
+  ["suppRep","🚚 Tədarükçülərin aylıq hesabatı"],
 ];
-const KASSIR_DEFAULT={zay:1,hist:1};
+const KASSIR_DEFAULT={zay:1,hist:1,supp:1};
 const TAB_PERM={gun:"reports",ay:"cost",mal:"cost",zay:"reports",anbar:"stock",bolme:"edit",admin:"edit",mat:"stock",backup:"backup"};
 let me=null, loginSel=null, pinBuf="", pinErr="";
 const isAdmin=()=>me?.role==="admin";
@@ -665,7 +687,7 @@ const setTabs=()=>RT_SET.filter(([k])=>k==="users"?isAdmin():can(TAB_PERM[k]));
 function applyPerms(){
   const show=(id,on)=>{const el=$(id);if(el)el.hidden=!on};
   show("btnZay",can("zay"));show("btnRep",repTabs().length>0);show("btnExp",can("exp"));show("btnEdit",can("edit"));
-  show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("today",can("reports"));
+  show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("btnSupp",can("supp")||can("suppRep"));show("today",can("reports"));
   $("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   if(editMode&&!can("edit"))setEdit(false);
 }
@@ -802,7 +824,7 @@ let keyArm=0,keyArmT=null;
 const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=DONE_TXT}
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden;
 function finishSale(){
   disarmPay();
   const lines=order.map(o=>{const it=item(o.id),p=unitPrice(it,o.q);return{id:o.id,name:it.name,q:o.q,price:p,sum:p*o.q,cost:unitCost(it)*o.q}});
@@ -1133,6 +1155,114 @@ document.addEventListener("click",e=>{
 document.addEventListener("input",e=>{if(etab==="buy"&&$("expBody").contains(e.target)&&e.target.dataset.li!==undefined)updCalc()});
 document.addEventListener("change",e=>{if(etab==="buy"&&(e.target.dataset?.x==="matsel"||/^l_un_/.test(e.target.id))){syncPd();renderExp()}
   if(e.target.id==="x_mon"){syncEd();eMon=e.target.value;eDel=null;renderExp()}});
+
+// ---------- 🚚 Tədarükçü: hazır mal alınan yerlər ----------
+// Hər alış "Digər xərclər"ə tədarükçünün adı ilə düşür (S.expenses, supp = tədarükçü id). Ayın mənfəətindən çıxılır,
+// nağd ödəniş gün sonu kassa hesabından da çıxılır. Kassir yaza bilir (icazə "supp"), aylıq hesabat "suppRep" və ya admin.
+let stab="add",sSel=null,sDel=null,sMon="",sDraft=null;
+const suppName=id=>S.suppliers.find(x=>x.id===id)?.name;
+const suppTabs=()=>[["add","🚚 Alışı yaz","supp"],["rep","📊 Aylıq hesabat","suppRep"],["list","⚙️ Tədarükçülər","admin"]].filter(([,,p])=>p==="admin"?isAdmin():can(p));
+const suppRecs=()=>S.expenses.filter(x=>x.supp);
+function openSupp(){const T=suppTabs();if(!T.length)return;if(!T.some(t=>t[0]===stab))stab=T[0][0];sSel=null;sDel=null;renderSupp();$("ovSupp").hidden=false}
+const canDelSupp=x=>isAdmin()||(x.worker===curName()&&isToday(x.ts));
+function suppRows(list,showWho=true){
+  return `<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Tədarükçü</th><th>Nə alınıb</th><th>Ödəniş</th>${showWho?"<th>Kim yazıb</th>":""}<th class="n">Məbləğ</th><th></th></tr>
+  ${list.map(x=>`<tr class="${sDel===x.id?"confirm":""}"><td><b>${fmtDate(x.ts)}</b> <span class="sub">${fmtTime(x.ts)}</span></td><td><b>${esc(suppName(x.supp)||x.cat)}</b></td>
+    <td class="wrap">${esc(x.note||"")}</td><td>${x.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':'<span class="pill card">💳 Kart</span>'}</td>
+    ${showWho?`<td>${esc(x.worker||"")}</td>`:""}<td class="n"><b>${m2(x.amount)} ₼</b></td>
+    <td>${!canDelSupp(x)?"":sDel===x.id?`<button class="btn red sm" data-s="del" data-id="${x.id}">Bəli, sil</button> <button class="btn ghost sm" data-s="delx">Ləğv</button>`
+      :`<button class="btn ghost sm del" data-s="ask" data-id="${x.id}">Sil</button>`}</td></tr>`).join("")}</table></div>`;
+}
+function renderSupp(){
+  const T=suppTabs();
+  $("stabs").innerHTML=T.length>1?T.map(([k,l])=>`<button class="tab ${k===stab?"on":""}" data-s="tab" data-t="${k}">${l}</button>`).join(""):"";
+  let h="";
+  if(stab==="add"){
+    const sp=sSel&&S.suppliers.find(x=>x.id===sSel);if(sSel&&!sp)sSel=null;
+    if(!sp){
+      h=`<p class="sub">Tədarükçüdən mal aldınız? Onun adına toxunun, məbləği yazın. Alış tədarükçünün adı ilə xərclərə düşür.</p>
+      ${S.suppliers.length?`<div class="stiles">${S.suppliers.map(x=>`<button class="stile" data-s="pick" data-id="${x.id}"><span class="ic">🚚</span>${esc(x.name)}</button>`).join("")}</div>`
+        :`<p class="sub empty-grp">Hələ tədarükçü yoxdur.${isAdmin()?" “⚙️ Tədarükçülər” tabından əlavə edin.":" Admin əlavə etməlidir."}</p>`}`;
+    }else{
+      if(!sDraft||sDraft.supp!==sp.id)sDraft={supp:sp.id,amount:"",note:"",pay:"nağd",day:dayKey(Date.now())};
+      h=`<div class="sform">
+        <div class="frow"><button class="btn ghost sm" data-s="back">← Başqa tədarükçü</button><h4>🚚 ${esc(sp.name)}</h4></div>
+        <div class="frow">
+          <label class="f xs">Məbləğ ₼<input id="s_amt" type="number" min="0" step="0.01" value="${esc(sDraft.amount)}" placeholder="0.00"></label>
+          <label class="f grow">Nə alınıb (istəyə görə)<input id="s_note" value="${esc(sDraft.note)}" placeholder="məs. 100 ədəd foto 10x15, 2 banner"></label>
+          ${isAdmin()?`<label class="f">Tarix<input type="date" id="s_day" value="${sDraft.day}"></label>`:""}
+        </div>
+        <div class="frow"><span class="sub">Ödəniş:</span>${[["nağd","💵 Nağd (kassadan)"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${sDraft.pay===k?"on":""}" data-s="pay" data-p="${k}">${l}</button>`).join("")}
+          <span class="grow"></span><button class="btn" data-s="save">✓ Alışı yaz</button></div>
+        <p class="sub">Nağd ödəsəniz, bu pul gün sonu kassa hesabından çıxılır.</p>
+      </div>`;
+    }
+    const today=suppRecs().filter(x=>isToday(x.ts)).sort((a,b)=>b.ts-a.ts);
+    h+=`<h4>Bu gün yazılan alışlar</h4>${today.length?suppRows(today)+`<p class="sub">Səhv yazmısınızsa, bu gün özünüzün yazdığını silə bilərsiniz.</p>`:`<p class="sub">Bu gün hələ alış yazılmayıb.</p>`}`;
+  }
+  if(stab==="rep"){
+    const all=suppRecs(),cur=monKey(Date.now());if(!sMon)sMon=cur;
+    const months=[...new Set([cur,...all.map(x=>monKey(x.ts))])].sort().reverse();
+    const list=all.filter(x=>monKey(x.ts)===sMon).sort((a,b)=>b.ts-a.ts),tot=list.reduce((a,x)=>a+x.amount,0);
+    const ids=[...new Set([...S.suppliers.map(x=>x.id),...all.map(x=>x.supp)])];
+    const by=id=>{const l=list.filter(x=>x.supp===id);return{n:l.length,sum:l.reduce((a,x)=>a+x.amount,0)}};
+    const last=months.slice(0,12);
+    const nm=id=>suppName(id)||all.find(x=>x.supp===id)?.cat||"?";
+    h=`<div class="frow"><label class="f">Ay<select id="s_mon">${months.map(k=>`<option value="${k}" ${k===sMon?"selected":""}>${monName(k)}</option>`).join("")}</select></label></div>
+    <div class="kpis"><div class="kpi"><span>${monName(sMon)} · bütün tədarükçülər</span><b style="color:var(--bad)">${m2(tot)} ₼</b></div>
+      ${ids.map(id=>{const b=by(id);return b.n||suppName(id)?`<div class="kpi"><span>🚚 ${esc(nm(id))}</span><b>${m2(b.sum)} ₼</b><span>${b.n} alış</span></div>`:""}).join("")}</div>
+    <h4>Aylar üzrə (son 12 ay)</h4>
+    <div class="tw"><table><tr><th>Tədarükçü</th>${last.map(k=>`<th class="n">${monShort(k)}</th>`).join("")}</tr>
+      ${ids.map(id=>`<tr><td><b>${esc(nm(id))}</b></td>${last.map(k=>{const v=all.filter(x=>x.supp===id&&monKey(x.ts)===k).reduce((a,x)=>a+x.amount,0);return `<td class="n">${v?m2(v):'<span class="sub">—</span>'}</td>`}).join("")}</tr>`).join("")}
+      <tr><td><b>Cəmi</b></td>${last.map(k=>`<td class="n"><b>${m2(all.filter(x=>monKey(x.ts)===k).reduce((a,x)=>a+x.amount,0))}</b></td>`).join("")}</tr></table></div>
+    <h4>${monName(sMon)}: bütün alışlar</h4>${list.length?suppRows(list):`<p class="sub">Bu ay alış yazılmayıb.</p>`}
+    <p class="sub">Bu alışlar “💸 Xərclər → 🧾 Digər xərclər”də də tədarükçünün adı ilə görünür və ayın xalis mənfəətindən çıxılır.</p>`;
+  }
+  if(stab==="list"){
+    h=`<p class="sub">Tədarükçünün adını dəyişsəniz, keçmiş alışları da yeni adla görünür. Silsəniz, keçmiş alışları hesabatda qalır.</p>
+    <div class="tw"><table>${S.suppliers.map(x=>`<tr><td><input data-sn="${x.id}" value="${esc(x.name)}" class="wide" aria-label="Tədarükçünün adı"></td>
+      <td class="n sub">${suppRecs().filter(r=>r.supp===x.id).length} alış</td>
+      <td><button class="btn ghost sm" data-s="sdel" data-id="${x.id}">${sDel==="t"+x.id?"Əminsiniz? Sil":"🗑 Sil"}</button></td></tr>`).join("")}</table></div>
+    <div class="frow"><input id="s_new" placeholder="Yeni tədarükçü, məs. Kamran Kağız" aria-label="Yeni tədarükçünün adı"><button class="btn" data-s="sadd">+ Əlavə et</button></div>`;
+  }
+  $("suppBody").innerHTML=h;
+}
+function syncSDraft(){if(!sDraft||!$("s_amt"))return;sDraft.amount=$("s_amt").value;sDraft.note=$("s_note").value;if($("s_day"))sDraft.day=$("s_day").value||sDraft.day}
+function saveSupp(){
+  syncSDraft();const amt=+sDraft.amount,sp=S.suppliers.find(x=>x.id===sDraft.supp);
+  if(!sp)return;if(!(amt>0)){toast("Məbləği yazın (0-dan böyük)");$("s_amt")?.focus();return}
+  const ts=isAdmin()&&sDraft.day!==dayKey(Date.now())?(new Date(sDraft.day+"T12:00").getTime()||Date.now()):Date.now();
+  S.expenses.push({id:newId("x"),ts,cat:sp.name,amount:amt,pay:sDraft.pay,note:sDraft.note.trim(),rec:null,supp:sp.id,worker:curName()});
+  sDraft=null;sSel=null;save();renderSupp();toast(`${sp.name}: ${m2(amt)} ₼ alış yazıldı ✓`);
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-s]");if(!t||$("ovSupp").hidden)return;
+  const a=t.dataset.s;syncSDraft();
+  if(a!=="sdel"&&a!=="del"&&a!=="ask")sDel=null;
+  if(a==="tab")stab=t.dataset.t;
+  else if(a==="pick"){sSel=t.dataset.id;setTimeout(()=>$("s_amt")?.focus(),0)}
+  else if(a==="back"){sSel=null;sDraft=null}
+  else if(a==="pay")sDraft.pay=t.dataset.p;
+  else if(a==="save"){saveSupp();return}
+  else if(a==="ask")sDel=t.dataset.id;
+  else if(a==="delx")sDel=null;
+  else if(a==="del"){const x=S.expenses.find(y=>y.id===t.dataset.id);if(!x||!canDelSupp(x))return;
+    S.expenses=S.expenses.filter(y=>y!==x);sDel=null;save();toast(`Silindi: ${x.cat} ${m2(x.amount)} ₼`)}
+  else if(a==="sadd"){if(!isAdmin())return;const n=$("s_new").value.trim();if(!n){toast("Tədarükçünün adını yazın");return}
+    if(S.suppliers.some(x=>norm(x.name)===norm(n))){toast(`"${n}" artıq var`);return}
+    S.suppliers.push({id:newId("sp"),name:n});save();toast(`"${n}" əlavə olundu`)}
+  else if(a==="sdel"){if(!isAdmin())return;const k="t"+t.dataset.id;if(sDel!==k)sDel=k;
+    else{const n=suppName(t.dataset.id);S.suppliers=S.suppliers.filter(x=>x.id!==t.dataset.id);sDel=null;save();toast(`"${n}" silindi, keçmiş alışları qalır`)}}
+  renderSupp();
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="s_mon"){sMon=e.target.value;renderSupp();return}
+  const id=e.target.dataset?.sn;if(!id||!isAdmin())return;
+  const sp=S.suppliers.find(x=>x.id===id),n=e.target.value.trim();if(!sp)return;
+  if(!n||S.suppliers.some(x=>x!==sp&&norm(x.name)===norm(n))){toast(n?`"${n}" artıq var`:"Ad boş ola bilməz");renderSupp();return}
+  sp.name=n;S.expenses.forEach(x=>{if(x.supp===id)x.cat=n});save();renderSupp();toast("Ad dəyişdi");
+});
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key==="NumpadEnter")&&e.target.id==="s_amt"){e.preventDefault();saveSupp()}});
 
 // ---------- Zay ----------
 function openZay(){
@@ -1567,6 +1697,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="btnEdit"){setEdit(!editMode)}
   else if(t.id==="btnHist"){openHist()}
   else if(t.id==="btnExp"){openExp()}
+  else if(t.id==="btnSupp"){openSupp()}
   else if(t.id==="btnSet"){mode="set";rtab="bolme";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="stSave"){
     let diff=[];

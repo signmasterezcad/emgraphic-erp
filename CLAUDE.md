@@ -92,6 +92,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **Hər əməliyyatdan sonra ehtiyat nüsxə** (v0.22.0): `save()` → `opBackupSoon()` (2 san. yığır) → `erpBackup(...,"emel")`,
   yalnız məlumat dəyişibsə (`dataSig()`, lastAuto/lastBackup nəzərə alınmır). exe-də `erpBackupKinds` yoxdursa (köhnə exe) işləmir.
   exe hər növü ayrıca saxlayır (`keepByKind`): emel 100, avto 60, el 30. Ehtiyat siyahısında növ süzgəci.
+- **🚚 Tədarükçü** (v0.23.0, başlıqda `#btnSupp`, pəncərə `#ovSupp`): hazır mal alınan yerlər `S.suppliers=[{id,name}]`
+  (ilkin: Samir Foto `sp1`, Vəfa Foto `sp2`, Şamil Vinetka `sp3`, Samir Banner `sp4`; admin adını dəyişir/əlavə edir/silir).
+  Alış **`S.expenses`-ə** düşür: `{cat: tədarükçünün adı, supp: id, amount, pay: nağd|kart, note: nə alınıb, worker}` — ayın xalis
+  mənfəətindən çıxılır, nağd olan kassa hesabından da. Ad dəyişəndə keçmiş qeydlərin `cat`-ı da dəyişir. Nisyə hələ yoxdur.
+  İcazələr: `supp` (alışı yazmaq; kassirlərə standart, `S.mig.suppPerm` mövcud kassirlərə verdi), `suppRep` (aylıq hesabat).
+  Kassir yalnız bu gün öz yazdığını silə bilər, admin hamısını; tarixi yalnız admin seçə bilir.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.

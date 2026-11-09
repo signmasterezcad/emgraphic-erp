@@ -108,6 +108,38 @@ let n = 0;
   await p.click('[data-act=bkind][data-k=avto]');
   ok(await p.locator('#blist tr').count() === kinds('avto') + 1, 'süzgəc: yalnız gündəlik nüsxələr');
 
+  await p.click('#ovRep [data-close]');
+
+  // 8) 🚚 Tədarükçü: kassir yazır, xərclərə düşür, admin aylıq hesabatı görür
+  ok(JSON.parse(fs.data).suppliers.map(x => x.name).join('|') === 'Samir Foto|Vəfa Foto|Şamil Vinetka|Samir Banner', '4 tədarükçü hazırdır');
+  await p.click('#btnUser'); await p.click(`[data-login="${leyla}"]`); await p.keyboard.type('2222'); await p.keyboard.press('Enter');
+  ok(await p.isVisible('#btnSupp') && await p.isHidden('#btnExp'), 'Leyla: 🚚 Tədarükçü görünür, Xərclər yox');
+  await p.click('#btnSupp');
+  ok(await p.locator('#stabs .tab').count() === 0 && await p.locator('.stile').count() === 4, 'Leyla: yalnız alış yazmaq (hesabat tabı yoxdur), 4 tədarükçü');
+  await p.click('.stile:has-text("Samir Foto")'); await p.click('[data-s=save]');
+  ok((await p.textContent('#toast')).includes('Məbləği yazın'), 'məbləğsiz yazılmır');
+  await p.fill('#s_amt', '45.5'); await p.fill('#s_note', '100 foto 10x15'); await p.press('#s_amt', 'Enter');
+  await p.click('.stile:has-text("Şamil Vinetka")'); await p.fill('#s_amt', '20'); await p.click('[data-s=pay][data-p=kart]'); await p.click('[data-s=save]');
+  const ex = JSON.parse(fs.data).expenses.filter(x => x.supp);
+  ok(ex.length === 2 && ex[0].cat === 'Samir Foto' && ex[0].amount === 45.5 && ex[0].pay === 'nağd' && ex[0].worker === 'Leyla' && ex[1].pay === 'kart', 'alışlar xərclərə tədarükçünün adı ilə düşdü (kim yazıb, ödəniş)');
+  ok((await p.textContent('#suppBody')).includes('100 foto 10x15') && await p.locator('#suppBody [data-s=ask]').count() === 2, 'bu günün siyahısı, Leyla öz yazdığını silə bilər');
+  await p.click('#ovSupp [data-close]');
+  await p.click('#btnUser'); await p.click(`[data-login="${adminId}"]`); await p.keyboard.type('1111'); await p.keyboard.press('Enter');
+  await p.click('#btnSupp'); await p.click('[data-s=tab][data-t=rep]');
+  const sr = await p.textContent('#suppBody');
+  ok(sr.includes('65.50') && sr.includes('45.50') && sr.includes('Samir Foto') && sr.includes('20.00'), 'admin: aylıq hesabat — cəmi 65.50, Samir Foto 45.50, Şamil Vinetka 20.00');
+  await p.click('[data-s=tab][data-t=list]');
+  await p.fill('[data-sn=sp1]', 'Samir Foto Studio'); await p.dispatchEvent('[data-sn=sp1]', 'change');
+  ok(JSON.parse(fs.data).expenses.find(x => x.supp === 'sp1').cat === 'Samir Foto Studio', 'ad dəyişəndə keçmiş alış da yeni adla');
+  await p.fill('#s_new', 'Kamran Kağız'); await p.click('[data-s=sadd]');
+  ok(JSON.parse(fs.data).suppliers.length === 5, 'admin yeni tədarükçü əlavə etdi');
+  await p.click('#ovSupp [data-close]');
+  await p.click('#btnRep'); await p.click('[data-rt=gun]');
+  ok((await p.textContent('#rbody')).includes('45.50'), 'nağd alış kassa hesabından çıxılır (− Nağd digər xərclər 45.50)');
+  await p.click('[data-rt=ay]');
+  ok((await p.textContent('#rbody')).includes('Samir Foto Studio'), 'aylıq mənfəət hesabatında xərc növü kimi görünür');
+  await p.click('#ovRep [data-close]');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
