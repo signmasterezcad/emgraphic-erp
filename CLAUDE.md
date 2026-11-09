@@ -113,6 +113,13 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Basanda `#ovSrc` (1 = Özümüz, 2 = tədarükçü, Esc). Sifariş sətri `{id,q,from}`, açar `okey()` = "id@from"; satış qiyməti eynidir.
   Tədarükçü sətri: anbardan material silinmir, `cost:0` (alış xərclərdədir — iki dəfə çıxılmasın), `from`, `fromName`, `scost` = say × alış qiyməti.
   Hesabat: "Məhsul + mənfəət"də ayrı sətir (maya = scost); 📅 Aylıq-da `srcSection()`: özümüz satış, tədarükçü satışı / alış qiyməti ilə / qazanc, ölçü cədvəli.
+- **📐 Banner / Vinil — m² ilə, sərbəst qiymət** (v0.28.0, `S.mig.bannerVinil`): yeni bölmə `banner` "Banner / Vinil" (plotterlə əlaqəsi yoxdur),
+  düymələr `bv_banner`, `bv_vinil` — `area:1`, `src:{supp:"sp4",item:"pb1"|"pb2",only:1}` (həmişə Samir Banner-dən, "Özümüz" sualı yoxdur).
+  Samir Banner qiymət siyahısı: Banner (1 m²) `pb1` 6 ₼, Vinil (1 m²) `pb2` 6 ₼. Satış qiyməti sabit deyil (sahibi m²-ə görə dəyişir):
+  basanda `#ovM2` — En × Hündürlük (və ya m² birbaşa), Ədəd, "1 m² qiyməti" ⇄ "cəmi məbləğ" (biri yazılır, o biri hesablanır);
+  `can("cost")` olana alış dəyəri və qazanc göstərilir. Sifariş sətri `{uid,id,q,area,w,h,cp,from}` (`okey` = uid, `lineUnit()` = cp).
+  Satış sətri: ad "Banner 3 × 1,5 m (4,5 m²)", `base`, `m2` (= area × q), `scost` = m2 × alış qiyməti. Hesabatlarda "Banner (m²)" bir sətir, say = m².
+  Redaktorda `#e_area` "📐 Kvadrat metrlə satılır". Axtarış: adında söz olan düymə birinci (`searchList` sıralayır).
 - **🏢 Borclular — müəssisələrə nisyə satış** (v0.25.0; v0.27.1-də ekranda "Borca" → **"Nisyə"**, düymə "Nisyəyə yaz ✓"): "Cari sifariş"də `#payDebt` "📝 Nisyə" → `#ovCust` müəssisə seçimi
   (yenisini orada əlavə etmək olar) → `pay="borc"` (daxili ad dəyişmir), `ordCust`. Satış: `pay:"borc", cust, custName`.
   `S.customers=[{id,name}]`, pul alınanda `S.custPays=[{id,cust,name,ts,amount,by,worker}]` (hissə-hissə). Borc = `custOwed(id)`.

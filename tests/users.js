@@ -240,6 +240,33 @@ let n = 0;
   ok((await p.textContent('#rbody')).includes('15x21 · 🚚 Samir Foto') && (await p.textContent('#rbody')).includes('15x21 · 🖨 özümüz'), 'Məhsul + mənfəət: 15x21 iki ayrı sətir');
   await p.click('#ovRep [data-close]');
 
+  // 13) Banner / Vinil: m² ilə, qiymət hər sifarişdə; həmişə Samir Banner-dən
+  const sb = JSON.parse(fs.data).suppliers.find(x => x.id === 'sp4');
+  ok(sb.items.map(x => x.name + ':' + x.price).join('|') === 'Banner (1 m²):6|Vinil (1 m²):6', 'Samir Banner: Banner və Vinil 1 m² — 6 ₼');
+  await p.fill('#q', 'banner'); await p.press('#q', 'Enter');
+  ok(await p.isVisible('#ovM2') && await p.isHidden('#ovSrc'), 'Banner: ölçü/qiymət pəncərəsi açılır (Özümüz/Samir sualı yoxdur)');
+  await p.click('[data-m2=add]');
+  ok((await p.textContent('#toast')).includes('Ölçünü yazın'), 'ölçüsüz əlavə olunmur');
+  await p.fill('#m2_w', '3'); await p.fill('#m2_h', '1,5');
+  ok((await p.textContent('#m2_area')).includes('4,5 m²'), '3 × 1,5 = 4,5 m²');
+  await p.fill('#m2_pm', '12');
+  ok((await p.inputValue('#m2_tot')) === '54.00' && (await p.textContent('#m2_sum')).includes('27.00') && (await p.textContent('#m2_sum')).includes('27.00 ₼'), '1 m² 12 → cəmi 54; Samir: 4,5 × 6 = 27, qazanc 27');
+  await p.fill('#m2_tot', '50');
+  ok((await p.inputValue('#m2_pm')) === '11.11', 'cəmi 50 yazanda 1 m² qiyməti özü: 11.11');
+  await p.keyboard.press('Enter');
+  ok(await p.isHidden('#ovM2') && (await p.textContent('#lines')).includes('3 × 1,5 m (4,5 m²)') && (await p.textContent('#total')).startsWith('50.00'), 'sifarişdə: Banner 3 × 1,5 m (4,5 m²) — 50.00');
+  await p.click('#qClear'); await p.fill('#q', 'vinil'); await p.press('#q', 'Enter');
+  ok((await p.textContent('#m2t')).includes('Vinil'), 'axtarış "vinil" + Enter: Vinil açılır (Banner yox)');
+  await p.click('[data-m2=mode][data-k=a]'); await p.fill('#m2_a', '2'); await p.fill('#m2_n', '3'); await p.fill('#m2_pm', '10'); await p.click('[data-m2=add]');
+  ok((await p.textContent('#total')).startsWith('110.00'), 'Vinil 2 m² × 3 ədəd × 10 = 60; cəmi 110');
+  await p.click('#btnDone');
+  const bl = JSON.parse(fs.data).sales.at(-1).lines;
+  ok(bl[0].from === 'sp4' && bl[0].cost === 0 && bl[0].scost === 27 && bl[0].sum === 50 && bl[1].m2 === 6 && bl[1].scost === 36, 'satış: Samir Banner işi, alış dəyəri (27 və 36), maya 0');
+  await p.click('#btnRep'); await p.click('[data-rt=ay]');
+  const br = await p.textContent('#rbody');
+  ok(br.includes('Samir Banner: satış') && br.includes('110.00') && br.includes('47.00') && br.includes('Banner (m²)'), 'aylıq: Samir Banner satış 110, qazanc 47, Banner (m²) sətri');
+  await p.click('#ovRep [data-close]');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

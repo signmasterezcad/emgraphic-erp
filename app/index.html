@@ -124,6 +124,9 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .custsel{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid var(--warn);border-radius:10px;padding:8px 10px;font-size:13px}
 .ctile{background:#b45309}
 .blines{display:grid;gap:8px}
+.m2grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.m2info{background:var(--panel2);border-radius:10px;padding:10px 12px;display:grid;gap:4px;font-size:14px}
+.m2info b{font-size:16px}
 .srcbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .srcbtns button{border:0;border-radius:14px;padding:22px 12px;color:#fff;font-weight:800;font-size:18px;display:grid;gap:6px;justify-items:center;text-align:center}
 .srcbtns .own{background:#2563eb}.srcbtns .sup{background:#0e7490}
@@ -348,6 +351,13 @@ h4{margin:6px 0 0;font-size:14px}
   </div>
 </div>
 
+<div class="ov" id="ovM2" hidden>
+  <div class="modal sm" role="dialog" aria-labelledby="m2t">
+    <div class="mh"><h3 id="m2t">Ölçü və qiymət</h3><button class="hbtn" data-m2x>Ləğv</button></div>
+    <div class="mb" id="m2Body"></div>
+  </div>
+</div>
+
 <div class="ov" id="ovCust" hidden>
   <div class="modal" role="dialog" aria-labelledby="ct">
     <div class="mh"><h3 id="ct">📝 Kimin borcuna yazaq?</h3><button class="hbtn" data-close>Bağla</button></div>
@@ -448,7 +458,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.27.1";
+const APP_VERSION="0.28.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -619,6 +629,15 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     S.items.forEach(i=>{if(/^qismən\s+/i.test(i.name))i.name=i.name.replace(/^qismən\s+/i,"")});
   }
   // v0.27.0: Foto Kağızlar düymələri Samir Foto-nun eyni ölçülü malına qoşulur (satışda "Özümüz / Samir Foto" seçimi)
+  // v0.28.0: Banner / Vinil — Samir Banner-dən (1 m² 6 ₼), satış qiyməti hər sifarişdə m²-ə görə yazılır
+  if(!S.mig.bannerVinil){S.mig.bannerVinil=1;
+    const sb=(S.suppliers||[]).find(x=>x.id==="sp4")||(S.suppliers||[]).find(x=>norm(x.name).startsWith("samir banner"));
+    if(sb){sb.items=sb.items||[];[["pb1","Banner (1 m²)"],["pb2","Vinil (1 m²)"]].forEach(([id,n])=>{if(!sb.items.some(y=>y.id===id||norm(y.name)===norm(n)))sb.items.push({id,name:n,price:6})})}
+    if(!S.cats.some(c=>c.id==="banner"||norm(c.name)==="banner / vinil"))S.cats.push({id:"banner",name:"Banner / Vinil"});
+    const bc=S.cats.find(c=>c.id==="banner")||S.cats.find(c=>norm(c.name)==="banner / vinil");
+    [["bv_banner","Banner","🪧","#0e7490","pb1"],["bv_vinil","Vinil","🏷️","#6d28d9","pb2"]].forEach(([id,n,ic,col,pi])=>{if(S.items.some(i=>i.id===id))return;
+      const it={id,name:n,cat:bc.id,icon:ic,color:col,fav:0,ink:0,recipe:[],tiers:[[1,0]],area:1};
+      const si=sb?.items.find(y=>y.id===pi)||sb?.items.find(y=>norm(y.name).startsWith(norm(n)));if(sb&&si)it.src={supp:sb.id,item:si.id,only:1};S.items.push(it)})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
       const sz=m.replace(/\s|×/g,c=>c==="×"?"x":""),it=sf.items.find(y=>(y.name.match(/\d+x\d+/)||[])[0]===sz);if(it&&!i.src)i.src={supp:sf.id,item:it.id}})}
@@ -834,7 +853,10 @@ const delLabel=(it,yes,no)=>delArm===it.id?(isGroup(it)&&kids(it.id).length?`${k
 const norm=t=>String(t||"").toLocaleLowerCase("az").replace(/[əäçğışöüİ]/g,c=>({ə:"e",ä:"e",ç:"c",ğ:"g",ı:"i",ş:"s",ö:"o",ü:"u",İ:"i"}[c])).replace(/\s+/g," ").trim();
 function searchList(){
   const w=norm(q).split(" ").filter(Boolean);if(!w.length)return [];
-  return S.items.filter(i=>{const p=i.parent?item(i.parent):null,txt=norm([i.name,p?.name,CATS.find(c=>c[0]===i.cat)?.[1]].join(" "));return w.every(x=>txt.includes(x))}).slice(0,60);
+  // Adında bütün sözlər olan düymə birinci gəlsin (məs. "vinil" → Vinil, bölmə adı "Banner / Vinil" olsa da)
+  const own=i=>w.every(x=>norm(i.name).includes(x))?0:1;
+  return S.items.filter(i=>{const p=i.parent?item(i.parent):null,txt=norm([i.name,p?.name,CATS.find(c=>c[0]===i.cat)?.[1]].join(" "));return w.every(x=>txt.includes(x))})
+    .map((i,k)=>[i,k]).sort((a,b)=>own(a[0])-own(b[0])||a[1]-b[1]).map(x=>x[0]).slice(0,60);
 }
 const pathOf=it=>[CATS.find(c=>c[0]===it.cat)?.[1],it.parent?item(it.parent)?.name:""].filter(Boolean).join(" › ");
 function renderGrid(){
@@ -856,16 +878,16 @@ function renderGrid(){
       ${ed}
       ${inQ&&!editMode?`<span class="cnt">${inQ}</span>`:""}
       <span class="ic">${it.icon}</span><span class="nm">${it.name}</span>${S_?`<span class="tier path">${esc(pathOf(it))}</span>`:""}
-      ${+it.tiers[0][1]?`<span class="pr">${m2(it.tiers[0][1])} ₼</span>`:`<span class="pr noprice">⚠ qiymət yoxdur</span>`}${tierText(it)?`<span class="tier">${tierText(it)}</span>`:""}</button>`}).join("")
+      ${it.area?`<span class="pr">📐 m² ilə · qiymət razılaşma ilə</span>`:+it.tiers[0][1]?`<span class="pr">${m2(it.tiers[0][1])} ₼</span>`:`<span class="pr noprice">⚠ qiymət yoxdur</span>`}${tierText(it)?`<span class="tier">${tierText(it)}</span>`:""}</button>`}).join("")
     +(editMode&&!S_?`<button class="svc addtile" data-act="qnew"><span class="ic">＋</span><span class="nm">Yeni düymə</span><span class="pr">${g?"“"+esc(g.name)+"” qrupuna":esc(cn)}</span></button>`:"");
 }
 function renderOrder(){
   if(!order.length){$("lines").innerHTML=`<div class="empty">Xidmət düyməsinə toxunun</div>`}
-  else $("lines").innerHTML=order.map(o=>{const it=item(o.id),p=unitPrice(it,o.q),k=okey(o);
-    return `<div class="line"><div><div class="t">${it.name}</div>${it.src?`<div class="src">${o.from?"🚚 "+esc(suppName(o.from)||"Tədarükçü"):"🖨 Özümüz"}</div>`:""}<div class="s">${m2(p)} ₼ × ${o.q}</div></div>
+  else $("lines").innerHTML=order.map(o=>{const it=item(o.id),p=lineUnit(o),k=okey(o);
+    return `<div class="line"><div><div class="t">${esc(it.name)}${o.area?` ${areaTxt(o)}`:""}</div>${it.src?`<div class="src">${o.from?"🚚 "+esc(suppName(o.from)||"Tədarükçü"):"🖨 Özümüz"}</div>`:""}<div class="s">${m2(p)} ₼ × ${o.q}${o.area?` · 1 m² ${m2(o.cp/o.area)} ₼`:""}</div></div>
       <div class="qty"><button data-dec="${k}" aria-label="azalt">−</button><input data-q="${k}" type="number" min="1" value="${o.q}" aria-label="say"><button data-inc="${k}" aria-label="artır">+</button></div>
       <div class="sum">${m2(p*o.q)} ₼</div></div>`}).join("");
-  const t=order.reduce((a,o)=>a+unitPrice(item(o.id),o.q)*o.q,0);
+  const t=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);
   $("total").textContent=m2(t)+" ₼";
   $("btnDone").disabled=!order.length;
   $("payCash").classList.toggle("on",pay==="nağd");$("payCard").classList.toggle("on",pay==="kart");
@@ -877,8 +899,14 @@ function renderOrder(){
 function renderAll(){renderHeader();renderTabs();renderGrid();renderOrder()}
 
 // Sifariş sətri: {id, q, from} — from = tədarükçü id (hazır alınıb) və ya boş (özümüz). Açar: "id@from".
-const okey=o=>o.id+(o.from?"@"+o.from:"");
+const okey=o=>o.uid||(o.id+(o.from?"@"+o.from:""));
+// m² ilə satılan sətir (banner, vinil): o.area = 1 ədədin m²-i, o.w×o.h, o.cp = 1 ədədin razılaşdırılmış qiyməti
+const lineUnit=o=>o.cp!=null?o.cp:unitPrice(item(o.id),o.q);
+const fmtN=n=>String(+(+n).toFixed(3)).replace(".",",");
+const areaTxt=o=>o.w&&o.h?`${fmtN(o.w)} × ${fmtN(o.h)} m (${fmtN(o.area)} m²)`:`${fmtN(o.area)} m²`;
 function addItem(key,d=1){
+  const ex=order.find(x=>okey(x)===key);
+  if(ex&&ex.uid){ex.q=Math.max(0,ex.q+d);if(!ex.q)order=order.filter(x=>x!==ex);renderGrid();renderOrder();return}
   const [id,from]=String(key).split("@"),it=item(id);
   if(d>0&&it&&!it.tiers.some(t=>+t[1])){toast(`"${it.name}" düyməsinin qiyməti yazılmayıb. ✏️ Düzəliş → ✏️ ilə qiyməti yazın`);return}
   const o=order.find(x=>okey(x)===okey({id,from}));
@@ -889,7 +917,56 @@ function addItem(key,d=1){
 const srcSup=it=>it?.src&&S.suppliers.find(x=>x.id===it.src.supp);
 const srcItem=it=>srcSup(it)?.items?.find(y=>y.id===it.src.item);
 let srcFor=null;
-function tapItem(id){const it=item(id);if(!srcSup(it)||editMode){addItem(id,1);return}
+let m2For=null,m2D=null;
+function openM2(id){const it=item(id);m2For=id;m2D={mode:"wh",w:"",h:"",a:"",n:"1",pm:"",tot:"",last:"pm"};
+  $("m2t").textContent=`${it.icon||""} ${it.name}: ölçü və qiymət`;renderM2();$("ovM2").hidden=false;setTimeout(()=>$("m2_w")?.focus(),0)}
+const m2Area=()=>m2D.mode==="wh"?(+String(m2D.w).replace(",",".")||0)*(+String(m2D.h).replace(",",".")||0):(+String(m2D.a).replace(",",".")||0);
+const num=v=>+String(v).replace(",",".")||0;
+function renderM2(){
+  const it=item(m2For),sp=srcSup(it),si=srcItem(it),A=m2Area(),n=Math.max(1,Math.round(num(m2D.n))),total=num(m2D.tot);
+  $("m2Body").innerHTML=`<div class="frow">${[["wh","En × Hündürlük"],["a","m² birbaşa"]].map(([k,l])=>`<button class="tab sm ${m2D.mode===k?"on":""}" data-m2="mode" data-k="${k}">${l}</button>`).join("")}</div>
+    <div class="m2grid">${m2D.mode==="wh"?`<label class="f">En (metr)<input id="m2_w" inputmode="decimal" value="${esc(m2D.w)}" placeholder="məs. 3"></label>
+      <label class="f">Hündürlük (metr)<input id="m2_h" inputmode="decimal" value="${esc(m2D.h)}" placeholder="məs. 1,5"></label>`
+      :`<label class="f">Sahə (m²)<input id="m2_a" inputmode="decimal" value="${esc(m2D.a)}" placeholder="məs. 4,5"></label>`}
+      <label class="f">Ədəd<input id="m2_n" type="number" min="1" step="1" value="${esc(m2D.n)}"></label></div>
+    <div class="m2info" id="m2_area"></div>
+    <div class="m2grid"><label class="f">1 m² qiyməti ₼<input id="m2_pm" inputmode="decimal" value="${esc(m2D.pm)}" placeholder="məs. 12"></label>
+      <label class="f">və ya cəmi məbləğ ₼<input id="m2_tot" inputmode="decimal" value="${esc(m2D.tot)}" placeholder="məs. 54"></label></div>
+    <div class="m2info" id="m2_sum"></div>
+    <div class="frow"><span class="grow"></span><button class="btn" data-m2="add">✓ Sifarişə əlavə et</button></div>`;
+  updM2();
+}
+function syncM2(){[["w","m2_w"],["h","m2_h"],["a","m2_a"],["n","m2_n"],["pm","m2_pm"],["tot","m2_tot"]].forEach(([k,id])=>{if($(id))m2D[k]=$(id).value})}
+function updM2(){
+  const it=item(m2For),sp=srcSup(it),si=srcItem(it),A=m2Area(),n=Math.max(1,Math.round(num(m2D.n))),TA=A*n;
+  if(m2D.last==="pm"){const v=num(m2D.pm)*TA;m2D.tot=v?m2(v):"";if($("m2_tot")&&document.activeElement!==$("m2_tot"))$("m2_tot").value=m2D.tot}
+  else{const v=TA?num(m2D.tot)/TA:0;m2D.pm=v?m2(v):"";if($("m2_pm")&&document.activeElement!==$("m2_pm"))$("m2_pm").value=m2D.pm}
+  $("m2_area").innerHTML=A?`📐 Sahə: <b>${fmtN(A)} m²</b>${n>1?` × ${n} ədəd = <b>${fmtN(TA)} m²</b>`:""}`:`<span class="sub">Ölçünü yazın: sahə özü hesablanacaq.</span>`;
+  const tot=num(m2D.tot),buy=si?si.price*TA:0;
+  $("m2_sum").innerHTML=tot?`Müştəriyə: <b>${m2(tot)} ₼</b>${sp&&si&&can("cost")?`<span class="sub">🚚 ${esc(sp.name)}: ${fmtN(TA)} m² × ${m2(si.price)} ₼ = ${m2(buy)} ₼ · qazanc <b style="color:${tot-buy<0?"var(--bad)":"var(--ok)"}">${m2(tot-buy)} ₼</b></span>`:""}`
+    :`<span class="sub">1 m² qiymətini və ya cəmi məbləği yazın: o biri özü hesablanacaq.</span>`;
+}
+function addM2(){
+  syncM2();const it=item(m2For),A=m2Area(),n=Math.max(1,Math.round(num(m2D.n))),tot=num(m2D.tot);
+  if(!(A>0)){toast("Ölçünü yazın (en və hündürlük, və ya m²)");return}
+  if(!(tot>0)){toast("Qiyməti yazın: 1 m² qiyməti və ya cəmi məbləğ");return}
+  const o={uid:newId("o"),id:it.id,q:n,area:A,cp:tot/n};
+  if(m2D.mode==="wh"){o.w=num(m2D.w);o.h=num(m2D.h)}
+  const sp=srcSup(it);if(sp&&it.src.only)o.from=sp.id;
+  order.push(o);m2For=null;$("ovM2").hidden=true;renderGrid();renderOrder();
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-m2],[data-m2x]");if(!t||$("ovM2").hidden)return;
+  if(t.hasAttribute("data-m2x")){m2For=null;$("ovM2").hidden=true;return}
+  syncM2();const a=t.dataset.m2;
+  if(a==="mode"){m2D.mode=t.dataset.k;renderM2();setTimeout(()=>$(m2D.mode==="wh"?"m2_w":"m2_a")?.focus(),0)}
+  else if(a==="add")addM2()});
+document.addEventListener("input",e=>{if($("ovM2").hidden||!/^m2_/.test(e.target.id||""))return;syncM2();
+  if(e.target.id==="m2_pm")m2D.last="pm";if(e.target.id==="m2_tot")m2D.last="tot";updM2()});
+document.addEventListener("keydown",e=>{if($("ovM2").hidden)return;
+  if(e.key==="Enter"||e.key==="NumpadEnter"){e.preventDefault();e.stopImmediatePropagation();addM2()}
+  else if(e.key==="Escape"){e.stopImmediatePropagation();m2For=null;$("ovM2").hidden=true}},true);
+function tapItem(id){const it=item(id);if(it?.area&&!editMode){openM2(id);return}
+  if(!srcSup(it)||editMode){addItem(id,1);return}
   if(!it.tiers.some(t=>+t[1])){addItem(id,1);return}
   srcFor=id;const sp=srcSup(it),si=srcItem(it);
   $("srt").textContent=`${it.name}: kim çap edir?`;
@@ -909,13 +986,14 @@ const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=doneTxt()}
 const doneTxt=()=>pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden;
 function finishSale(){
   disarmPay();
   if(pay==="borc"){if(!can("custSale"))pay="nağd";else if(!custById(ordCust)){openCustPick();return}}
   // Tədarükçüdən hazır alınan sətir: anbardan material silinmir, maya 0 (alış artıq xərclərdədir); scost = alış qiyməti (hesabat üçün)
-  const lines=order.map(o=>{const it=item(o.id),p=unitPrice(it,o.q),L={id:o.id,name:it.name,q:o.q,price:p,sum:p*o.q,cost:o.from?0:unitCost(it)*o.q};
-    if(o.from){L.from=o.from;L.fromName=suppName(o.from)||"";const si=it.src?.supp===o.from?srcItem(it):null;L.scost=(si?.price||0)*o.q}return L});
+  const lines=order.map(o=>{const it=item(o.id),p=lineUnit(o),L={id:o.id,name:it.name+(o.area?" "+areaTxt(o):""),q:o.q,price:p,sum:p*o.q,cost:o.from?0:unitCost(it)*o.q};
+    if(o.area){L.base=it.name;L.m2=o.area*o.q;if(o.w){L.w=o.w;L.h=o.h}}
+    if(o.from){L.from=o.from;L.fromName=suppName(o.from)||"";const si=it.src?.supp===o.from?srcItem(it):null;L.scost=(si?.price||0)*(o.area?o.area*o.q:o.q)}return L});
   const short=[],used={};
   order.filter(o=>!o.from).forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;used[m]=(used[m]||0)+q*o.q;if(M.stock<0)short.push(M.name)}));
   const sale={id:newId("s"),ts:Date.now(),worker:curName(),pay,lines,total:lines.reduce((a,l)=>a+l.sum,0),used};
@@ -933,8 +1011,8 @@ function monthStats(){
   const M={},g=k=>M[k]||(M[k]={k,sales:0,n:0,cost:0,waste:0,exp:0,items:{},cats:{},own:{sales:0,q:0},src:{},srcRows:{},supBuy:{}});
   g(monKey(Date.now()));
   S.sales.forEach(s=>{const m=g(monKey(s.ts));s.lines.forEach(l=>{if(l.from){const x=m.src[l.from]||(m.src[l.from]={sales:0,scost:0,q:0});x.sales+=l.sum;x.scost+=l.scost||0;x.q+=l.q}else if(item(l.id)?.src){m.own.sales+=l.sum;m.own.q+=l.q}
-    if(l.from||item(l.id)?.src){const r=m.srcRows[l.name]||(m.srcRows[l.name]={own:0,ownS:0,sup:0,supS:0});if(l.from){r.sup+=l.q;r.supS+=l.sum}else{r.own+=l.q;r.ownS+=l.sum}}});
-    m.sales+=s.total;m.n++;s.lines.forEach(l=>{m.cost+=l.cost||0;const nk=l.name+(l.from?` · 🚚 ${l.fromName||suppName(l.from)||""}`:""),it=m.items[nk]||(m.items[nk]={q:0,sum:0});it.q+=l.q;it.sum+=l.sum})});
+    if(l.from||item(l.id)?.src){const rk=l.base?l.base+" (m²)":l.name,qq=l.base?+(l.m2||0):l.q,r=m.srcRows[rk]||(m.srcRows[rk]={own:0,ownS:0,sup:0,supS:0});if(l.from){r.sup+=qq;r.supS+=l.sum}else{r.own+=qq;r.ownS+=l.sum}}});
+    m.sales+=s.total;m.n++;s.lines.forEach(l=>{m.cost+=l.cost||0;const nk=(l.base?l.base+" (m²)":l.name)+(l.from?` · 🚚 ${l.fromName||suppName(l.from)||""}`:""),it=m.items[nk]||(m.items[nk]={q:0,sum:0});it.q+=l.q;it.sum+=l.sum})});
   S.waste.forEach(w=>{g(monKey(w.ts)).waste+=w.cost||0});
   S.expenses.forEach(x=>{const m=g(monKey(x.ts));m.exp+=x.amount;m.cats[x.cat]=(m.cats[x.cat]||0)+x.amount;if(x.supp)m.supBuy[x.supp]=(m.supBuy[x.supp]||0)+x.amount});
   return Object.values(M).sort((a,b)=>b.k.localeCompare(a.k)).map(m=>({...m,net:m.sales-m.cost-m.waste-m.exp}));
@@ -1614,7 +1692,7 @@ function renderRep(){
   }
   if(rtab==="ay")h=renderMonthly();
   if(rtab==="mal"){
-    const agg={};S.sales.forEach(s=>s.lines.forEach(l=>{const k=l.id+(l.from?"@"+l.from:""),a=agg[k]||(agg[k]={name:l.name+(l.from?` · 🚚 ${l.fromName||suppName(l.from)||""}`:(item(l.id)?.src?" · 🖨 özümüz":"")),q:0,sum:0,cost:0});a.q+=l.q;a.sum+=l.sum;a.cost+=l.from?(l.scost||0):l.cost}));
+    const agg={};S.sales.forEach(s=>s.lines.forEach(l=>{const k=l.id+(l.from?"@"+l.from:""),a=agg[k]||(agg[k]={area:!!l.base,name:(l.base?l.base+" (m²)":l.name)+(l.from?` · 🚚 ${l.fromName||suppName(l.from)||""}`:(item(l.id)?.src?" · 🖨 özümüz":"")),q:0,sum:0,cost:0});a.q+=l.base?+(l.m2||0):l.q;a.sum+=l.sum;a.cost+=l.from?(l.scost||0):l.cost}));
     const rows=Object.values(agg).sort((a,b)=>b.sum-a.sum);
     h=`<p class="sub">Bütün dövr üzrə. Mənfəət = satış − (kağız + mürəkkəb mayası).</p><div class="tw"><table><tr><th>Məhsul</th><th class="n">Say</th><th class="n">Satış</th><th class="n">Maya</th><th class="n">Mənfəət</th><th class="n">%</th></tr>
     ${rows.map(r=>`<tr><td>${r.name}</td><td class="n">${r.q}</td><td class="n">${m2(r.sum)}</td><td class="n">${m2(r.cost)}</td><td class="n">${m2(r.sum-r.cost)}</td><td class="n">${r.sum?Math.round((r.sum-r.cost)/r.sum*100):0}%</td></tr>`).join("")||`<tr><td colspan="6" class="sub">Hələ satış yoxdur</td></tr>`}</table></div>`;
@@ -1686,6 +1764,7 @@ function renderAdmin(){
       </div>
       <div class="frow"><span class="sub">Satış ekranında belə görünəcək:</span><span class="svc preview" style="background:${esc(d.color)}"><span class="ic">${esc(d.icon)}</span><span class="nm">${esc(d.name||"Düymənin adı")}</span><span class="pr">${d.group?"📂 qrup":m2(+(d.tiers[0]?.[1])||0)+" ₼"}</span></span></div>
       ${d.group?`<p class="sub">Qrupun qiyməti və resepti olmur. Satış qrupun içindəki düymələrdən olur. Yadda saxlayandan sonra satış ekranında qrupu açın və ✏️ Düzəliş → “+ Yeni düymə” ilə içinə düymə əlavə edin.</p>`:`
+      <div class="frow"><label class="chk"><input type="checkbox" id="e_area" ${d.area?"checked":""}> 📐 Kvadrat metrlə satılır: qiymət hər sifarişdə yazılır (banner, vinil kimi)</label></div>
       ${S.suppliers.some(x=>x.items?.length)?`<div class="frow"><label class="f grow">Tədarükçüdən hazır da alınır? (satışda “Özümüz / Tədarükçü” soruşulur)<select id="e_src">
         <option value="">— yox, yalnız özümüz —</option>${S.suppliers.filter(x=>x.items?.length).map(x=>x.items.map(y=>`<option value="${x.id}|${y.id}" ${d.src?.supp===x.id&&d.src?.item===y.id?"selected":""}>🚚 ${esc(x.name)} → ${esc(y.name)} (${m2(y.price)} ₼)</option>`).join("")).join("")}</select></label></div>`:""}
       <h4>Resept: 1 ədəd satışda anbardan nə silinir</h4>
@@ -1716,7 +1795,8 @@ function syncDraft(){
   if($("e_type"))draft.group=$("e_type").value==="group"?1:0;
   if($("e_parent"))draft.parent=$("e_parent").value||undefined;
   if($("e_ink"))draft.ink=parseFloat($("e_ink").value)||0;
-  if($("e_src")){const v=$("e_src").value;if(v){const [supp,it]=v.split("|");draft.src={supp,item:it}}else delete draft.src}
+  if($("e_area")){if($("e_area").checked)draft.area=1;else delete draft.area}
+  if($("e_src")){const v=$("e_src").value;if(v){const [supp,it]=v.split("|");draft.src={supp,item:it};if(draft.area)draft.src.only=1}else delete draft.src}
   if($("r_m_0"))draft.recipe=draft.recipe.map((r,i)=>[$("r_m_"+i).value,parseFloat($("r_q_"+i).value)||0]);
   if($("t_p_0"))draft.tiers=draft.tiers.map((t,i)=>[i===0?1:(parseInt($("t_min_"+i).value)||1),parseFloat($("t_p_"+i).value)||0]);
 }
