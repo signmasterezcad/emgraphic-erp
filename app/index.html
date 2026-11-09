@@ -154,6 +154,10 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+.kassa{display:grid;gap:6px;max-width:420px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kline{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.kline.ksum{border-top:1px solid var(--line);padding-top:6px;font-size:16px}
+.kassa label.f.xs{width:100%}
 .badge{background:var(--warn);color:#111;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:800;margin-left:4px}
 .buylines{display:grid;gap:10px}
 .bline{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -322,10 +326,11 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.18.0";
+const APP_VERSION="0.19.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
-function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.waste=S.waste||[];
+function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
+  if(!S.expCats)S.expCats=["Maaş","İcarə","İşıq","Su / Qaz","İnternet","Çay-su","Təsərrüfat (salfet, təmizlik)","Reklam","Təmir","Sərfiyyat (mürəkkəb, toner)","Digər"];S.waste=S.waste||[];
   S.items.forEach(i=>{i.recipe=i.recipe||[];i.tiers=i.tiers?.length?i.tiers:[[1,0]];i.ink=i.ink||0});
   // v0.7.0: ÇAP bölməsi = 4 qrup düyməsi (içində düymələr açılır), köhnə 3 çap düyməsi silinir
   S.mig=S.mig||{};
@@ -631,6 +636,17 @@ function finishSale(){
   toast(short.length?`Satıldı. Diqqət: ${short.join(", ")} mənfiyə düşdü`:"Satış yazıldı ✓");
 }
 
+// ---------- Kassa hesabı (gün üzrə, yalnız nağd) ----------
+function cashDay(day){
+  const on=ts=>ts&&dayKey(ts)===day;
+  const sales=S.sales.filter(s=>on(s.ts)&&s.pay==="nağd").reduce((a,s)=>a+s.total,0);
+  const purch=S.purchases.filter(p=>on(p.ts)&&p.pay==="nağd").reduce((a,p)=>a+p.total,0)
+    +S.purchases.filter(p=>p.paid&&p.paidBy==="nağd"&&on(p.paidTs)).reduce((a,p)=>a+p.total,0);
+  const exp=S.expenses.filter(x=>on(x.ts)&&x.pay==="nağd").reduce((a,x)=>a+x.amount,0);
+  const c=S.cash[day]||{},open=c.open??null,counted=c.counted??null,should=(+open||0)+sales-purch-exp;
+  return{sales,purch,exp,open,counted,should,diff:counted==null?0:counted-should};
+}
+
 // ---------- Satış Tarixçəsi ----------
 let hDay="",hPay="all",hDel=null;
 const pad=n=>String(n).padStart(2,"0");
@@ -688,7 +704,10 @@ document.addEventListener("click",e=>{
 // Mal alışı xərc deyil, anbara qoyulan puldur: anbar artır, maya (orta qiymət) yenilənir.
 // Satış olanda maya reseptlə mənfəətdən çıxılır. Digər xərclər (maaş, icarə…) 2-ci mərhələdə.
 const UNITS=["ədəd","vərəq","paçka","metr","m²","qram","litr"];
-let etab="buy",pd=null,pDel=null;
+let etab="buy",pd=null,pDel=null,ed=null,eDel=null,eMon="";
+const newEd=()=>({day:dayKey(Date.now()),cat:S.expCats[0],amount:"",pay:"nağd",note:"",rec:false});
+const monKey=ts=>dayKey(ts).slice(0,7);
+const monName=k=>{const [y,m]=k.split("-");return ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"][+m-1]+" "+y};
 const blankLine=()=>({mat:"",newName:"",unit:"ədəd",packs:1,perPack:1,total:"",link:""});
 const newPd=()=>({day:dayKey(Date.now()),supplier:"",pay:"nağd",note:"",lines:[blankLine()]});
 const purchDebt=()=>S.purchases.filter(p=>p.pay==="nisyə"&&!p.paid).reduce((a,p)=>a+p.total,0);
@@ -748,7 +767,41 @@ function renderExp(){
           <td><span class="sub">Ödədim:</span> <button class="btn sm" data-x="paydebt" data-id="${p.id}" data-by="nağd">💵 Nağd</button> <button class="btn ghost sm" data-x="paydebt" data-id="${p.id}" data-by="kart">💳 Kart</button></td></tr>`).join("")}</table></div>`).join("")}`
       :`<p class="sub empty-grp">Borcunuz yoxdur ✓ Nisyə alış edəndə burada görünəcək.</p>`;
   }
-  if(etab==="other")h=`<p class="sub empty-grp">🧾 Digər xərclər (maaş, icarə, işıq, çay, salfet…) növbəti mərhələdə əlavə olunacaq.</p>`;
+  if(etab==="other"){
+    if(!ed)ed=newEd();if(!eMon)eMon=monKey(Date.now());
+    const cur=monKey(Date.now()),list=S.expenses.filter(x=>monKey(x.ts)===eMon).sort((a,b)=>b.ts-a.ts);
+    const byCat={};list.forEach(x=>byCat[x.cat]=(byCat[x.cat]||0)+x.amount);
+    const tot=list.reduce((a,x)=>a+x.amount,0),months=[...new Set([cur,...S.expenses.map(x=>monKey(x.ts))])].sort().reverse();
+    h=`<p class="sub">Pul qazandırmayan xərclər: maaş, icarə, işıq, çay, salfet… Bunlar anbara düşmür, ayın mənfəətindən çıxılır. Nağd ödənənlər gün sonu kassa hesabından da çıxılır.</p>
+    <div class="editor">
+      <div class="frow">
+        <label class="f">Tarix<input type="date" id="x_day" value="${ed.day}"></label>
+        <label class="f">Növ<select id="x_cat">${S.expCats.map(c=>`<option ${c===ed.cat?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
+        <label class="f xs">Məbləğ ₼<input id="x_amt" type="number" min="0" step="0.01" value="${ed.amount}" placeholder="0.00"></label>
+        <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
+        <label class="f grow">Qeyd (istəyə görə)<input id="x_note" value="${esc(ed.note)}" placeholder="məs. Leylanın noyabr maaşı"></label>
+      </div>
+      <div class="frow"><label class="chk"><input type="checkbox" id="x_rec" ${ed.rec?"checked":""}> Hər ay təkrarlanır (icarə, maaş kimi) — siyahıya əlavə et</label>
+        <span class="grow"></span><button class="btn" data-x="xsave">✓ Xərci yaz</button></div>
+    </div>
+    <h4>🔁 Aylıq təkrarlanan xərclər — ${monName(cur)}</h4>
+    ${S.recurring.length?`<div class="tw"><table class="hist">${S.recurring.map(r=>{const done=S.expenses.find(x=>x.rec===r.id&&monKey(x.ts)===cur);return `<tr>
+      <td><b>${esc(r.cat)}</b>${r.note?` <span class="sub">${esc(r.note)}</span>`:""}</td><td class="n"><b>${m2(r.amount)} ₼</b></td>
+      <td>${done?`<span class="pill ok">✓ ödənilib ${fmtDate(done.ts)} (${done.pay==="nağd"?"nağd":"kart"})</span>`
+        :`<span class="sub">Bu ay:</span> <button class="btn sm" data-x="rpay" data-id="${r.id}" data-by="nağd">💵 Nağd ödədim</button> <button class="btn ghost sm" data-x="rpay" data-id="${r.id}" data-by="kart">💳 Kart</button>`}</td>
+      <td><button class="btn ghost sm del" data-x="rdel" data-id="${r.id}">${eDel==="r"+r.id?"Əminsiniz?":"Siyahıdan çıxar"}</button></td></tr>`}).join("")}</table></div>`
+      :`<p class="sub">Hələ yoxdur. Xərci yazanda "Hər ay təkrarlanır" işarələsəniz, burada görünəcək və hər ay bir kliklə ödəyəcəksiniz.</p>`}
+    <div class="frow"><h4 style="margin:0">Xərclər:</h4><select id="x_mon" aria-label="ay">${months.map(k=>`<option value="${k}" ${k===eMon?"selected":""}>${monName(k)}</option>`).join("")}</select></div>
+    <div class="kpis"><div class="kpi"><span>${monName(eMon)} · cəmi</span><b style="color:var(--bad)">${m2(tot)} ₼</b></div>
+      ${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="kpi"><span>${esc(c)}</span><b>${m2(v)} ₼</b></div>`).join("")}</div>
+    ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Növ</th><th>Qeyd</th><th>Ödəniş</th><th class="n">Məbləğ</th><th></th></tr>
+      ${list.map(x=>`<tr class="${eDel===x.id?"confirm":""}"><td><b>${fmtDate(x.ts)}</b></td><td>${esc(x.cat)}${x.rec?' <span class="sub">🔁</span>':""}</td><td class="wrap">${esc(x.note||"")}</td>
+        <td>${x.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':'<span class="pill card">💳 Kart</span>'}</td><td class="n"><b>${m2(x.amount)} ₼</b></td>
+        <td>${eDel===x.id?`<button class="btn red sm" data-x="xdel" data-id="${x.id}">Bəli, sil</button> <button class="btn ghost sm" data-x="xdelx">Ləğv</button>`:`<button class="btn ghost sm del" data-x="xask" data-id="${x.id}">Sil</button>`}</td></tr>`).join("")}</table></div>`
+      :`<p class="sub empty-grp">${monName(eMon)} üçün xərc yoxdur.</p>`}
+    <h4>Xərc növləri</h4>
+    <div class="frow">${S.expCats.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<input id="x_newcat" placeholder="Yeni növ, məs. Nəqliyyat"><button class="btn ghost sm" data-x="xcat">+ Əlavə et</button></div>`;
+  }
   $("expBody").innerHTML=h;
 }
 const payPill=p=>p.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':p.pay==="kart"?'<span class="pill card">💳 Kart</span>'
@@ -792,6 +845,16 @@ async function savePurchase(){
   S.purchases.push(p);pd=newPd();save();renderHeader();renderDebtBadge();renderExp();
   toast(`Alış yazıldı ✓ ${m2(p.total)} ₼ · ${out.map(l=>l.name+" +"+l.qty).join(", ")}`);
 }
+function syncEd(){if(!ed||!$("x_day"))return;ed.day=$("x_day").value||ed.day;ed.cat=$("x_cat").value;ed.amount=$("x_amt").value;ed.note=$("x_note").value;ed.rec=$("x_rec").checked}
+function saveExpense(){
+  syncEd();const amt=+ed.amount;
+  if(!(amt>0)){toast("Məbləği yazın (0-dan böyük)");return}
+  const ts=new Date(ed.day+"T"+fmtTime(Date.now())).getTime()||Date.now();
+  let rec;
+  if(ed.rec){rec={id:newId("r"),cat:ed.cat,amount:amt,note:ed.note.trim(),pay:ed.pay};S.recurring.push(rec)}
+  S.expenses.push({id:newId("x"),ts,cat:ed.cat,amount:amt,pay:ed.pay,note:ed.note.trim(),rec:rec?.id||null});
+  eMon=monKey(ts);ed=newEd();save();renderExp();toast(`Xərc yazıldı ✓ ${m2(amt)} ₼`+(rec?" · aylıq siyahıya əlavə olundu":""));
+}
 async function deletePurchase(id){
   const i=S.purchases.findIndex(p=>p.id===id);if(i<0)return;
   if(NATIVE)await window.erpBackup(backupText(),"el").catch(()=>{});
@@ -807,7 +870,8 @@ document.addEventListener("click",e=>{
   const a=t.dataset.x;
   if(a==="matsel")return;
   if(etab==="buy")syncPd();
-  if(a==="tab"){etab=t.dataset.t;pDel=null}
+  if(etab==="other")syncEd();
+  if(a==="tab"){etab=t.dataset.t;pDel=null;eDel=null}
   else if(a==="pay")pd.pay=t.dataset.p;
   else if(a==="ladd")pd.lines.push(blankLine());
   else if(a==="ldel")pd.lines.splice(+t.dataset.li,1);
@@ -816,12 +880,21 @@ document.addEventListener("click",e=>{
   else if(a==="pask")pDel=t.dataset.id;
   else if(a==="pdelx")pDel=null;
   else if(a==="pdel"){deletePurchase(t.dataset.id);return}
+  else if(a==="xpay"){syncEd();ed.pay=t.dataset.p}
+  else if(a==="xsave"){saveExpense();return}
+  else if(a==="xask"){syncEd();eDel=t.dataset.id}
+  else if(a==="xdelx"){syncEd();eDel=null}
+  else if(a==="xdel"){const x=S.expenses.find(y=>y.id===t.dataset.id);S.expenses=S.expenses.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast(`Xərc silindi: ${x?.cat} ${m2(x?.amount||0)} ₼`)}
+  else if(a==="rpay"){const r=S.recurring.find(y=>y.id===t.dataset.id);if(r){S.expenses.push({id:newId("x"),ts:Date.now(),cat:r.cat,amount:r.amount,pay:t.dataset.by,note:r.note,rec:r.id});save();toast(`${r.cat}: ${m2(r.amount)} ₼ ödənildi ✓`)}}
+  else if(a==="rdel"){syncEd();const k="r"+t.dataset.id;if(eDel!==k)eDel=k;else{S.recurring=S.recurring.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast("Aylıq siyahıdan çıxarıldı (keçmiş ödənişlər qalır)")}}
+  else if(a==="xcat"){syncEd();const n=$("x_newcat").value.trim();if(n&&!S.expCats.includes(n)){S.expCats.splice(S.expCats.length-1,0,n);ed.cat=n;save();toast(`"${n}" növü əlavə olundu`)}}
   else if(a==="paydebt"){const p=S.purchases.find(x=>x.id===t.dataset.id);if(p){p.paid=true;p.paidTs=Date.now();p.paidBy=t.dataset.by;save();renderDebtBadge();toast(`Borc ödənildi ✓ ${m2(p.total)} ₼`)}}
   renderExp();
   if(a==="ladd")$("l_mat_"+(pd.lines.length-1))?.focus();
 });
 document.addEventListener("input",e=>{if(etab==="buy"&&$("expBody").contains(e.target)&&e.target.dataset.li!==undefined)updCalc()});
-document.addEventListener("change",e=>{if(etab==="buy"&&(e.target.dataset?.x==="matsel"||/^l_un_/.test(e.target.id))){syncPd();renderExp()}});
+document.addEventListener("change",e=>{if(etab==="buy"&&(e.target.dataset?.x==="matsel"||/^l_un_/.test(e.target.id))){syncPd();renderExp()}
+  if(e.target.id==="x_mon"){syncEd();eMon=e.target.value;eDel=null;renderExp()}});
 
 // ---------- Zay ----------
 function openZay(){
@@ -848,6 +921,7 @@ function renderRep(){
   let h="";
   if(rtab==="gun"){
     const tot=sales.reduce((a,s)=>a+s.total,0),cash=sales.filter(s=>s.pay==="nağd").reduce((a,s)=>a+s.total,0);
+    const K=cashDay(dayKey(Date.now()));
     const cost=sales.reduce((a,s)=>a+s.lines.reduce((b,l)=>b+l.cost,0),0),wc=waste.reduce((a,w)=>a+w.cost,0);
     const byW={};sales.forEach(s=>byW[s.worker]=(byW[s.worker]||0)+s.total);
     h=`<div class="kpis">
@@ -855,7 +929,19 @@ function renderRep(){
       <div class="kpi"><span>Nağd / Kart</span><b>${m2(cash)} / ${m2(tot-cash)}</b></div>
       <div class="kpi"><span>Material + mürəkkəb mayası</span><b>${m2(cost)} ₼</b></div>
       <div class="kpi"><span>Zay itkisi</span><b style="color:var(--bad)">${m2(wc)} ₼</b></div>
-      <div class="kpi"><span>Xalis qazanc</span><b style="color:var(--ok)">${m2(tot-cost-wc)} ₼</b></div></div>
+      <div class="kpi"><span>Satışdan qazanc</span><b style="color:var(--ok)">${m2(tot-cost-wc)} ₼</b></div></div>
+      <h4>💰 Kassa (yalnız nağd pul)</h4>
+      <div class="kassa">
+        <label class="f xs">Səhər kassada idi ₼<input id="k_open" type="number" step="0.01" value="${K.open??""}" placeholder="0.00"></label>
+        <div class="kline"><span>+ Nağd satış</span><b>${m2(K.sales)} ₼</b></div>
+        <div class="kline"><span>− Nağd mal alışı / borc ödənişi</span><b>${m2(K.purch)} ₼</b></div>
+        <div class="kline"><span>− Nağd digər xərclər</span><b>${m2(K.exp)} ₼</b></div>
+        <div class="kline ksum"><span>= Kassada olmalıdır</span><b>${m2(K.should)} ₼</b></div>
+        <label class="f xs">Saydım, kassada var ₼<input id="k_cnt" type="number" step="0.01" value="${K.counted??""}" placeholder="0.00"></label>
+        ${K.counted==null?`<p class="sub">Axşam kassadakı pulu sayıb yazın, proqram fərqi göstərəcək.</p>`
+          :Math.abs(K.diff)<0.005?`<span class="pill ok">✓ Kassa düzdür</span>`
+          :`<span class="pill ${K.diff<0?"bad":"warn"}">${K.diff<0?"Çatışmır":"Artıqdır"}: ${m2(Math.abs(K.diff))} ₼</span><p class="sub">Fərq varsa: qeyd olunmayan satış, xərc və ya qaytarılan qalıq ola bilər.</p>`}
+      </div>
       <h4>İşçilər üzrə</h4><div class="tw"><table><tr><th>İşçi</th><th class="n">Satış</th></tr>
       ${Object.entries(byW).map(([w,v])=>`<tr><td>${w}</td><td class="n">${m2(v)} ₼</td></tr>`).join("")||`<tr><td colspan="2" class="sub">Bu gün satış yoxdur</td></tr>`}</table></div>
       <h4>Son satışlar</h4><div class="tw"><table><tr><th>Saat</th><th>İşçi</th><th>Nə</th><th>Ödəniş</th><th class="n">Məbləğ</th></tr>
@@ -1206,6 +1292,11 @@ document.addEventListener("change",e=>{
   setTimeout(()=>{renderGrid();renderOrder()},0); // blur zamanı DOM-u dərhal dəyişməmək üçün
 });
 document.querySelectorAll(".ov").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
+document.addEventListener("change",e=>{
+  if(e.target.id!=="k_open"&&e.target.id!=="k_cnt")return;
+  const d=dayKey(Date.now()),c=S.cash[d]||(S.cash[d]={}),v=e.target.value===""?null:+e.target.value;
+  c[e.target.id==="k_open"?"open":"counted"]=v;save();renderRep();
+});
 $("hDate").addEventListener("change",e=>{hDay=e.target.value;hDel=null;renderHist()});
 $("q").addEventListener("input",e=>{q=e.target.value;qAdded=null;$("qClear").hidden=!q;renderGrid()});
 // Axtarışda Enter: birinci nəticəni əlavə et. Yazı dəyişməyibsə və sifariş varsa, növbəti Enter ödəniş sayılır.

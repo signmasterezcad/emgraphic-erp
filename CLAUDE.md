@@ -68,8 +68,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (köhnə qalıq × köhnə maya + alış məbləği) / (köhnə qalıq + alınan say). Alış silinəndə anbar və maya geri hesablanır.
   **📋 Alış tarixçəsi** (bu ay cəmləri), **💳 Borclar** (nisyə, təchizatçı üzrə, "Ödədim: nağd/kart"), başlıqda borc nişanı.
   Mal alışı mənfəətdən çıxılmır (anbardır); maya satışda reseptlə çıxılır.
-  Qalan mərhələlər: 2) 🧾 Digər xərclər (Maaş, İcarə, İşıq, Su/Qaz, İnternet, Çay-su, Təsərrüfat, Reklam, Təmir, Digər; aylıq təkrarlanan)
-  + gün sonu "kassada olmalı olan pul" (nağd satış − nağd alış/xərc); 3) aylıq mənfəət hesabatı (satış − satılanın mayası − zay − digər xərclər).
+  2-ci mərhələ (v0.19.0): **🧾 Digər xərclər** (`S.expenses`, növlər `S.expCats` — əlavə etmək olur), ay seçimi və növ üzrə cəmlər;
+  **🔁 aylıq təkrarlanan** (`S.recurring`; xərcdə `rec` = şablon id; "bu ay ödənilib" monKey ilə yoxlanır).
+  **💰 Kassa** (Hesabat → Bu gün, `cashDay()`): səhər kassada (`S.cash[gün].open`) + nağd satış − nağd alış − nağd ödənmiş borc − nağd xərc
+  = kassada olmalıdır; "saydım" (`counted`) ilə fərq. "Xalis qazanc" adı "Satışdan qazanc" oldu (xərclər aylıq hesabatda çıxılacaq).
+  Qalan: 3) aylıq mənfəət hesabatı (satış − satılanın mayası − zay − digər xərclər).
 - Hazırda bütün funksiyalar Admin üçündür; istifadəçi (işçi) üçün nə görünəcəyini sahibi sonra deyəcək.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur

@@ -398,6 +398,44 @@ const path = require('path');
   ok(true, 'Xərclər açıq ikən Enter satış etmir (yoxlanıb)');
   await p.click('#ovExp [data-close]');
 
+  // 🧾 Digər xərclər
+  await p.click('#btnExp'); await p.click('[data-x=tab][data-t=other]');
+  ok((await p.textContent('#x_cat')).includes('İcarə') && (await p.textContent('#x_cat')).includes('Çay-su'), 'hazır xərc növləri var');
+  await p.click('[data-x=xsave]');
+  ok((await p.textContent('#toast')).includes('Məbləği yazın'), 'məbləğsiz xərc yazılmır');
+  await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.fill('#x_note', 'çay, şəkər');
+  await p.click('[data-x=xsave]');
+  ok((await p.textContent('#expBody')).includes('çay, şəkər') && (await p.textContent('#expBody')).includes('4.50'), 'Çay-su 4.50 nağd yazıldı');
+  await p.selectOption('#x_cat', 'İcarə'); await p.fill('#x_amt', '300'); await p.click('[data-x=xpay][data-p=kart]'); await p.check('#x_rec');
+  await p.click('[data-x=xsave]');
+  ok((await p.textContent('#expBody')).includes('ödənilib') && await p.evaluate(() => S.recurring.length) === 1, 'İcarə 300 kartla + aylıq siyahıya düşdü, bu ay ödənilib görünür');
+  ok((await p.textContent('#expBody')).includes('304.50'), 'ayın xərc cəmi 304.50');
+  await p.fill('#x_newcat', 'Nəqliyyat'); await p.click('[data-x=xcat]');
+  ok((await p.textContent('#x_cat')).includes('Nəqliyyat') && (await p.inputValue('#x_cat')) === 'Nəqliyyat', 'yeni xərc növü əlavə olundu və seçildi');
+  // keçən ayın icarəsi kimi: təkrarlananı ödəmək
+  await p.evaluate(() => { S.expenses = S.expenses.filter(x => !x.rec); });
+  await p.click('[data-x=tab][data-t=buy]'); await p.click('[data-x=tab][data-t=other]');
+  await p.click('[data-x=rpay][data-by=nağd]');
+  ok(await p.evaluate(() => S.expenses.some(x => x.cat === 'İcarə' && x.pay === 'nağd' && x.amount === 300)) && (await p.textContent('#expBody')).includes('ödənilib'), '🔁 "Nağd ödədim": bu ayın icarəsi bir kliklə yazıldı');
+  const xid = await p.evaluate(() => S.expenses.find(x => x.cat === 'Çay-su').id);
+  await p.click(`[data-x=xask][data-id="${xid}"]`); await p.click('[data-x=xdel]');
+  ok(!(await p.evaluate(() => S.expenses.some(x => x.cat === 'Çay-su'))), 'xərc silindi (təsdiqlə)');
+  await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.click('[data-x=xsave]');
+  await p.click('#ovExp [data-close]');
+  // 💰 Kassa
+  await p.click('#btnRep'); await p.click('[data-rt=gun]');
+  const K = await p.evaluate(() => cashDay(dayKey(Date.now())));
+  const expSales = await p.evaluate(() => S.sales.filter(s => s.pay === 'nağd' && new Date(s.ts).toDateString() === new Date().toDateString()).reduce((a, s) => a + s.total, 0));
+  ok(Math.abs(K.sales - expSales) < 1e-9 && Math.abs(K.exp - 304.5) < 1e-9 && Math.abs(K.purch - 52) < 1e-9, `kassa: nağd satış ${expSales.toFixed(2)}, nağd alış 52.00 (silinmiş 10 ₼ alış sayılmır), nağd xərc 304.50 (çay 4.50 + icarə 300)`);
+  await p.fill('#k_open', '400'); await p.dispatchEvent('#k_open', 'change');
+  const should = 400 + expSales - 52 - 304.5;
+  ok((await p.textContent('.kassa')).includes(should.toFixed(2)), `kassada olmalıdır: 400 + ${expSales.toFixed(2)} − 52 − 304.50 = ${should.toFixed(2)}`);
+  await p.fill('#k_cnt', should.toFixed(2)); await p.dispatchEvent('#k_cnt', 'change');
+  ok((await p.textContent('.kassa')).includes('Kassa düzdür'), 'saydığım = olmalı: "Kassa düzdür"');
+  await p.fill('#k_cnt', (should - 5).toFixed(2)); await p.dispatchEvent('#k_cnt', 'change');
+  ok((await p.textContent('.kassa')).includes('Çatışmır: 5.00'), '5 ₼ az: "Çatışmır: 5.00 ₼"');
+  await p.click('#ovRep [data-close]');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
 })();
