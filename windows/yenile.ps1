@@ -84,7 +84,11 @@ if ($newVer -and $newVer -eq $oldVer) {
       $sh = New-Object -ComObject WScript.Shell
       foreach ($d in @($root, [Environment]::GetFolderPath('Desktop'))) {
         $lnk = Join-Path $d "KASSA.lnk"
-        if ($d -eq $root -or (Test-Path $lnk)) { $l = $sh.CreateShortcut($lnk); $l.TargetPath = $exe; $l.WorkingDirectory = $root; $l.Save() }
+        if ($d -eq $root -or (Test-Path $lnk)) {
+          $l = $sh.CreateShortcut($lnk); $l.TargetPath = $exe; $l.WorkingDirectory = $root
+          $ico = Join-Path $root "app\kassa.ico"; if (Test-Path $ico) { $l.IconLocation = "$ico,0" }
+          $l.Save()
+        }
       }
     } catch { }
   }

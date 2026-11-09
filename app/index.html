@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KASSA</title>
+<link rel="icon" href="kassa.svg" type="image/svg+xml">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 @font-face{font-family:"Noto Sans";font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/notosans-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -155,6 +156,12 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+header h1 .logo{width:28px;height:28px;vertical-align:-7px;margin-right:8px;border-radius:7px}
+.mhbtns{display:flex;gap:8px}
+.mh{user-select:none}
+.ov.maxed{padding:0}
+.modal.max{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;border:0}
+.modal.sm.max{width:100%}
 .chg{display:inline-block;font-size:12px;font-weight:700;margin-left:6px}
 .chg.up{color:var(--ok)}.chg.dn{color:var(--bad)}
 .kpi.hero{border:1px solid var(--line)}
@@ -214,7 +221,7 @@ h4{margin:6px 0 0;font-size:14px}
 <body>
 
 <header class="wrap">
-  <h1>🖨️ KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span></h1>
+  <h1><img src="kassa.svg" class="logo" alt="" width="28" height="28">KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span></h1>
   <select class="worker" id="worker" aria-label="İşçi"></select>
   <button class="hbtn" id="btnZay">🗑️ Zay</button>
   <button class="hbtn" id="btnRep">📊 Hesabat / Anbar</button>
@@ -345,7 +352,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.20.0";
+const APP_VERSION="0.21.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1376,6 +1383,22 @@ document.addEventListener("change",e=>{
   if(e.target.id!=="k_open"&&e.target.id!=="k_cnt")return;
   const d=dayKey(Date.now()),c=S.cash[d]||(S.cash[d]={}),v=e.target.value===""?null:+e.target.value;
   c[e.target.id==="k_open"?"open":"counted"]=v;save();renderRep();
+});
+// ---------- Pəncərəni böyüt / kiçilt (Windows kimi) ----------
+// Hər pəncərənin başlığında düymə; başlığa iki dəfə basmaq da işləyir. Seçim yadda qalır (yalnız bu kompüterdə).
+const MAXKEY="kassa.maxed";
+let maxed={};try{maxed=JSON.parse(localStorage.getItem(MAXKEY)||"{}")}catch(e){}
+function applyMax(ov){const on=!!maxed[ov.id],m=ov.querySelector(".modal"),b=ov.querySelector("[data-max]");
+  ov.classList.toggle("maxed",on);m.classList.toggle("max",on);
+  if(b){b.textContent=on?"🗗 Kiçilt":"⛶ Böyüt";b.title=on?"Əvvəlki ölçüyə qaytar":"Bütün ekrana böyüt";b.setAttribute("aria-pressed",on)}}
+function toggleMax(ov){maxed[ov.id]=!maxed[ov.id];try{localStorage.setItem(MAXKEY,JSON.stringify(maxed))}catch(e){}applyMax(ov)}
+document.querySelectorAll(".ov").forEach(ov=>{
+  const mh=ov.querySelector(".mh"),close=mh?.querySelector("[data-close]");if(!mh||!close)return;
+  const wrap=document.createElement("div");wrap.className="mhbtns";close.replaceWith(wrap);
+  const b=document.createElement("button");b.className="hbtn";b.dataset.max="";wrap.append(b,close);
+  b.addEventListener("click",e=>{e.stopPropagation();toggleMax(ov)});
+  mh.addEventListener("dblclick",e=>{if(!e.target.closest("button,input,select"))toggleMax(ov)});
+  applyMax(ov);
 });
 $("hDate").addEventListener("change",e=>{hDay=e.target.value;hDel=null;renderHist()});
 $("q").addEventListener("input",e=>{q=e.target.value;qAdded=null;$("qClear").hidden=!q;renderGrid()});

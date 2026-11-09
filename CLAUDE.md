@@ -75,6 +75,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   3-cü mərhələ (v0.20.0): **📅 Aylıq** tab (Hesabat / Anbar; `monthStats()`, `renderMonthly()`): xalis = satış − satış sətirlərinin `cost`-u
   − zay `cost` − digər xərclər (mal alışı çıxılmır). Ay seçimi, əvvəlki ayla ▲/▼ % (xərclərdə azalma yaşıl), son 12 ayın SVG sütun
   qrafiki (Satış `--series-1`, Xalis `--series-2`, validator hər iki mövzuda keçib), 24 aylıq cədvəl, ayın xərc növləri və ən çox satılanlar.
+- **Pəncərəni böyüt / kiçilt** (v0.21.0): hər `.ov` pəncərənin başlığında "⛶ Böyüt / 🗗 Kiçilt" (və başlığa iki dəfə basmaq);
+  seçim `localStorage["kassa.maxed"]`-də (pəncərə id-sinə görə).
+- **Loqo** (v0.21.0): `launcher/icon/kassa.svg` (mavi kvadrat, qəbz, K) → PNG-lər → `app/kassa.ico` (öz Python skriptimizlə, PNG daxilli ICO)
+  və `app/kassa.svg` (başlıq + favicon). Başladıcı pəncərə/tapşırıq zolağı ikonunu `LoadImageW`+`WM_SETICON` ilə qoyur;
+  qısayollar `IconLocation = app\kassa.ico` (işarə `qisayol-kassa-ikon`). **exe faylının öz ikonu hələ yoxdur** — resurs
+  (`.syso`) üçün go-winres işlətmək bu mühitdə icazəsiz oldu; istifadəçi icazə versə, `go-winres simply --icon` ilə edilər.
 - Hazırda bütün funksiyalar Admin üçündür; istifadəçi (işçi) üçün nə görünəcəyini sahibi sonra deyəcək.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur

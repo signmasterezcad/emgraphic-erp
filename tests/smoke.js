@@ -457,6 +457,24 @@ const path = require('path');
   ok((await p.locator('tr.selrow').textContent()).includes(await p.evaluate(k => monName(k), cur.k)), 'ay seçimi: cədvəldə sətir işarələnir');
   await p.click('#ovRep [data-close]');
 
+  // Pəncərəni böyüt / kiçilt və loqo
+  ok(await p.evaluate(() => { const i = document.querySelector('header .logo'); return i && i.complete && i.naturalWidth > 0; }), 'başlıqda loqo görünür');
+  await p.click('#btnRep');
+  const box = async () => p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; });
+  const small = await box();
+  await p.click('#ovRep [data-max]');
+  const big = await box();
+  ok(big[0] === 1366 && big[1] === 768 && (await p.textContent('#ovRep [data-max]')).includes('Kiçilt'), `⛶ Böyüt: pəncərə bütün ekran oldu (${small} → ${big})`);
+  await p.click('#ovRep [data-close]'); await p.click('#btnRep');
+  ok((await box())[0] === 1366, 'bağlayıb açanda böyük qalır (yadda saxlanır)');
+  await p.dblclick('#ovRep .mh h3');
+  ok((await box())[0] === small[0], 'başlığa iki dəfə basmaq: əvvəlki ölçüyə qayıtdı');
+  await p.click('#ovRep [data-close]');
+  await p.click('#btnZay'); await p.click('#ovZay [data-max]');
+  ok((await p.evaluate(() => document.querySelector('#ovZay .modal').getBoundingClientRect().width)) === 1366, 'kiçik Zay pəncərəsi də böyüyür');
+  await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
+  ok(await p.locator('.ov [data-max]').count() === 4, 'bütün 4 pəncərədə böyüt düyməsi var');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
 })();

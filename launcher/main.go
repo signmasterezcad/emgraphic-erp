@@ -33,6 +33,8 @@ var (
 	procFindWindow   = user32.NewProc("FindWindowW")
 	procShowWindow   = user32.NewProc("ShowWindow")
 	procSetForegrnd  = user32.NewProc("SetForegroundWindow")
+	procLoadImage    = user32.NewProc("LoadImageW")
+	procSendMessage  = user32.NewProc("SendMessageW")
 	procCreateMutex  = kernel32.NewProc("CreateMutexW")
 	procGetLastError = kernel32.NewProc("GetLastError")
 )
@@ -42,7 +44,19 @@ const (
 	swRestore          = 9
 	errorAlreadyExists = 183
 	mbIconError        = 0x10
+	imageIcon          = 1
+	lrLoadFromFile     = 0x10
+	wmSetIcon          = 0x80
 )
+
+// setWindowIcon pəncərəyə və tapşırıq zolağına app\kassa.ico loqosunu qoyur.
+func setWindowIcon(hwnd uintptr, ico string) {
+	for _, v := range []struct{ kind, size uintptr }{{0, 16}, {1, 32}} { // ICON_SMALL, ICON_BIG
+		if h, _, _ := procLoadImage.Call(0, uintptr(unsafe.Pointer(u16(ico))), imageIcon, v.size, v.size, lrLoadFromFile); h != 0 {
+			procSendMessage.Call(hwnd, wmSetIcon, v.kind, h)
+		}
+	}
+}
 
 func u16(s string) *uint16 { p, _ := syscall.UTF16PtrFromString(s); return p }
 
@@ -101,6 +115,7 @@ func main() {
 	}
 	defer w.Destroy()
 	procShowWindow.Call(uintptr(w.Window()), swMaximize)
+	setWindowIcon(uintptr(w.Window()), filepath.Join(filepath.Dir(exe), "app", "kassa.ico"))
 
 	// Məlumat faylı və ehtiyat qovluğu (proqram qovluğunda "ehtiyat")
 	home, _ := os.UserHomeDir()
@@ -122,7 +137,7 @@ func main() {
 	w.Bind("erpOpenFolder", func() error { return exec.Command("explorer.exe", st.backupDir).Start() })
 
 	u := url.URL{Scheme: "file", Path: "/" + filepath.ToSlash(index)}
-	go ensureShortcuts(exe, root, fileExists(filepath.Join(cfg, oldDirName, "qisayol-yaradildi")))
+	go ensureShortcuts(exe, root, fileExists(filepath.Join(cfg, oldDirName, "qisayol-yaradildi")) || fileExists(filepath.Join(root, "qisayol-kassa")))
 	w.Navigate(u.String())
 	w.Run()
 }
@@ -133,7 +148,7 @@ func fileExists(p string) bool { _, err := os.Stat(p); return err == nil }
 //   - proqram qovluğunda: həmişə;
 //   - iş masasında: əvvəllər heç yaradılmayıbsa, və ya orada KASSA qısayolu varsa (istifadəçi silibsə, yenidən yaradılmır).
 func ensureShortcuts(exe, dataRoot string, desktopDoneBefore bool) {
-	marker := filepath.Join(dataRoot, "qisayol-kassa")
+	marker := filepath.Join(dataRoot, "qisayol-kassa-ikon") // v0.21: qısayollara loqo
 	if fileExists(marker) {
 		return
 	}
@@ -147,6 +162,8 @@ foreach ($d in @($env:KASSA_DIR, $desk)) {
   $l.TargetPath = $env:KASSA_EXE
   $l.WorkingDirectory = $env:KASSA_DIR
   $l.Description = 'KASSA'
+  $ico = Join-Path $env:KASSA_DIR 'app\kassa.ico'
+  if (Test-Path $ico) { $l.IconLocation = "$ico,0" }
   $l.Save()
 }`
 	before := "0"
