@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EMGRAPHIC ERP</title>
+<title>KASSA</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 @font-face{font-family:"Noto Sans";font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/notosans-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -182,7 +182,7 @@ h4{margin:6px 0 0;font-size:14px}
 <body>
 
 <header class="wrap">
-  <h1>🖨️ EMGRAPHIC ERP <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span></h1>
+  <h1>🖨️ KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span></h1>
   <select class="worker" id="worker" aria-label="İşçi"></select>
   <button class="hbtn" id="btnZay">🗑️ Zay</button>
   <button class="hbtn" id="btnRep">📊 Hesabat / Anbar</button>
@@ -302,7 +302,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.15.0";
+const APP_VERSION="0.16.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -896,6 +896,7 @@ async function fillBackupList(){
     <td><button class="btn ghost sm" data-act="brest" data-n="${esc(b.name)}">Bu nüsxəni bərpa et</button></td></tr>`).join("")}</table>`
     :`<p class="sub">Hələ ehtiyat nüsxə yoxdur. "İndi ehtiyat nüsxə yarat" basın.</p>`;
 }
+// "EMGRAPHIC ERP" daxili addır: ehtiyat fayllarında və YENILE.bat-ın yoxlamasında işlənir — DƏYİŞMƏ (görünən ad: KASSA)
 function backupText(){return JSON.stringify({app:"EMGRAPHIC ERP",version:APP_VERSION,exported:new Date().toISOString(),data:S},null,1)}
 
 document.addEventListener("click",e=>{
@@ -999,7 +1000,7 @@ document.addEventListener("change",e=>{
   if(cid){const c=S.cats.find(x=>x.id===cid),n=e.target.value.trim();if(c&&n){c.name=n;save();renderTabs();toast("Bölmənin adı dəyişdi")}return}
   if(e.target.id!=="bfile")return;
   const f=e.target.files[0];if(!f)return;
-  f.text().then(txt=>{const d=parseData(txt);if(!d||!d.sales)throw new Error("bu EMGRAPHIC ERP ehtiyat faylı deyil");
+  f.text().then(txt=>{const d=parseData(txt);if(!d||!d.sales)throw new Error("bu KASSA proqramının ehtiyat faylı deyil");
     pendingImport=d;renderRep();toast(`Fayl oxundu: ${d.sales.length} satış. Təsdiq üçün qırmızı düyməni basın`)}).catch(err=>toast("Fayl oxunmadı: "+err.message));
 });
 

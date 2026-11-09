@@ -1,4 +1,4 @@
-# EMGRAPHIC ERP
+# KASSA (daxili adı: EMGRAPHIC ERP)
 
 Foto, çap və xırda promo işləri üçün satış və anbar proqramı (Windows).
 

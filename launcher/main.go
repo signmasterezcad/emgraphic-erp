@@ -1,6 +1,6 @@
 //go:build windows
 
-// EMGRAPHIC ERP başladıcısı.
+// KASSA (daxili adı EMGRAPHIC ERP) başladıcısı.
 // Windows-un daxili WebView2 (Edge) mühərriki ilə app\index.html faylını açır.
 // Electron-dan fərqli olaraq öz brauzerini daşımır, ona görə kiçik və sürətlidir.
 package main
@@ -17,7 +17,8 @@ import (
 	webview2 "github.com/jchv/go-webview2"
 )
 
-const title = "EMGRAPHIC ERP"
+// Görünən ad. Daxili adlar ("EMGRAPHIC ERP" qovluğu, exe faylı, mutex) dəyişmir.
+const title = "KASSA"
 
 var (
 	user32           = syscall.NewLazyDLL("user32.dll")

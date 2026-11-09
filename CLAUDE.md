@@ -1,5 +1,9 @@
 # EMGRAPHIC ERP — layihə qeydləri
 
+**Görünən ad: KASSA** (v0.16.0: `<title>`, başlıq, pəncərə adı). Daxili ad **EMGRAPHIC ERP** qalır və DƏYİŞMƏMƏLİDİR:
+`%APPDATA%\EMGRAPHIC ERP\` qovluğu, `EMGRAPHIC ERP.exe`, GitHub `emgraphic-erp`, ehtiyat faylında `app:"EMGRAPHIC ERP"`,
+və `yenile.ps1` yüklənən `index.html`-də "EMGRAPHIC ERP" sözünü axtarır (köhnə skriptlər də) — bu söz faylda qalmalıdır.
+
 Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sahibi proqramçı deyil:
 **həmişə Azərbaycan dilində, sadə və addım-addım yaz**, texniki termini izah et.
 
