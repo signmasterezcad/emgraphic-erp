@@ -543,7 +543,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.30.0";
+const APP_VERSION="0.31.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1054,18 +1054,21 @@ async function cloudFirstLoad(){
 }
 function showCloudMsg(t,bad){$("cloudLoginBody").innerHTML=`<p style="${bad?"color:var(--bad)":""}">${esc(t)}</p>`;$("ovCloud").hidden=false}
 // Telefon: link (#bulud=…) ilə gəlib, parolu soruş
-function cloudLinkCfg(){const m=location.hash.match(/bulud=([A-Za-z0-9_-]+)/);if(!m)return null;
+function cloudLinkCfg(txt){const m=String(txt??location.hash).match(/bulud=([A-Za-z0-9_-]+)/);if(!m)return null;
   try{const j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));return j.a&&j.p&&j.e?{apiKey:j.a,projectId:j.p,email:j.e,urls:j.u}:null}catch(e){return null}}
 function askCloudLogin(pre){
   return new Promise(res=>{
     const f=pre||{};
-    $("cloudLoginBody").innerHTML=`<p class="sub">${pre?"Parolunuzu yazın (Firebase-də yaratdığınız istifadəçinin parolu). Bunu bu telefonda yalnız bir dəfə edirsiniz.":"Bu səhifəni kompüterdəki <b>⚙️ Ayarlar → ☁️ Bulud → Telefon üçün link</b> ilə açın. Və ya məlumatları əl ilə yazın."}</p>
+    $("cloudLoginBody").innerHTML=`<p class="sub">${pre?"Parolunuzu yazın (Firebase-də yaratdığınız istifadəçinin parolu). Bunu bu telefonda yalnız bir dəfə edirsiniz.":"Kompüterdə <b>⚙️ Ayarlar → ☁️ Bulud → Linki kopyala</b> basın, linki telefona göndərin (məs. WhatsApp-da özünüzə), sonra buraya yapışdırın."}</p>
       <div class="cform">
-        ${pre?"":`<label class="f">API Key<input id="clk" autocomplete="off"></label><label class="f">Project ID<input id="clp" autocomplete="off"></label>`}
+        ${pre?"":`<label class="f">Kompüterdəki link<textarea id="cllink" rows="3" placeholder="https://signmasterezcad.github.io/kassa/app/#bulud=…" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);width:100%;font:inherit;font-size:13px"></textarea></label>
+          <details><summary class="sub">və ya əl ilə yazın</summary><label class="f">API Key<input id="clk" autocomplete="off"></label><label class="f">Project ID<input id="clp" autocomplete="off"></label></details>`}
         <label class="f">E-poçt<input id="cle" type="email" value="${esc(f.email||"")}" autocomplete="username"></label>
         <label class="f">Parol<input id="clw" type="password" autocomplete="current-password"></label>
         <button class="btn" id="clgo">Daxil ol</button><p class="pinerr" id="clerr"></p></div>`;
-    $("ovCloud").hidden=false;setTimeout(()=>$(pre?"clw":"clk")?.focus(),0);
+    $("ovCloud").hidden=false;setTimeout(()=>$(pre?"clw":"cllink")?.focus(),0);
+    if(!pre)$("cllink").addEventListener("input",()=>{const c=cloudLinkCfg($("cllink").value);if(!c)return;
+      $("clk").value=c.apiKey;$("clp").value=c.projectId;if(!$("cle").value)$("cle").value=c.email;f.urls=c.urls;$("clerr").textContent="";$("clw").focus()});
     const go=async()=>{const k=pre?f.apiKey:$("clk").value.trim(),p=pre?f.projectId:$("clp").value.trim(),em=$("cle").value.trim(),pw=$("clw").value;
       if(!k||!p||!em||!pw){$("clerr").textContent="Bütün xanaları doldurun";return}
       $("clgo").disabled=true;$("clerr").textContent="Yoxlanır…";
@@ -2652,7 +2655,7 @@ $("keyIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault()
     await cloudInit();
     const lc=cloudLinkCfg();
     if(lc&&(!CL.cfg||CL.cfg.email!==lc.email||CL.cfg.projectId!==lc.projectId))await askCloudLogin(lc);
-    else if(!CL.cfg&&/github\.io$/.test(location.hostname))await askCloudLogin(null);
+    else if(!CL.cfg&&(/github\.io$/.test(location.hostname)||/KassaAndroid/.test(navigator.userAgent)))await askCloudLogin(null);
     PHONE_CLOUD=!!CL.cfg;
     if(PHONE_CLOUD&&"serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
   }else if(NATIVE&&!REMOTE)await cloudInit();

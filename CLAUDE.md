@@ -158,6 +158,14 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   qoşul / indi sinxronlaşdır / ayır, telefon linki, Rules mətni (`request.auth.token.email == ...`). Başlıqda `#btnCloud` (✓ / n gözləyir / internet yoxdur).
   Sınaq: `node tests/cloud.js` (yaddaşda sınaq Firebase-i). GitHub Pages-i API ilə açmaq bu mühitdə qadağandır — istifadəçi Settings → Pages-dən açmalıdır.
 
+- **📱 Android proqramı (APK)** (v0.31.0, `android/`): `MainActivity` — WebView, `https://signmasterezcad.github.io/kassa/app/` açır
+  (məntiq səhifədədir → yeniliklər APK-sız gəlir), brauzer identifikatoruna ` KassaAndroid/1` əlavə edir; başqa saytlar brauzerdə; "geri" düyməsi.
+  İlk açılışda link yoxdur → `askCloudLogin(null)`: kompüterdəki linki **yapışdırmaq** xanası (`#cllink`, `cloudLinkCfg(txt)`), sonra parol.
+  Yığma: `android/build.sh <kod> <ad> <keystore.p12> <parol>` — Google SDK-sız: aapt2 + framework apktool-lib jar-dan, dx (jakewharton
+  dalvik-dx), stub `com.google.android:android:4.1.1.4`, imza apksig 2.3.0 (yalnız **v2**, Java 21-də v1 işləmir; minSdk 24, targetSdk 34).
+  Hazır fayl: `android/KASSA.apk` (Pages-dən: https://signmasterezcad.github.io/kassa/android/KASSA.apk). **İmza açarı depoda deyil**
+  (sessiyanın müvəqqəti qovluğunda idi) — yeni APK başqa açarla imzalansa, telefonda köhnəni silib yenisini qurmaq lazımdır (məlumat buluddan gəlir).
+
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
   İstifadəçi "deyəndə" anbarı yenidən dolduracağıq və materialları düymələrə qoşacağıq.
@@ -182,7 +190,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 2. Yeni fayl əlavə edirsənsə, `app/files.txt`-ə yaz.
 3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o ../KASSA.exe .`
 4. Testlər: `node tests/smoke.js` (brauzer), `node tests/native.js` (exe simulyasiyası), `node tests/users.js` (kassirlər + əməliyyat nüsxəsi)
-   , `node tests/sync.js` (Wi-Fi telefon serveri; Go lazımdır) və `node tests/cloud.js` (bulud) — hamısı OK olmalıdır.
+   , `node tests/sync.js` (Wi-Fi telefon serveri; Go lazımdır) və `node tests/cloud.js` (bulud + APK ilk açılışı) — hamısı OK olmalıdır.
 5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/kassa/main/app/index.html` yeni versiyanı verir (GitHub 5 dəqiqəyə qədər köhnəni göstərə bilər; yeni versiya görünənə qədər gözlə, sonra istifadəçiyə "hazırdır" de).
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)
 
@@ -190,7 +198,8 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 - `YENILE.bat` Windows-da işləyir (istifadəçi v0.8.4-ə yenilənib, ekran şəklində görünür).
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
 - Təklif olunub, hələ edilməyib: setup (quraşdırma) faylı. Google Disk-ə nüsxə — istifadəçi istəmədi.
-- Bulud real Firebase ilə hələ yoxlanmayıb (istifadəçi layihəni yaradandan sonra). GitHub Pages açılmalıdır. Depo Private olsa, Pages pulsuz işləmir.
+- Bulud real Firebase ilə işləyir (layihə `kassa-7bad5`, istifadəçi təsdiqlədi: kompüter + telefon sinxron). GitHub Pages açıqdır. Depo Private olsa, Pages pulsuz işləmir.
+- APK real telefonda hələ yoxlanmayıb (emulyator yoxdur).
 - Telefon Windows-da real Wi-Fi ilə hələ yoxlanmayıb (Firewall icazəsi, IP ünvanı).
 
 ## Brauzer versiyası (nümayiş üçün)

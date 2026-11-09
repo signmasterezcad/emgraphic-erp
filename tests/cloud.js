@@ -165,6 +165,18 @@ const srv = http.createServer((req, res) => {
     await PC.evaluate(() => cloudTick()); await sleep(1500); await Ph.evaluate(() => cloudTick()); await sleep(1500);
     ok(!(await Ph.evaluate(() => S.suppliers.some(x => x.id === 'spx'))), 'kompüterdə silinən telefonda da silindi');
     ok(JSON.parse(pcFiles.data).sales.length === 5, 'kompüterin faylında da 5 satış');
+
+    // ---------- 6) Android proqramı (APK): ilk açılışda linki yapışdırmaq ----------
+    const ctxA = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile KassaAndroid/1' });
+    const An = await ctxA.newPage(); An.on('pageerror', e => errs.push('APK: ' + e.message));
+    await An.goto(base + '/app/');
+    await An.waitForSelector('#ovCloud:not([hidden]) #cllink');
+    ok(true, 'APK ilk açılış: link yapışdırmaq üçün xana');
+    await An.fill('#cllink', 'Link: https://signmasterezcad.github.io/kassa/app/#bulud=' + enc);
+    ok((await An.inputValue('#clk')) === 'KEY1' && (await An.inputValue('#cle')) === USER.email, 'yapışdırılan linkdən API Key və e-poçt özü dolur');
+    await An.fill('#clw', USER.password); await An.click('#clgo');
+    await An.waitForFunction(() => typeof S === 'object' && S && S.sales && S.sales.length === 5, null, { timeout: 20000 });
+    ok(true, 'APK: buluddan bütün məlumat gəldi (5 satış)');
   } finally {
     ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
     await b.close(); srv.close();
