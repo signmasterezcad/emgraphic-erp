@@ -270,7 +270,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.12.0";
+const APP_VERSION="0.12.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -427,6 +427,12 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="fav").map(([
   if(!S.mig.qismenYox){S.mig.qismenYox=1;
     S.items.forEach(i=>{if(/^qismən\s+/i.test(i.name))i.name=i.name.replace(/^qismən\s+/i,"")});
   }
+  // v0.12.1: anbar sıfırlanır — bütün materiallar silinir, reseptlər boşalır (istifadəçinin istəyi).
+  // Satışlara və zay tarixçəsinə toxunulmur. Yeni quraşdırmada (nümunə məlumat) tətbiq olunmur.
+  // Həmişə sonda qalmalıdır: yuxarıdakı köçürmələrin qoşduğu reseptləri də təmizləyir.
+  if(!S.mig.anbarSifir){S.mig.anbarSifir=1;
+    if(!firstRun){S.materials=[];S.items.forEach(i=>{i.recipe=[]})}
+  }
 }
 function parseData(txt){try{const j=JSON.parse(txt);const d=j&&j.data&&j.app?j.data:j;return d&&d.items&&d.materials?d:null}catch(e){return null}}
 async function loadData(){
@@ -446,8 +452,11 @@ async function loadData(){
     try{S=parseData(localStorage.getItem(KEY)||"")}catch(e){}
   }
   if(!S){S=structuredClone(SEED);firstRun=true}
+  if(NATIVE&&!firstRun&&!S.mig?.anbarSifir&&S.materials?.length)
+    try{await window.erpBackup(backupText(),"el")}catch(e){}   // anbar silinməzdən əvvəl
+  const migBefore=JSON.stringify(S.mig||{});
   upgrade();
-  if(migrated)save();
+  if(migrated||JSON.stringify(S.mig)!==migBefore)save();
 }
 let saving=Promise.resolve(), saveFailed=false;
 const save=()=>{
@@ -475,7 +484,7 @@ const m2=n=>(Math.round(n*100)/100).toFixed(2);
 const mat=id=>S.materials.find(m=>m.id===id);
 const item=id=>S.items.find(i=>i.id===id);
 const unitPrice=(it,q)=>{let p=it.tiers[0][1];for(const[t,v] of it.tiers) if(q>=t)p=v;return p};
-const unitCost=it=>it.recipe.reduce((s,[m,q])=>s+mat(m).cost*q,0)+(it.ink||0);
+const unitCost=it=>it.recipe.reduce((s,[m,q])=>s+(mat(m)?.cost||0)*q,0)+(it.ink||0);
 const tierText=it=>it.tiers.length>1?it.tiers.slice(1).map(([t,v])=>`${t}+: ${m2(v)}`).join(" · "):"";
 const isToday=ts=>new Date(ts).toDateString()===new Date().toDateString();
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
@@ -548,7 +557,7 @@ function addItem(id,d=1){
 function finishSale(){
   const lines=order.map(o=>{const it=item(o.id),p=unitPrice(it,o.q);return{id:o.id,name:it.name,q:o.q,price:p,sum:p*o.q,cost:unitCost(it)*o.q}});
   const short=[];
-  order.forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);M.stock-=q*o.q;if(M.stock<0)short.push(M.name)}));
+  order.forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;if(M.stock<0)short.push(M.name)}));
   S.sales.push({ts:Date.now(),worker:$("worker").value,pay,lines,total:lines.reduce((a,l)=>a+l.sum,0)});
   save();order=[];renderAll();autoBackup();
   toast(short.length?`Satıldı. Diqqət: ${short.join(", ")} mənfiyə düşdü`:"Satış yazıldı ✓");
@@ -556,12 +565,13 @@ function finishSale(){
 
 // ---------- Zay ----------
 function openZay(){
-  $("zMat").innerHTML=S.materials.map(m=>`<option value="${m.id}">${m.name} (qalıq ${m.stock})</option>`).join("");
+  $("zMat").innerHTML=S.materials.map(m=>`<option value="${m.id}">${m.name} (qalıq ${m.stock})</option>`).join("")||`<option value="">— anbar boşdur —</option>`;
   $("zReasons").innerHTML=REASONS.map(r=>`<button data-r="${r}" class="${r===zReason?"on":""}">${r}</button>`).join("");
   $("zQty").value=1;$("zNote").value="";$("ovZay").hidden=false;
 }
 function saveZay(){
   const M=mat($("zMat").value),q=Math.max(1,parseInt($("zQty").value)||1);
+  if(!M){toast("Anbarda material yoxdur. Əvvəlcə ⚙️ Ayarlar → Materiallar bölməsində material əlavə edin");return}
   M.stock-=q;
   S.waste.push({ts:Date.now(),mat:M.id,q,reason:zReason,worker:$("worker").value,note:$("zNote").value,cost:M.cost*q});
   save();$("ovZay").hidden=true;renderHeader();toast(`${q} vərəq ${M.name} zay yazıldı`);

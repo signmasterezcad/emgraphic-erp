@@ -19,7 +19,7 @@ let clock = 0;
     await p.exposeFunction('erpOpenFolder', () => null);
     if (seedLocal !== undefined) await p.addInitScript(v => { if (v) localStorage.setItem('fotoerp.v1', v); else localStorage.clear(); }, seedLocal);
     await p.goto('file://' + path.resolve('app/index.html'));
-    await p.waitForFunction(() => document.querySelector('#chips .chip'));
+    await p.waitForFunction(() => document.querySelector('#today').textContent.includes('Bu gün'));
     await p.waitForTimeout(200);
     return p;
   };
@@ -29,13 +29,18 @@ let clock = 0;
     materials: [{ id: 'a4', name: 'A4 80 qr', cost: 0.02, stock: 999, min: 1 }], workers: ['Leyla'], sales: [{ ts: Date.now(), worker: 'Leyla', pay: 'nağd', lines: [], total: 7 }], waste: [] });
   let p = await open(old);
   ok((await p.textContent('#toast')).includes('köçürüldü') || fs.data.includes('Köhnə xidmət'), 'köhnə yaddaşdan fayla avtomatik köçürüldü');
-  ok(JSON.parse(fs.data).sales.length === 1 && (await p.textContent('#chips')).includes('999'), 'köçürülən məlumat: 1 satış, anbar 999');
-  ok(fs.backups.length === 1 && fs.backups[0].name.includes('-avto'), 'açılışda avtomatik ehtiyat nüsxə yaradıldı');
+  const d1 = JSON.parse(fs.data);
+  ok(d1.sales.length === 1, 'köçürülən məlumat: 1 satış qaldı');
+  ok(d1.materials.length === 0 && d1.items.every(i => !i.recipe.length) && d1.mig.anbarSifir === 1, 'anbar sıfırlandı: material yoxdur, reseptlər boşdur');
+  ok(fs.backups.length === 2 && fs.backups[0].name.includes('-avto') && fs.backups[1].name.includes('-el') && fs.backups[1].j.includes('"stock": 999'), 'anbar silinməzdən əvvəl ehtiyat nüsxə (999 vərəq) + açılışda avtomatik nüsxə');
 
   // 2) satış → fayla yazılır; eyni gün ikinci avtomatik nüsxə yaranmır
   await p.click('[data-add=x1]'); await p.click('#btnDone'); await p.waitForTimeout(200);
   ok(JSON.parse(fs.data).sales.length === 2, 'satış fayla yazıldı');
-  ok(fs.backups.length === 1, 'eyni gündə ikinci avtomatik nüsxə yaranmır');
+  ok(fs.backups.length === 2, 'eyni gündə ikinci avtomatik nüsxə yaranmır');
+  await p.click('#btnZay'); await p.click('#zSave');
+  ok((await p.textContent('#toast')).includes('Anbarda material yoxdur'), 'anbar boşdursa zay yazılmır, izah çıxır');
+  await p.click('#ovZay [data-close]');
   await p.close();
 
   // 3) yenidən açılış: brauzer yaddaşı boş olsa da, məlumat fayldan gəlir
@@ -47,14 +52,14 @@ let clock = 0;
   await p.click('#btnSet'); await p.click('[data-rt=backup]'); await p.waitForSelector('#blist table');
   ok((await p.textContent('#rbody')).includes('C:\\EMGRAPHIC-ERP\\ehtiyat'), 'ehtiyat qovluğunun yolu göstərilir');
   await p.click('[data-act=bnow]'); await p.waitForTimeout(200);
-  ok(fs.backups.length === 2 && fs.backups[0].name.includes('-el'), '"İndi ehtiyat nüsxə yarat" işləyir');
-  ok(await p.locator('#blist tr').count() === 3, 'siyahıda 2 nüsxə görünür');
+  ok(fs.backups.length === 3 && fs.backups[0].name.includes('-el'), '"İndi ehtiyat nüsxə yarat" işləyir');
+  ok(await p.locator('#blist tr').count() === 4, 'siyahıda 3 nüsxə görünür');
   const firstBackup = fs.backups[fs.backups.length - 1].name; // 1 satışlı köhnə nüsxə
   await p.click(`[data-act=brest][data-n="${firstBackup}"]`); await p.waitForSelector('[data-act=bimp]');
   ok((await p.textContent('[data-act=bimp]')).includes('1 satışlı'), 'nüsxə seçildi: 1 satış');
   await p.click('[data-act=bimp]'); await p.waitForTimeout(300);
   ok(JSON.parse(fs.data).sales.length === 1, 'bərpa: məlumat 1 satışlı nüsxəyə qaytarıldı');
-  ok(fs.backups.length === 3 && JSON.parse(fs.backups[0].j).data.sales.length === 2, 'bərpadan əvvəl indiki vəziyyətin nüsxəsi saxlandı');
+  ok(fs.backups.length === 4 && JSON.parse(fs.backups[0].j).data.sales.length === 2, 'bərpadan əvvəl indiki vəziyyətin nüsxəsi saxlandı');
   await p.close();
 
   // 5) məlumat faylı xarab olub → ən son nüsxə açılır
@@ -62,7 +67,7 @@ let clock = 0;
   p = await open(''); await p.waitForTimeout(400);
   const t5 = await p.textContent('#toast'); if (!t5.includes('Ən son')) console.log('   toast:', t5);
   ok(t5.includes('Ən son ehtiyat nüsxə'), 'xarab fayl: ən son ehtiyat nüsxə açıldı');
-  ok((await p.textContent('#chips')).includes('999'), 'xarab fayldan sonra məlumat yerindədir');
+  ok((await p.textContent('#today')).includes('2'), 'xarab fayldan sonra məlumat yerindədir (2 satış)');
 
   // 6) xarab fayl və ehtiyat nüsxə yoxdur → fayla toxunulmur
   await p.close(); fs.data = '{xarab'; fs.backups = [];
