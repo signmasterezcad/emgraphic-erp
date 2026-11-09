@@ -124,6 +124,10 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .custsel{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid var(--warn);border-radius:10px;padding:8px 10px;font-size:13px}
 .ctile{background:#b45309}
 .blines{display:grid;gap:8px}
+.plist{display:flex;flex-wrap:wrap;gap:8px}
+.plist button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-weight:700;display:grid;gap:2px;text-align:left}
+.plist button:hover{border-color:var(--accent)}
+.plist button .sub{font-weight:600}
 .bl{display:grid;grid-template-columns:minmax(0,1fr) 90px 120px auto;gap:8px;align-items:end}
 @media (max-width:560px){.bl{grid-template-columns:minmax(0,1fr) 70px 100px auto}}
 .done{padding:16px;border-radius:12px;border:0;background:var(--ok);color:#fff;font-size:20px;font-weight:800}
@@ -432,7 +436,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.25.0";
+const APP_VERSION="0.26.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -447,6 +451,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!Array.isArray(S.custPays))S.custPays=[];
   if(!S.mig.custPerm){S.mig.custPerm=1;(S.users||[]).forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};u.perms.custSale=1}})}
   if(!Array.isArray(S.suppliers))S.suppliers=["Samir Foto","Vəfa Foto","Şamil Vinetka","Samir Banner"].map((name,i)=>({id:"sp"+(i+1),name}));
+  S.suppliers.forEach(x=>{if(!Array.isArray(x.items))x.items=[]});
+  // v0.26.0: Samir Foto-dan alış qiymətləri (1 ədəd)
+  if(!S.mig.samirQiymet){S.mig.samirQiymet=1;const sf=S.suppliers.find(x=>x.id==="sp1")||S.suppliers.find(x=>norm(x.name).startsWith("samir foto"));
+    if(sf&&!sf.items.length)sf.items=[["10x15",0.30],["13x18",0.40],["15x21",0.45],["20x25",2],["21x30",2],["25x30",4],["25x38",4]].map(([n,pr],i)=>({id:"pi"+(i+1),name:"Foto "+n,price:pr}))}
   if(!S.mig.suppPerm){S.mig.suppPerm=1;(S.users||[]).forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};u.perms.supp=1}})}
   if(!S.mig.capQrup){S.mig.capQrup=1;
     let c=S.cats.find(x=>x.id==="cap")||S.cats.find(x=>x.name.trim().toLocaleLowerCase("az")==="çap");
@@ -1304,7 +1312,7 @@ document.addEventListener("change",e=>{
 // ---------- 🚚 Tədarükçü: hazır mal alınan yerlər ----------
 // Hər alış "Digər xərclər"ə tədarükçünün adı ilə düşür (S.expenses, supp = tədarükçü id). Ayın mənfəətindən çıxılır,
 // nağd ödəniş gün sonu kassa hesabından da çıxılır. Kassir yaza bilir (icazə "supp"), aylıq hesabat "suppRep" və ya admin.
-let stab="add",sSel=null,sDel=null,sMon="",sDraft=null;
+let stab="add",sSel=null,sDel=null,sMon="",sDraft=null,sPL=null;
 const suppName=id=>S.suppliers.find(x=>x.id===id)?.name;
 const suppTabs=()=>[["add","🚚 Alışı yaz","supp"],["debt","💳 Borclar"+(suppDebtAll()>0.004?` (${m2(suppDebtAll())} ₼)`:""),"suppDebt"],["rep","📊 Aylıq hesabat","suppRep"],["list","⚙️ Tədarükçülər","admin"]].filter(([,,p])=>p==="admin"?isAdmin():can(p));
 const suppRecs=()=>S.expenses.filter(x=>x.supp);
@@ -1340,14 +1348,16 @@ function renderSupp(){
       const known=[...new Set(suppRecs().filter(x=>x.supp===sp.id).flatMap(x=>(x.lines||[]).map(l=>l.name)).filter(Boolean))];
       h=`<div class="sform">
         <div class="frow"><button class="btn ghost sm" data-s="back">← Başqa tədarükçü</button><h4>🚚 ${esc(sp.name)}</h4></div>
-        <p class="sub">Nə aldınızsa, hər malı ayrı sətirdə yazın: adı, sayı və ona ödədiyiniz pul. Cəmi özü hesablanır.</p>
+        ${sp.items?.length?`<div><p class="sub" style="margin:0 0 6px">Qiymət siyahısı: mala toxunun, sonra sayını yazın. Məbləğ özü hesablanır.</p>
+          <div class="plist">${sp.items.map(it=>`<button data-s="pli" data-id="${it.id}">${esc(it.name)}<span class="sub">${m2(it.price)} ₼</span></button>`).join("")}</div></div>`:""}
+        <p class="sub">${sp.items?.length?"Siyahıda olmayan malı adı, sayı və məbləği ilə əl ilə yazın.":"Nə aldınızsa, hər malı ayrı sətirdə yazın: adı, sayı və ona ödədiyiniz pul. Cəmi özü hesablanır."}</p>
         <datalist id="sKnown">${known.map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
         <div class="blines">${sDraft.lines.map((l,i)=>{const q=+l.qty||0,sm=+l.sum||0;return `<div class="bl">
           <label class="f">Mal / xidmət<input id="sl_n_${i}" list="sKnown" value="${esc(l.name)}" placeholder="məs. Foto kağız 10x15, Banner 1x2 m"></label>
           <label class="f">Say<input id="sl_q_${i}" type="number" min="0" step="any" value="${esc(l.qty)}"></label>
           <label class="f">Məbləğ ₼<input id="sl_s_${i}" type="number" min="0" step="0.01" value="${esc(l.sum)}" placeholder="0.00"></label>
           ${sDraft.lines.length>1?`<button class="btn ghost sm del" data-s="lrm" data-i="${i}" aria-label="sətri sil">✕</button>`:"<span></span>"}
-          <span class="sub" id="sl_u_${i}" style="grid-column:1/-1">${q&&sm?`1 ədəd: ${m2(sm/q)} ₼`:""}</span></div>`}).join("")}</div>
+          <span class="sub" id="sl_u_${i}" style="grid-column:1/-1">${q&&sm?`1 ədəd: ${m2(sm/q)} ₼`:""}${l.price?` · siyahı qiyməti ${m2(l.price)} ₼`:""}</span></div>`}).join("")}</div>
         <div class="frow"><button class="btn ghost sm" data-s="ladd">+ Daha bir mal</button><span class="grow"></span><span class="sub">Cəmi:</span><b class="grand" id="s_tot">${m2(sLinesTotal())} ₼</b></div>
         <div class="frow">
           <label class="f grow">Qeyd (istəyə görə)<input id="s_note" value="${esc(sDraft.note)}" placeholder="məs. qəbz №145"></label>
@@ -1406,7 +1416,14 @@ function renderSupp(){
     h=`<p class="sub">Tədarükçünün adını dəyişsəniz, keçmiş alışları da yeni adla görünür. Silsəniz, keçmiş alışları hesabatda qalır.</p>
     <div class="tw"><table>${S.suppliers.map(x=>`<tr><td><input data-sn="${x.id}" value="${esc(x.name)}" class="wide" aria-label="Tədarükçünün adı"></td>
       <td class="n sub">${suppRecs().filter(r=>r.supp===x.id).length} alış</td>
-      <td><button class="btn ghost sm" data-s="sdel" data-id="${x.id}">${sDel==="t"+x.id?"Əminsiniz? Sil":"🗑 Sil"}</button></td></tr>`).join("")}</table></div>
+      <td><button class="btn ghost sm" data-s="pled" data-id="${x.id}">${sPL===x.id?"▲ Qiymətlər":"💲 Qiymətlər ("+(x.items?.length||0)+")"}</button></td>
+      <td><button class="btn ghost sm" data-s="sdel" data-id="${x.id}">${sDel==="t"+x.id?"Əminsiniz? Sil":"🗑 Sil"}</button></td></tr>
+      ${sPL===x.id?`<tr><td colspan="4"><div class="sform"><p class="sub" style="margin:0">${esc(x.name)}: alış qiymətləri (1 ədəd üçün). Kassir alışı yazanda bu mallar düymə kimi çıxır.</p>
+        <div class="tw"><table>${(x.items||[]).map(it=>`<tr><td><input data-pn="${x.id}|${it.id}" value="${esc(it.name)}" class="wide" aria-label="Malın adı"></td>
+          <td class="n"><input data-pp="${x.id}|${it.id}" type="number" min="0" step="0.01" value="${it.price}" aria-label="Qiymət"></td>
+          <td><button class="btn ghost sm del" data-s="pldel" data-id="${x.id}|${it.id}" aria-label="sil">✕</button></td></tr>`).join("")}
+          <tr><td><input id="pl_n" placeholder="Yeni mal, məs. Foto 30x40" class="wide" aria-label="Yeni malın adı"></td><td class="n"><input id="pl_p" type="number" min="0" step="0.01" placeholder="0.00" aria-label="Qiymət"></td>
+          <td><button class="btn sm" data-s="pladd" data-id="${x.id}">+ Əlavə et</button></td></tr></table></div></div></td></tr>`:""}`).join("")}</table></div>
     <div class="frow"><input id="s_new" placeholder="Yeni tədarükçü, məs. Kamran Kağız" aria-label="Yeni tədarükçünün adı"><button class="btn" data-s="sadd">+ Əlavə et</button></div>`;
   }
   $("suppBody").innerHTML=h;
@@ -1433,6 +1450,12 @@ document.addEventListener("click",e=>{
   if(!["sdel","del","ask","pdel","pask"].includes(a))sDel=null;
   if(a==="tab")stab=t.dataset.t;
   else if(a==="pick"){sSel=t.dataset.id;setTimeout(()=>$("sl_n_0")?.focus(),0)}
+  else if(a==="pli"){const sp=S.suppliers.find(x=>x.id===sDraft.supp),it=sp?.items.find(y=>y.id===t.dataset.id);if(!it)return;
+    let i=sDraft.lines.findIndex(l=>norm(l.name)===norm(it.name));
+    if(i>=0){const l=sDraft.lines[i];l.qty=String((+l.qty||0)+1);l.price=it.price;l.sum=m2((+l.qty)*it.price)}
+    else{const blank=sDraft.lines.findIndex(l=>!l.name.trim()&&!(+l.sum));const nl={name:it.name,qty:"1",price:it.price,sum:m2(it.price)};
+      if(blank>=0)sDraft.lines[blank]=nl;else sDraft.lines.push(nl);i=blank>=0?blank:sDraft.lines.length-1}
+    setTimeout(()=>{const q=$("sl_q_"+i);q?.focus();q?.select()},0)}
   else if(a==="ladd"){sDraft.lines.push({name:"",qty:"1",sum:""});const n=sDraft.lines.length-1;setTimeout(()=>$("sl_n_"+n)?.focus(),0)}
   else if(a==="lrm"){sDraft.lines.splice(+t.dataset.i,1)}
   else if(a==="back"){sSel=null;sDraft=null}
@@ -1450,6 +1473,13 @@ document.addEventListener("click",e=>{
     const r=suppOwed(id);toast(`${suppLabel(id)}: ${m2(amt)} ₼ ödənildi ✓`+(r>0.004?` · qalan borc ${m2(r)} ₼`:" · borc bağlandı"))}
   else if(a==="pask")sDel="p"+t.dataset.id;
   else if(a==="pdel"){if(!isAdmin())return;S.suppPays=S.suppPays.filter(y=>y.id!==t.dataset.id);sDel=null;save();renderSuppBadge();toast("Ödəniş silindi, borc geri qayıtdı")}
+  else if(a==="pled"){sPL=sPL===t.dataset.id?null:t.dataset.id}
+  else if(a==="pladd"){if(!isAdmin())return;const x=S.suppliers.find(y=>y.id===t.dataset.id),n=$("pl_n").value.trim(),pr=+$("pl_p").value;
+    if(!x)return;if(!n){toast("Malın adını yazın");return}if(!(pr>0)){toast("Qiyməti yazın");return}
+    if(x.items.some(y=>norm(y.name)===norm(n))){toast(`"${n}" artıq siyahıdadır`);return}
+    x.items.push({id:newId("pi"),name:n,price:pr});save();toast(`${x.name}: "${n}" ${m2(pr)} ₼ əlavə olundu`);setTimeout(()=>$("pl_n")?.focus(),0)}
+  else if(a==="pldel"){if(!isAdmin())return;const [sid,iid]=t.dataset.id.split("|"),x=S.suppliers.find(y=>y.id===sid);if(!x)return;
+    const it=x.items.find(y=>y.id===iid);x.items=x.items.filter(y=>y.id!==iid);save();toast(`"${it?.name}" siyahıdan çıxarıldı`)}
   else if(a==="sadd"){if(!isAdmin())return;const n=$("s_new").value.trim();if(!n){toast("Tədarükçünün adını yazın");return}
     if(S.suppliers.some(x=>norm(x.name)===norm(n))){toast(`"${n}" artıq var`);return}
     S.suppliers.push({id:newId("sp"),name:n});save();toast(`"${n}" əlavə olundu`)}
@@ -1459,14 +1489,19 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("change",e=>{
   if(e.target.id==="s_mon"){sMon=e.target.value;renderSupp();return}
+  const pk=e.target.dataset?.pn||e.target.dataset?.pp;
+  if(pk&&isAdmin()){const [sid,iid]=pk.split("|"),it=S.suppliers.find(y=>y.id===sid)?.items.find(y=>y.id===iid);if(!it)return;
+    if(e.target.dataset.pn){const n=e.target.value.trim();if(n)it.name=n}else{const v=+e.target.value;if(v>0)it.price=v}
+    save();renderSupp();toast("Qiymət siyahısı yeniləndi");return}
   const id=e.target.dataset?.sn;if(!id||!isAdmin())return;
   const sp=S.suppliers.find(x=>x.id===id),n=e.target.value.trim();if(!sp)return;
   if(!n||S.suppliers.some(x=>x!==sp&&norm(x.name)===norm(n))){toast(n?`"${n}" artıq var`:"Ad boş ola bilməz");renderSupp();return}
   sp.name=n;S.expenses.forEach(x=>{if(x.supp===id)x.cat=n});save();renderSupp();toast("Ad dəyişdi");
 });
 document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key==="NumpadEnter")&&/^sl_s_/.test(e.target.id||"")){e.preventDefault();saveSupp()}});
-document.addEventListener("input",e=>{const id=e.target.id||"";if(!/^sl_[qs]_/.test(id)||!sDraft)return;syncSDraft();$("s_tot").textContent=m2(sLinesTotal())+" ₼";
-  const i=id.split("_")[2],l=sDraft.lines[i],q=+l?.qty||0,sm=+l?.sum||0;if($("sl_u_"+i))$("sl_u_"+i).textContent=q&&sm?`1 ədəd: ${m2(sm/q)} ₼`:""});
+document.addEventListener("input",e=>{const id=e.target.id||"";if(!/^sl_[qs]_/.test(id)||!sDraft)return;syncSDraft();
+  {const i=id.split("_")[2],l=sDraft.lines[i];if(l?.price&&id.startsWith("sl_q_")){l.sum=m2((+l.qty||0)*l.price);$("sl_s_"+i).value=l.sum}}$("s_tot").textContent=m2(sLinesTotal())+" ₼";
+  const i=id.split("_")[2],l=sDraft.lines[i],q=+l?.qty||0,sm=+l?.sum||0;if($("sl_u_"+i))$("sl_u_"+i).textContent=(q&&sm?`1 ədəd: ${m2(sm/q)} ₼`:"")+(l?.price?` · siyahı qiyməti ${m2(l.price)} ₼`:"")});
 
 // ---------- Zay ----------
 function openZay(){

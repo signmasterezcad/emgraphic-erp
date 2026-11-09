@@ -104,6 +104,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Kassir yalnız bu gün öz yazdığını silə bilər, admin hamısını; tarixi yalnız admin seçə bilir.
   **Mal-mal qeyd** (v0.25.0): alış formasında sətirlər (`sl_n_i` ad, `sl_q_i` say, `sl_s_i` məbləğ), cəmi özü; qeyddə `lines:[{name,qty,sum}]`,
   `note` = "Ad ×say, …". Əvvəlki adlar datalist ilə təklif olunur. Aylıq hesabatda "nə alınıb" cədvəli (tədarükçü + mal üzrə cəm).
+  **Qiymət siyahısı** (v0.26.0): `S.suppliers[].items=[{id,name,price}]` (1 ədədin alış qiyməti). Formada düymə kimi (`data-s="pli"`):
+  basanda sətir əlavə olunur / say +1, məbləğ = say × qiymət (sətirdə `price`). Admin "⚙️ Tədarükçülər → 💲 Qiymətlər"-də dəyişir.
+  Samir Foto (`S.mig.samirQiymet`): Foto 10x15 0.30, 13x18 0.40, 15x21 0.45, 20x25 2, 21x30 2, 25x30 4, 25x38 4.
+  Bu alış qiymətləri satış düymələrinin mayasına (resept) **qoşulmayıb** — alış artıq xərc kimi çıxılır, qoşsaq iki dəfə çıxılar.
 - **🏢 Borclular — müəssisələrə borca satış** (v0.25.0): "Cari sifariş"də `#payDebt` "📝 Borca" → `#ovCust` müəssisə seçimi
   (yenisini orada əlavə etmək olar) → `pay="borc"`, `ordCust`; düymə "Borca yaz ✓". Satış: `pay:"borc", cust, custName`.
   `S.customers=[{id,name}]`, pul alınanda `S.custPays=[{id,cust,name,ts,amount,by,worker}]` (hissə-hissə). Borc = `custOwed(id)`.

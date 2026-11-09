@@ -207,6 +207,22 @@ let n = 0;
   ok(JSON.parse(fs.data).sales.filter(s => s.pay === 'borc').length === 1, 'admin borca satışı silə bilir (ödənişdən artıq deyilsə)');
   await p.click('#ovHist [data-close]');
 
+  // 11) Samir Foto qiymət siyahısı: düyməyə bas → say → məbləğ özü
+  await p.click('#btnSupp'); await p.click('[data-s=tab][data-t=add]'); await p.click('.stile:has-text("Samir Foto")');
+  ok(await p.locator('.plist button').count() === 7 && (await p.textContent('.plist')).includes('Foto 15x21') && (await p.textContent('.plist')).includes('0.45'), 'Samir Foto: 7 mallıq qiymət siyahısı (15x21 — 0.45)');
+  await p.click('.plist button:has-text("Foto 10x15")'); await p.fill('#sl_q_0', '200'); await p.dispatchEvent('#sl_q_0', 'input');
+  ok((await p.inputValue('#sl_s_0')) === '60.00', '10x15 × 200 = 60.00 (0.30-dan)');
+  await p.click('.plist button:has-text("Foto 20x25")'); await p.click('.plist button:has-text("Foto 20x25")');
+  ok((await p.inputValue('#sl_q_1')) === '2' && (await p.inputValue('#sl_s_1')) === '4.00' && (await p.textContent('#s_tot')).startsWith('64.00'), 'eyni mala iki dəfə basmaq sayı artırır: 20x25 × 2 = 4.00, cəmi 64.00');
+  await p.click('[data-s=save]');
+  ok(JSON.parse(fs.data).expenses.at(-1).note.startsWith('Foto 10x15 ×200, Foto 20x25 ×2'), 'alış mal-mal yazıldı');
+  await p.click('[data-s=tab][data-t=list]'); await p.click('[data-s=pled][data-id=sp1]');
+  await p.fill('[data-pp="sp1|pi1"]', '0.35'); await p.dispatchEvent('[data-pp="sp1|pi1"]', 'change');
+  await p.fill('#pl_n', 'Foto 30x40'); await p.fill('#pl_p', '6'); await p.click('[data-s=pladd][data-id=sp1]');
+  const sf = JSON.parse(fs.data).suppliers.find(x => x.id === 'sp1');
+  ok(sf.items[0].price === 0.35 && sf.items.length === 8, 'admin qiyməti dəyişdi (0.35) və yeni mal əlavə etdi');
+  await p.click('#ovSupp [data-close]');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
