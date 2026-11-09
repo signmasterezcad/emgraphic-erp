@@ -35,7 +35,7 @@ let clock = 0;
   ok(fs.backups.length === 2 && fs.backups[0].name.includes('-avto') && fs.backups[1].name.includes('-el') && fs.backups[1].j.includes('"stock": 999'), 'anbar silinməzdən əvvəl ehtiyat nüsxə (999 vərəq) + açılışda avtomatik nüsxə');
 
   // 2) satış → fayla yazılır; eyni gün ikinci avtomatik nüsxə yaranmır
-  await p.click('[data-add=x1]'); await p.click('#btnDone'); await p.waitForTimeout(200);
+  await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } }); await p.click('[data-add=x1]'); await p.click('#btnDone'); await p.waitForTimeout(200);
   ok(JSON.parse(fs.data).sales.length === 2, 'satış fayla yazıldı');
   ok(fs.backups.length === 2, 'eyni gündə ikinci avtomatik nüsxə yaranmır');
   await p.click('#btnZay'); await p.click('#zSave');

@@ -37,7 +37,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Bayraq təkli/ikili/üçlü (`g_bayraq1/2/3`), Medal (`g_medal`), Alışqan (`g_alisqan`), Body (`g_body`).
 - Qiyməti 0 olan düymə "⚠ qiymət yoxdur" göstərir və satılmır.
 - **Kəsim Plotter** (id `plotter`) və **Fiber Lazer** (id `lazer`) bölmələri (`S.mig.plotterLazer`) — hələ boşdur.
-- İndi bölmələr: Sevimlilər, ÇAP, Poliqrafiya Xidmətləri, Sublim, Kəsim Plotter, Fiber Lazer.
+- **🔍 Axtarış** (v0.13.0) Sevimlilər-in yerinə gəlib (daxili açar `"search"`, həmişə birinci tab, açılışda seçilir).
+  Bütün bölmə və qruplarda düymə adı + qrup + bölmə adına görə axtarır; ə/ş/ç/ğ/ı/ö/ü hərfsiz yazmaq olar; Enter birinci nəticəni əlavə edir.
+  Düymələrdəki köhnə `fav` sahəsi artıq işlənmir.
+- İndi bölmələr: Axtarış, ÇAP, Poliqrafiya Xidmətləri, Sublim, Kəsim Plotter, Fiber Lazer.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.

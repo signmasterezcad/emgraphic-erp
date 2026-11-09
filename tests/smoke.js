@@ -29,16 +29,34 @@ const path = require('path');
   await p.fill('#e_name', 'A3 rəngli çap');
   await p.click('[data-act=radd]'); await p.selectOption('#r_m_0', 'a4'); await p.fill('#r_q_0', '2');
   await p.fill('#t_p_0', '2'); await p.click('[data-act=tadd]'); await p.fill('#t_min_1', '20'); await p.fill('#t_p_1', '1.5');
-  await p.check('#e_fav');
   await p.click('[data-act=isave]');
   ok((await p.textContent('#rbody')).includes('A3 rəngli çap'), 'admin: yeni məhsul siyahıda');
   await p.click('#ovRep [data-close]');
+  // Axtarış (Sevimlilər əvəzinə)
+  await p.click('[data-cat=search]', { position: { x: 12, y: 12 } });
+  ok((await p.locator('#tabs .tab').first().textContent()).includes('Axtarış') && !(await p.textContent('#tabs')).includes('Sevimlilər'), 'birinci tab Axtarış, Sevimlilər yoxdur');
+  ok(await p.isVisible('#q') && (await p.textContent('#grid')).includes('bir neçə hərf yazın'), 'boş axtarış: izah görünür');
+  await p.fill('#q', 'yoxdurbelesey');
+  ok((await p.textContent('#grid')).includes('heç nə tapılmadı'), 'tapılmayanda izah');
+  await p.fill('#q', 'a3 rengli cap');
   const btn = p.locator('.svc', { hasText: 'A3 rəngli çap' });
-  ok(await btn.count() === 1, 'admin: yeni məhsul satış ekranında');
+  ok(await btn.count() === 1, 'axtarış ə/ç hərfsiz də tapır: "a3 rengli cap" → A3 rəngli çap');
   await btn.click(); await p.fill('.line input', '20'); await p.dispatchEvent('.line input', 'change');
   ok((await p.textContent('#total')).startsWith('30.00'), 'yeni məhsul: 20 × 1.50 = 30.00');
   await p.click('#btnDone');
   ok((await p.textContent('#chips')).includes('1139'), 'yeni məhsulun resepti: 20 × 2 vərəq silindi');
+  await p.fill('#q', 'surət');
+  ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === 'A4 ağ-qara surət|A3 ağ-qara surət|A3 ağ-qara surət (2 üzlü)|Telefondan sənəd surəti', 'axtarış "surət": qrupların içindən də tapır');
+  ok((await p.textContent('[data-add=ks_tel]')).includes('ÇAP › Sənəd Surəti'), 'nəticədə yol görünür (Bölmə › Qrup)');
+  await p.fill('#q', 'fincan termo'); await p.press('#q', 'Enter');
+  ok((await p.textContent('#total')).startsWith('10.00'), 'Enter: birinci nəticə sifarişə əlavə olunur (Fincan Termo 10)');
+  await p.click('#btnClear');
+  await p.fill('#q', 'foto kagiz'); await p.click('[data-grp=g_foto]');
+  ok(await p.isVisible('#crumb') && (await p.textContent('#crumb')).includes('Axtarış') && await p.locator('#grid [data-add]').count() === 9, 'qrup tapılır, basanda içi açılır');
+  await p.click('[data-back]');
+  ok((await p.inputValue('#q')) === 'foto kagiz' && await p.isVisible('#searchbar'), '← geri: axtarış yazısı qalır');
+  await p.click('#qClear');
+  ok((await p.inputValue('#q')) === '' && (await p.textContent('#grid')).includes('bir neçə hərf yazın'), 'Təmizlə düyməsi');
 
   // Bölmələr
   await p.click('#btnSet');
