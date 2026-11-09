@@ -32,16 +32,16 @@ func TestStore(t *testing.T) {
 	}
 
 	base := time.Date(2026, 11, 1, 9, 0, 0, 0, time.Local)
-	for i := 0; i < keepBackups+5; i++ {
+	for i := 0; i < keepByKind["avto"]+5; i++ {
 		if _, err := s.backup(`{"n":1}`, "avto", base.Add(time.Duration(i)*time.Hour)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	l, _ := s.list()
-	if len(l) != keepBackups {
+	if len(l) != keepByKind["avto"] {
 		t.Fatalf("saxlanan nüsxə: %d", len(l))
 	}
-	if !strings.HasPrefix(l[0].Name, "kassa-") || !strings.Contains(l[0].Name, "2026-11-02_19-00-00-avto") {
+	if !strings.HasPrefix(l[0].Name, "kassa-") || !strings.Contains(l[0].Name, "2026-11-04_01-00-00-avto") {
 		t.Fatalf("ən yenisi birinci olmalıdır: %s", l[0].Name)
 	}
 	if got, err := s.read(l[0].Name); err != nil || got != `{"n":1}` {
@@ -89,5 +89,38 @@ func TestOldBackupsAndMigration(t *testing.T) {
 	}
 	if got, _ := s.load(); got != `{"sales":[1,2,3,4]}` {
 		t.Fatalf("yeni məlumat qorunmalıdır: %q", got)
+	}
+}
+
+// Hər növ ayrıca sayılır: çoxlu əməliyyat nüsxəsi gündəlik və əl ilə nüsxələri silmir.
+func TestPruneByKind(t *testing.T) {
+	dir := t.TempDir()
+	s := &store{dataFile: filepath.Join(dir, "d.json"), backupDir: filepath.Join(dir, "ehtiyat")}
+	base := time.Date(2026, 11, 1, 9, 0, 0, 0, time.Local)
+	n := 0
+	add := func(kind string, count int) {
+		for i := 0; i < count; i++ {
+			n++
+			if _, err := s.backup(`{"n":1}`, kind, base.Add(time.Duration(n)*time.Minute)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	add("avto", 3)
+	add("el", 2)
+	add("emel", keepByKind["emel"]+40)
+	l, _ := s.list()
+	got := map[string]int{}
+	for _, b := range l {
+		got[kindOf(b.Name)]++
+	}
+	if got["emel"] != keepByKind["emel"] || got["avto"] != 3 || got["el"] != 2 {
+		t.Fatalf("növlər üzrə say: %v", got)
+	}
+	if kindOf(l[0].Name) != "emel" {
+		t.Fatalf("ən yenisi əməliyyat nüsxəsi olmalıdır: %s", l[0].Name)
+	}
+	if kindOf("kassa-2026-11-01_09-00-00-bilinmeyen.json") != "el" {
+		t.Fatal("tanınmayan növ əl ilə sayılmalıdır")
 	}
 }

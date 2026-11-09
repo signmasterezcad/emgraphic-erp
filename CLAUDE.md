@@ -82,7 +82,16 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   və `app/kassa.svg` (başlıq + favicon). Başladıcı pəncərə/tapşırıq zolağı ikonunu `LoadImageW`+`WM_SETICON` ilə qoyur;
   qısayollar `IconLocation = app\kassa.ico` (işarə `qisayol-kassa-ikon`). **exe faylının öz ikonu hələ yoxdur** — resurs
   (`.syso`) üçün go-winres işlətmək bu mühitdə icazəsiz oldu; istifadəçi icazə versə, `go-winres simply --icon` ilə edilər.
-- Hazırda bütün funksiyalar Admin üçündür; istifadəçi (işçi) üçün nə görünəcəyini sahibi sonra deyəcək.
+- **👥 Kassirlər və icazələr** (v0.22.0): `S.users=[{id,name,pin,role:"admin"|"kassir",perms:{}}]`; köhnə `S.workers` adlardan
+  bir dəfə yaradılır (adı "Admin" olan və ya birinci → admin), `S.workers` adların siyahısı kimi saxlanır (`syncWorkers()`).
+  PIN 4–6 rəqəm, faylda yalnız izi (`pinHash`, FNV — ciddi qoruma deyil, təsadüfi baxışa qarşıdır). Admin-in PIN-i yoxdursa
+  proqram birbaşa admin kimi açılır (`startSession`), varsa giriş ekranı (`#ovLogin`, `.ov.lock` — kənara basanda bağlanmır).
+  Başlıqda `#btnUser` = Çıxış. İcazələr `PERMS`: zay, hist, delSale, reports, cost, stock, exp, edit, backup;
+  `can(p)` (admin hər şey), tablar `TAB_PERM` ilə süzülür (`repTabs()/setTabs()`), "👥 Kassirlər" tabı yalnız admin.
+  Yeni kassir: `KASSIR_DEFAULT` = zay + hist. Satış/zay/sayım `worker: curName()`. "Endirim" funksiyası hələ yoxdur.
+- **Hər əməliyyatdan sonra ehtiyat nüsxə** (v0.22.0): `save()` → `opBackupSoon()` (2 san. yığır) → `erpBackup(...,"emel")`,
+  yalnız məlumat dəyişibsə (`dataSig()`, lastAuto/lastBackup nəzərə alınmır). exe-də `erpBackupKinds` yoxdursa (köhnə exe) işləmir.
+  exe hər növü ayrıca saxlayır (`keepByKind`): emel 100, avto 60, el 30. Ehtiyat siyahısında növ süzgəci.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
@@ -100,21 +109,21 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 - `launcher/` — Go + WebView2 başladıcı. `main.go` (yalnız Windows), `storage.go` (məlumat faylı, ehtiyat nüsxə)
 - `KASSA.exe` (depo kökündə) — hazır başladıcı; yeniləmə onu buradan yükləyir
 - `windows/YENILE.bat` + `yenile.ps1` — istifadəçi iki klik edir, files.txt-dəki hər şeyi (exe daxil, `../` ilə) və özünü yeniləyir
-- Məlumat: `%APPDATA%\KASSA\data\kassa-data.json`. Ehtiyat: proqram qovluğunda `ehtiyat\` (son 30, gündəlik avtomatik)
+- Məlumat: `%APPDATA%\KASSA\data\kassa-data.json`. Ehtiyat: proqram qovluğunda `ehtiyat\` (hər əməliyyatdan sonra + gündəlik + əl ilə, növ üzrə ayrıca saxlanır)
 - exe içində `window.erpLoad/erpSave/erpBackup/...` var (`NATIVE`); brauzerdə localStorage işlədilir
 
 ## Hər dəyişiklikdə qaydalar
 1. `app/index.html`-də `APP_VERSION`-u artır (yeniləmə skripti versiyanı müqayisə edir).
 2. Yeni fayl əlavə edirsənsə, `app/files.txt`-ə yaz.
 3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o ../KASSA.exe .`
-4. Testlər: `node tests/smoke.js` (brauzer) və `node tests/native.js` (exe simulyasiyası) — hamısı OK olmalıdır.
+4. Testlər: `node tests/smoke.js` (brauzer), `node tests/native.js` (exe simulyasiyası) və `node tests/users.js` (kassirlər + əməliyyat nüsxəsi) — hamısı OK olmalıdır.
 5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/kassa/main/app/index.html` yeni versiyanı verir (GitHub 5 dəqiqəyə qədər köhnəni göstərə bilər; yeni versiya görünənə qədər gözlə, sonra istifadəçiyə "hazırdır" de).
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)
 
 ## Açıq məsələlər
 - `YENILE.bat` Windows-da işləyir (istifadəçi v0.8.4-ə yenilənib, ekran şəklində görünür).
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
-- Təklif olunub, hələ edilməyib: işçi girişi (şifrə; işçi maya/mənfəət görməsin), ehtiyat nüsxənin Google Drive qovluğuna da yazılması.
+- Təklif olunub, hələ edilməyib: setup (quraşdırma) faylı, telefon versiyası + sinxronlaşma, ehtiyat nüsxənin Google Drive qovluğuna da yazılması.
 
 ## Brauzer versiyası (nümayiş üçün)
 https://claude.ai/artifact/5TkmNrGWJuyNTRNZoXi5vA — `app/index.html`-dən `<head>` və `<body>` teqləri çıxarılıb dərc olunur.

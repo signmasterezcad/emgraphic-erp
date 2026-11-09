@@ -11,8 +11,25 @@ import (
 	"time"
 )
 
-// Neçə ehtiyat nüsxə saxlanılsın (köhnələri silinir).
-const keepBackups = 30
+// Neçə ehtiyat nüsxə saxlanılsın (köhnələri silinir). Hər növ ayrıca sayılır:
+//
+//	emel — hər əməliyyatdan sonra (satış, zay, alış...), avto — gündə bir dəfə, el — əl ilə və riskli işdən əvvəl.
+const keepBackups = 30 // əl ilə nüsxələr
+
+var keepByKind = map[string]int{"emel": 100, "avto": 60, "el": keepBackups}
+
+// backupKinds proqrama (index.html) hansı nüsxə növlərini tanıdığımızı deyir.
+func backupKinds() []string { return []string{"avto", "el", "emel"} }
+
+// kindOf fayl adından nüsxənin növünü tapır.
+func kindOf(name string) string {
+	for _, k := range []string{"emel", "avto"} {
+		if strings.HasSuffix(name, "-"+k+".json") {
+			return k
+		}
+	}
+	return "el"
+}
 
 // Ehtiyat fayllarının adı: yenilər "kassa-", köhnələr "emgraphic-" ilə başlayır (ikisi də tanınır).
 const backupPrefix = "kassa-"
@@ -95,7 +112,7 @@ func (s *store) backup(json, kind string, now time.Time) (string, error) {
 	if len(json) < 2 || json[0] != '{' {
 		return "", errors.New("məlumat düzgün deyil")
 	}
-	if kind != "avto" {
+	if kind != "avto" && kind != "emel" {
 		kind = "el"
 	}
 	name := backupPrefix + now.Format("2006-01-02_15-04-05") + "-" + kind + ".json"
@@ -135,8 +152,13 @@ func (s *store) prune() {
 	if err != nil {
 		return
 	}
-	for i := keepBackups; i < len(l); i++ {
-		os.Remove(filepath.Join(s.backupDir, l[i].Name))
+	seen := map[string]int{}
+	for _, b := range l { // ən yenisi birincidir
+		k := kindOf(b.Name)
+		seen[k]++
+		if seen[k] > keepByKind[k] {
+			os.Remove(filepath.Join(s.backupDir, b.Name))
+		}
 	}
 }
 

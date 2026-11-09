@@ -41,7 +41,36 @@ header h1{font-size:18px;margin:0;font-weight:800;flex:1 1 auto}
 .hbtn:hover{border-color:var(--muted)}
 .today{color:var(--muted);font-size:13px}
 .today b{color:var(--fg)}
-select.worker{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 10px}
+.hbtn.user{display:inline-flex;gap:6px;align-items:center}
+.hbtn.user .un{max-width:16ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Giriş ekranı: arxadakı satış ekranı görünmür */
+.ov.lock{background:var(--bg);z-index:40}
+.modal.login{width:min(560px,100%)}
+.login h3{display:flex;gap:8px;align-items:center}
+.utiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.utile{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 10px;font-weight:800;font-size:16px;display:grid;gap:4px;justify-items:center;text-align:center;overflow-wrap:anywhere}
+.utile:hover{border-color:var(--accent)}
+.utile .sub{font-weight:600}
+.pinwho{text-align:center;font-weight:800;font-size:18px;margin:0}
+.pindots{display:flex;gap:12px;justify-content:center;min-height:20px}
+.pindots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted)}
+.pindots i.on{background:var(--fg);border-color:var(--fg)}
+.pinerr{color:var(--bad);text-align:center;font-weight:700;min-height:20px;margin:0}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:300px;width:100%;margin:0 auto}
+.keypad button{padding:14px 0;font-size:22px;font-weight:800;border-radius:12px;border:1px solid var(--line);background:var(--panel2)}
+.keypad button.go{background:var(--ok);border-color:var(--ok);color:#fff;font-size:16px}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}}
+.ulist{display:grid;gap:10px}
+.ucard{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;background:var(--panel2)}
+.uhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.uhead input,.uhead select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--fg)}
+.uhead input{font-weight:800;min-width:0;flex:0 1 220px}
+.perms{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:6px 16px}
+.perm{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4}
+.perm input{margin-top:2px;width:16px;height:16px;flex:0 0 auto}
+.warnbox{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel));border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5}
 
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px;border-bottom:1px solid var(--line)}
 .chip{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12px;color:var(--muted);background:var(--panel)}
@@ -222,7 +251,7 @@ h4{margin:6px 0 0;font-size:14px}
 
 <header class="wrap">
   <h1><img src="kassa.svg" class="logo" alt="" width="28" height="28">KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span></h1>
-  <select class="worker" id="worker" aria-label="İşçi"></select>
+  <button class="hbtn user" id="btnUser" title="Çıxış: başqa işçi ilə gir">👤 <span class="un" id="userName"></span> · Çıxış</button>
   <button class="hbtn" id="btnZay">🗑️ Zay</button>
   <button class="hbtn" id="btnRep">📊 Hesabat / Anbar</button>
   <button class="hbtn" id="btnExp">💸 Xərclər <span class="badge" id="debtBadge" hidden></span></button>
@@ -309,6 +338,13 @@ h4{margin:6px 0 0;font-size:14px}
   </div>
 </div>
 
+<div class="ov lock" id="ovLogin" hidden>
+  <div class="modal login" role="dialog" aria-labelledby="lt">
+    <div class="mh"><h3 id="lt"><img src="kassa.svg" class="logo" alt="" width="24" height="24">KASSA · Kim işləyir?</h3></div>
+    <div class="mb" id="loginBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -352,7 +388,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.21.1";
+const APP_VERSION="0.22.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -512,6 +548,15 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   }
   // v0.12.1: anbar sıfırlanır — bütün materiallar silinir, reseptlər boşalır (istifadəçinin istəyi).
   // Satışlara və zay tarixçəsinə toxunulmur. Yeni quraşdırmada (nümunə məlumat) tətbiq olunmur.
+  // v0.22.0: işçi adları → istifadəçilər (Admin + kassirlər, PIN və icazələrlə)
+  if(!Array.isArray(S.users)||!S.users.length){
+    const names=[...new Set((S.workers||[]).map(w=>String(w).trim()).filter(Boolean))];if(!names.length)names.push("Admin");
+    const ai=Math.max(0,names.findIndex(n=>norm(n)==="admin"));
+    S.users=names.map((n,i)=>({id:newId("u"),name:n,pin:"",role:i===ai?"admin":"kassir",perms:{...KASSIR_DEFAULT}}));
+  }
+  if(!S.users.some(u=>u.role==="admin"))S.users[0].role="admin";
+  S.users.forEach(u=>{u.perms=u.perms||{};u.pin=u.pin||""});
+  syncWorkers();
   // Həmişə sonda qalmalıdır: yuxarıdakı köçürmələrin qoşduğu reseptləri də təmizləyir.
   if(!S.mig.anbarSifir){S.mig.anbarSifir=1;
     if(!firstRun){S.materials=[];S.items.forEach(i=>{i.recipe=[]})}
@@ -539,6 +584,7 @@ async function loadData(){
     try{await window.erpBackup(backupText(),"el")}catch(e){}   // anbar silinməzdən əvvəl
   const migBefore=JSON.stringify(S.mig||{});
   upgrade();
+  opSig=dataSig(); // açılışın özü əməliyyat sayılmır
   if(migrated||JSON.stringify(S.mig)!==migBefore)save();
 }
 let saving=Promise.resolve(), saveFailed=false;
@@ -549,10 +595,24 @@ const save=()=>{
     saving=saving.then(()=>window.erpSave(txt)).then(
       ()=>{if(saveFailed){saveFailed=false;toast("Məlumat yenidən diskə yazılır ✓")}},
       e=>{saveFailed=true;toast("Diqqət: məlumat diskə yazılmadı: "+e)});
+    opBackupSoon();
     return;
   }
   try{localStorage.setItem(KEY,txt)}catch(e){toast("Diqqət: məlumat yadda saxlanmadı (brauzer yaddaşı dolub)")}
 };
+// Hər əməliyyatdan sonra ehtiyat nüsxə (v0.22.0). Bir neçə saniyə ərzindəki dəyişikliklər bir nüsxəyə yığılır;
+// heç nə dəyişməyibsə, nüsxə yazılmır. Köhnə exe bu növü tanımırsa, işə düşmür (gündəlik nüsxə qalır).
+const OP_DELAY=2000;
+let opT=null, opSig=null;
+const dataSig=()=>JSON.stringify(S,(k,v)=>k==="lastAuto"||k==="lastBackup"?undefined:v);
+const opReady=()=>NATIVE&&typeof window.erpBackupKinds==="function"&&!loadBroken;
+function opBackupSoon(){if(!opReady())return;clearTimeout(opT);opT=setTimeout(opBackup,OP_DELAY)}
+async function opBackup(){
+  opT=null;const sig=dataSig();if(sig===opSig)return;
+  try{await window.erpBackup(backupText(),"emel");opSig=sig;S.lastBackup=Date.now();backups=null;
+    if(!$("ovRep").hidden&&rtab==="backup")renderRep()}
+  catch(e){toast("Ehtiyat nüsxə yazılmadı: "+e)}
+}
 // Gündə bir dəfə avtomatik ehtiyat nüsxə: proqram qovluğunda "ehtiyat" papkası
 async function autoBackup(){
   if(!NATIVE||loadBroken)return;
@@ -575,8 +635,99 @@ function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout
 // ---------- Vəziyyət ----------
 let editMode=false, grp=null, q="", cat="search", order=[], pay="nağd", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
 
+// ---------- 👥 İstifadəçilər: Admin və kassirlər, PIN ilə giriş, icazələr ----------
+const PERMS=[
+  ["zay","🗑️ Zay yazmaq"],
+  ["hist","🧾 Satış tarixçəsinə baxmaq"],
+  ["delSale","❌ Satışı silmək"],
+  ["reports","📊 Günlük hesabat, kassa və zay hesabatı"],
+  ["cost","💰 Maya və mənfəəti görmək (aylıq hesabat da)"],
+  ["stock","📦 Anbar sayımı və materiallar"],
+  ["exp","💸 Xərclər: mal alışı, digər xərclər, borclar"],
+  ["edit","✏️ Düymələri, qiymətləri və bölmələri dəyişmək"],
+  ["backup","💾 Ehtiyat nüsxə və bərpa"],
+];
+const KASSIR_DEFAULT={zay:1,hist:1};
+const TAB_PERM={gun:"reports",ay:"cost",mal:"cost",zay:"reports",anbar:"stock",bolme:"edit",admin:"edit",mat:"stock",backup:"backup"};
+let me=null, loginSel=null, pinBuf="", pinErr="";
+const isAdmin=()=>me?.role==="admin";
+const can=p=>!!me&&(me.role==="admin"||!!me.perms?.[p]);
+const curName=()=>me?.name||"";
+const userById=id=>S.users.find(u=>u.id===id);
+const roleName=u=>u.role==="admin"?"Admin":"Kassir";
+// PIN açıq yazılmır, yalnız onun "izi" saxlanır
+const pinHash=p=>{let x=2166136261;for(const c of "kassa-pin:"+p){x^=c.charCodeAt(0);x=Math.imul(x,16777619)>>>0}return "h"+x.toString(36)};
+const pinOk=p=>/^\d{4,6}$/.test(p);
+const openAdmin=()=>S.users.find(u=>u.role==="admin"&&!u.pin);
+function syncWorkers(){S.workers=S.users.map(u=>u.name)}
+const repTabs=()=>RT_REP.filter(([k])=>can(TAB_PERM[k]));
+const setTabs=()=>RT_SET.filter(([k])=>k==="users"?isAdmin():can(TAB_PERM[k]));
+function applyPerms(){
+  const show=(id,on)=>{const el=$(id);if(el)el.hidden=!on};
+  show("btnZay",can("zay"));show("btnRep",repTabs().length>0);show("btnExp",can("exp"));show("btnEdit",can("edit"));
+  show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("today",can("reports"));
+  $("userName").textContent=curName()+(isAdmin()?" (admin)":"");
+  if(editMode&&!can("edit"))setEdit(false);
+}
+// Açılışda: Admin-in PIN-i yoxdursa birbaşa admin kimi açılır (köhnə qayda), varsa giriş ekranı
+function startSession(){const a=openAdmin();if(a)login(a,true);else showLogin()}
+function login(u,quiet){
+  me=u;loginSel=null;pinBuf="";pinErr="";$("ovLogin").hidden=true;order=[];grp=null;draft=null;
+  applyPerms();renderAll();if(!quiet)toast(`Xoş gəldiniz, ${u.name}`);
+}
+function logout(){
+  if(editMode)setEdit(false);
+  document.querySelectorAll(".ov").forEach(o=>o.hidden=true);
+  me=null;order=[];draft=null;disarmPay();showLogin();
+}
+function showLogin(){
+  if(loginSel&&!userById(loginSel))loginSel=null;
+  const u=loginSel&&userById(loginSel),b=$("loginBody");
+  if(!u){
+    b.innerHTML=`<p class="sub">Adınıza toxunun. PIN kodunuz varsa, sonra onu yazın.</p>
+      <div class="utiles">${S.users.map(x=>`<button class="utile" data-login="${x.id}">👤 ${esc(x.name)}<span class="sub">${roleName(x)}${x.pin?" · 🔒":""}</span></button>`).join("")}</div>`;
+  }else{
+    const len=Math.max(4,pinBuf.length);
+    b.innerHTML=`<button class="btn ghost sm" data-login="back" style="justify-self:start">← Başqa işçi</button>
+      <p class="pinwho">👤 ${esc(u.name)} <span class="sub">· ${roleName(u)}</span></p>
+      <div class="pindots" id="pindots" aria-label="PIN: ${pinBuf.length} rəqəm yazılıb">${Array.from({length:len},(_,i)=>`<i class="${i<pinBuf.length?"on":""}"></i>`).join("")}</div>
+      <p class="pinerr" role="alert">${esc(pinErr)}</p>
+      <div class="keypad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-pin="${n}">${n}</button>`).join("")}<button data-pin="del" aria-label="Sil">⌫</button><button data-pin="0">0</button><button class="go" data-pin="go">Giriş ✓</button></div>
+      <p class="sub" style="text-align:center">Klaviatura ilə də yazmaq olar: rəqəmlər, ⌫ və Enter.</p>`;
+  }
+  $("ovLogin").hidden=false;
+}
+function pinPress(k){
+  const u=userById(loginSel);if(!u)return;
+  if(k==="del")pinBuf=pinBuf.slice(0,-1);
+  else if(k==="go"){
+    if(pinHash(pinBuf)===u.pin){login(u);return}
+    pinBuf="";pinErr="PIN səhvdir, yenidən yazın";showLogin();const d=$("pindots");d.classList.add("shake");return;
+  }
+  else if(pinBuf.length<6)pinBuf+=k;
+  pinErr="";showLogin();
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-login],[data-pin]");if(!t||$("ovLogin").hidden)return;
+  if(t.dataset.pin){pinPress(t.dataset.pin);return}
+  const id=t.dataset.login;
+  if(id==="back"){loginSel=null;pinBuf="";pinErr="";showLogin();return}
+  const u=userById(id);if(!u)return;
+  if(!u.pin){login(u);return}
+  loginSel=id;pinBuf="";pinErr="";showLogin();
+});
+document.addEventListener("keydown",e=>{
+  if($("ovLogin").hidden)return;
+  e.stopImmediatePropagation();
+  if(!loginSel)return;
+  if(/^[0-9]$/.test(e.key)){e.preventDefault();pinPress(e.key)}
+  else if(e.key==="Backspace"){e.preventDefault();pinPress("del")}
+  else if(e.key==="Enter"||e.key==="NumpadEnter"){e.preventDefault();pinPress("go")}
+  else if(e.key==="Escape"){loginSel=null;pinBuf="";pinErr="";showLogin()}
+},true);
+
 function renderHeader(){
-  $("worker").innerHTML=S.workers.map(w=>`<option>${w}</option>`).join("");
+  if(me)$("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   const ts=S.sales.filter(s=>isToday(s.ts));
   $("today").innerHTML=`Bu gün: <b>${ts.length}</b> satış · <b>${m2(ts.reduce((a,s)=>a+s.total,0))} ₼</b>`;
   $("chips").innerHTML=S.materials.map(m=>`<span class="chip ${m.stock<=m.min?"low":""}">${m.name}: <b>${m.stock}</b>${m.stock<=m.min?" ⚠":""}</span>`).join("");
@@ -651,13 +802,13 @@ let keyArm=0,keyArmT=null;
 const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=DONE_TXT}
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden;
 function finishSale(){
   disarmPay();
   const lines=order.map(o=>{const it=item(o.id),p=unitPrice(it,o.q);return{id:o.id,name:it.name,q:o.q,price:p,sum:p*o.q,cost:unitCost(it)*o.q}});
   const short=[],used={};
   order.forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;used[m]=(used[m]||0)+q*o.q;if(M.stock<0)short.push(M.name)}));
-  S.sales.push({id:newId("s"),ts:Date.now(),worker:$("worker").value,pay,lines,total:lines.reduce((a,l)=>a+l.sum,0),used});
+  S.sales.push({id:newId("s"),ts:Date.now(),worker:curName(),pay,lines,total:lines.reduce((a,l)=>a+l.sum,0),used});
   save();order=[];renderAll();autoBackup();
   toast(short.length?`Satıldı. Diqqət: ${short.join(", ")} mənfiyə düşdü`:"Satış yazıldı ✓");
 }
@@ -758,12 +909,13 @@ function renderHist(){
       <td>${s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':'<span class="pill card">💳 Kart</span>'}</td>
       <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}</td>
       <td>${esc(s.worker||"")}</td><td class="n"><b>${m2(s.total)} ₼</b></td>
-      <td>${hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
+      <td>${!can("delSale")?"":hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
         :`<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
     ${list.length>500?`<p class="sub">Son 500 satış göstərilir. Konkret günü seçin.</p>`:""}`
     :`<p class="sub empty-grp">${hDay?"Bu gün":"Hələ"} satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
 }
 async function deleteSale(k){
+  if(!can("delSale"))return;
   const i=S.sales.findIndex(s=>saleKey(s)===k);if(i<0)return;
   if(NATIVE)await window.erpBackup(backupText(),"el").catch(()=>{});
   const s=S.sales[i];
@@ -992,17 +1144,20 @@ function saveZay(){
   const M=mat($("zMat").value),q=Math.max(1,parseInt($("zQty").value)||1);
   if(!M){toast("Anbarda material yoxdur. Əvvəlcə ⚙️ Ayarlar → Materiallar bölməsində material əlavə edin");return}
   M.stock-=q;
-  S.waste.push({ts:Date.now(),mat:M.id,q,reason:zReason,worker:$("worker").value,note:$("zNote").value,cost:M.cost*q});
+  S.waste.push({ts:Date.now(),mat:M.id,q,reason:zReason,worker:curName(),note:$("zNote").value,cost:M.cost*q});
   save();$("ovZay").hidden=true;renderHeader();toast(`${q} vərəq ${M.name} zay yazıldı`);
 }
 
 // ---------- Hesabat ----------
 const RT_REP=[["gun","Bu gün"],["ay","📅 Aylıq"],["mal","Məhsul + mənfəət"],["zay","Zay"],["anbar","Anbar / Sayım"]];
-const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["mat","Materiallar / İşçilər"],["backup","💾 Ehtiyat nüsxə"]];
+const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["mat","Materiallar"],["users","👥 Kassirlər"],["backup","💾 Ehtiyat nüsxə"]];
 function renderRep(){
   refreshCats();
   $("rt").textContent=mode==="set"?"⚙️ Ayarlar":"📊 Hesabat / Anbar";
-  $("rtabs").innerHTML=(mode==="set"?RT_SET:RT_REP).map(([k,l])=>`<button class="tab ${k===rtab?"on":""}" data-rt="${k}">${l}</button>`).join("");
+  const TABS=mode==="set"?setTabs():repTabs();
+  if(!TABS.length){$("ovRep").hidden=true;return}
+  if(!TABS.some(([k])=>k===rtab))rtab=TABS[0][0];
+  $("rtabs").innerHTML=TABS.map(([k,l])=>`<button class="tab ${k===rtab?"on":""}" data-rt="${k}">${l}</button>`).join("");
   const sales=S.sales.filter(s=>isToday(s.ts)), waste=S.waste.filter(w=>isToday(w.ts));
   let h="";
   if(rtab==="gun"){
@@ -1013,9 +1168,9 @@ function renderRep(){
     h=`<div class="kpis">
       <div class="kpi"><span>Satış</span><b>${m2(tot)} ₼</b></div>
       <div class="kpi"><span>Nağd / Kart</span><b>${m2(cash)} / ${m2(tot-cash)}</b></div>
-      <div class="kpi"><span>Material + mürəkkəb mayası</span><b>${m2(cost)} ₼</b></div>
+      ${can("cost")?`<div class="kpi"><span>Material + mürəkkəb mayası</span><b>${m2(cost)} ₼</b></div>
       <div class="kpi"><span>Zay itkisi</span><b style="color:var(--bad)">${m2(wc)} ₼</b></div>
-      <div class="kpi"><span>Satışdan qazanc</span><b style="color:var(--ok)">${m2(tot-cost-wc)} ₼</b></div></div>
+      <div class="kpi"><span>Satışdan qazanc</span><b style="color:var(--ok)">${m2(tot-cost-wc)} ₼</b></div>`:""}</div>
       <h4>💰 Kassa (yalnız nağd pul)</h4>
       <div class="kassa">
         <label class="f xs">Səhər kassada idi ₼<input id="k_open" type="number" step="0.01" value="${K.open??""}" placeholder="0.00"></label>
@@ -1062,6 +1217,7 @@ function renderRep(){
   if(rtab==="admin") h=renderAdmin();
   if(rtab==="mat") h=renderMatAdmin();
   if(rtab==="backup") h=renderBackup();
+  if(rtab==="users") h=renderUsers();
   $("rbody").innerHTML=h;
   if(rtab==="backup")fillBackupList();
 }
@@ -1189,10 +1345,32 @@ function renderMatAdmin(){
     <td class="n"><input id="nm_min" type="number" placeholder="0"></td>
     <td class="n"><input id="nm_stock" type="number" placeholder="qalıq"></td>
     <td><button class="btn sm" data-act="madd">+ Əlavə et</button></td></tr></table></div>
-  <div><button class="btn" data-act="msave">Dəyişiklikləri yadda saxla</button></div>
-  <h4>İşçilər</h4>
-  <div class="frow">${S.workers.map(w=>`<span class="chip">${esc(w)} <button class="x" data-act="wdel" data-w="${esc(w)}" aria-label="${esc(w)} sil">×</button></span>`).join("")}</div>
-  <div class="frow"><input id="nw" placeholder="Yeni işçinin adı"><button class="btn sm" data-act="wadd">+ İşçi əlavə et</button></div>`;
+  <div><button class="btn" data-act="msave">Dəyişiklikləri yadda saxla</button></div>`;
+}
+
+// ---------- Admin: 👥 Kassirlər ----------
+function renderUsers(){
+  const oa=openAdmin();
+  return `${oa?`<div class="warnbox">⚠ <b>Admin üçün PIN qoyulmayıb.</b> Proqram açılanda hər kəs avtomatik admin kimi girir və hər şeyi görür. Kassirlərin icazələrinin işləməsi üçün aşağıda “${esc(oa.name)}” üçün PIN qoyun.</div>`:""}
+  <p class="sub">Hər işçi proqrama öz adı və PIN kodu (4–6 rəqəm) ilə girir. Satış və zay kimin adına yazılır. Admin hər şeyi görür. Kassirə yalnız işarələdiyiniz işlər açıqdır: icazəsi olmayan düymələri o, ümumiyyətlə görmür.</p>
+  <div class="ulist">${S.users.map(userCard).join("")}</div>
+  <h4>➕ Yeni kassir</h4>
+  <div class="frow"><input id="nu_name" placeholder="Adı, məs. Leyla" aria-label="Yeni kassirin adı"><input id="nu_pin" inputmode="numeric" maxlength="6" placeholder="PIN, məs. 1234" aria-label="Yeni kassirin PIN kodu"><button class="btn" data-act="uadd">+ Kassir əlavə et</button></div>
+  <p class="sub">Yeni kassirə əvvəlcə yalnız satış, zay yazmaq və satış tarixçəsi açıqdır. Qalanını özünüz işarələyin. PIN boş qalsa, kassir adına toxunan kimi girir.</p>`;
+}
+function userCard(u){
+  const self=u.id===me?.id,adm=u.role==="admin";
+  return `<div class="ucard">
+    <div class="uhead"><input id="u_n_${u.id}" data-un="${u.id}" value="${esc(u.name)}" aria-label="Ad">
+      <select data-ur="${u.id}" aria-label="Vəzifə" ${self?"disabled title=\"Öz vəzifənizi dəyişə bilməzsiniz\"":""}><option value="kassir" ${adm?"":"selected"}>Kassir</option><option value="admin" ${adm?"selected":""}>Admin</option></select>
+      ${u.pin?'<span class="pill ok">🔒 PIN var</span>':'<span class="pill warn">PIN yoxdur</span>'}${self?'<span class="pill card">siz</span>':""}</div>
+    <div class="frow"><input id="u_p_${u.id}" inputmode="numeric" maxlength="6" placeholder="${u.pin?"Yeni PIN":"PIN (4–6 rəqəm)"}" aria-label="${esc(u.name)} üçün PIN">
+      <button class="btn ghost sm" data-act="upin" data-id="${u.id}">${u.pin?"PIN-i dəyiş":"PIN qoy"}</button>
+      ${u.pin?`<button class="btn ghost sm" data-act="upinx" data-id="${u.id}">PIN-i sil</button>`:""}
+      ${self?"":`<button class="btn ghost sm" data-act="udel" data-id="${u.id}">${delArm===u.id?"Əminsiniz? Sil":"🗑 Sil"}</button>`}</div>
+    ${adm?`<p class="sub">Admin bütün işləri görür, icazə seçmək lazım deyil.</p>`
+      :`<div class="perms">${PERMS.map(([k,l])=>`<label class="perm"><input type="checkbox" data-up="${u.id}" data-k="${k}" ${u.perms?.[k]?"checked":""}> ${l}</label>`).join("")}</div>`}
+  </div>`;
 }
 
 // ---------- Ehtiyat nüsxə ----------
@@ -1205,7 +1383,9 @@ function renderBackup(){
     <div class="kpi"><span>Zay qeydləri</span><b>${S.waste.length}</b></div>
     <div class="kpi"><span>Məlumatın həcmi</span><b>${kb} KB</b></div>
     <div class="kpi"><span>Son ehtiyat nüsxə</span><b style="font-size:15px;color:${old?"var(--warn)":"var(--ok)"}">${last}</b></div></div>
-  ${NATIVE?`<p class="sub">Proqram hər gün ilk satışda (və hər açılışda) özü ehtiyat nüsxə yaradır. Son ${30} nüsxə saxlanılır, köhnələri avtomatik silinir. Kompüter xarab olmasından qorunmaq üçün bu qovluğu vaxtaşırı fləşkaya və ya Google Drive-a da köçürün.</p>
+  ${NATIVE?`<p class="sub">${opReady()?`Proqram <b>hər əməliyyatdan sonra</b> (satış, zay, alış, xərc, düymə və ya qiymət dəyişikliyi) özü ehtiyat nüsxə yaradır. Heç nə dəyişməyibsə, nüsxə yazılmır. Bundan əlavə gündə bir dəfə ayrıca gündəlik nüsxə olur. Saxlanılır: son 100 əməliyyat nüsxəsi, son 60 gündəlik və son 30 əl ilə nüsxə, köhnələri özü silinir.`
+      :`Proqram hər gün ilk satışda (və hər açılışda) özü ehtiyat nüsxə yaradır. Son 30 nüsxə saxlanılır. Hər əməliyyatdan sonra nüsxə üçün proqramı YENILE ilə yeniləyin.`}
+      Kompüter xarab olmasından qorunmaq üçün bu qovluğu vaxtaşırı fləşkaya və ya Google Drive-a da köçürün.</p>
     <div class="pathbox"><span class="sub">Ehtiyat qovluğu</span><code>${esc(PATHS?.backup||"")}</code><span class="sub">Məlumat faylı</span><code>${esc(PATHS?.data||"")}</code></div>
     <div class="frow"><button class="btn" data-act="bnow">💾 İndi ehtiyat nüsxə yarat</button><button class="btn ghost" data-act="bopen">📂 Qovluğu aç</button><button class="btn ghost" data-act="bcopy">Mətn kimi kopyala</button></div>
     <h4>Qovluqdakı ehtiyat nüsxələr</h4>
@@ -1219,21 +1399,26 @@ function renderBackup(){
   <h4>Sıfırlamaq</h4>
   <div><button class="btn ghost" data-act="reset">${delArm==="reset"?"Əminsiniz? Bütün məlumat silinəcək":"Nümunə məlumata qaytar"}</button></div>`;
 }
+let bKind="all";
+const bkindOf=n=>n.includes("-emel")?"emel":n.includes("-avto")?"avto":"el";
+const BKIND_NAME={emel:"əməliyyatdan sonra",avto:"gündəlik",el:"əl ilə"};
 async function fillBackupList(){
   const box=$("blist");if(!box||!NATIVE)return;
   try{if(!backups)backups=await window.erpBackupList()}catch(e){box.innerHTML=`<p class="sub">Siyahı oxunmadı: ${esc(e)}</p>`;return}
   if(!$("blist"))return;
-  $("blist").innerHTML=backups.length?`<table><tr><th>Tarix</th><th>Növ</th><th class="n">Həcm</th><th></th></tr>${backups.map(b=>`<tr>
-    <td>${new Date(b.time).toLocaleString("az")}</td><td>${b.name.includes("-avto")?"avtomatik":"əl ilə"}</td><td class="n">${Math.max(1,Math.round(b.size/1024))} KB</td>
+  const shown=backups.filter(b=>bKind==="all"||bkindOf(b.name)===bKind);
+  $("blist").innerHTML=`<div class="frow" style="margin-bottom:8px"><span class="sub">Göstər:</span>${[["all","Hamısı"],["emel","Əməliyyatdan sonra"],["avto","Gündəlik"],["el","Əl ilə"]].map(([k,l])=>`<button class="tab sm ${bKind===k?"on":""}" data-act="bkind" data-k="${k}">${l} (${k==="all"?backups.length:backups.filter(b=>bkindOf(b.name)===k).length})</button>`).join("")}</div>`
+    +(shown.length?`<table><tr><th>Tarix</th><th>Növ</th><th class="n">Həcm</th><th></th></tr>${shown.map(b=>`<tr>
+    <td>${new Date(b.time).toLocaleString("az")}</td><td>${BKIND_NAME[bkindOf(b.name)]}</td><td class="n">${Math.max(1,Math.round(b.size/1024))} KB</td>
     <td><button class="btn ghost sm" data-act="brest" data-n="${esc(b.name)}">Bu nüsxəni bərpa et</button></td></tr>`).join("")}</table>`
-    :`<p class="sub">Hələ ehtiyat nüsxə yoxdur. "İndi ehtiyat nüsxə yarat" basın.</p>`;
+    :`<p class="sub">${backups.length?"Bu növdə nüsxə yoxdur.":"Hələ ehtiyat nüsxə yoxdur. \"İndi ehtiyat nüsxə yarat\" basın."}</p>`);
 }
 function backupText(){return JSON.stringify({app:"KASSA",version:APP_VERSION,exported:new Date().toISOString(),data:S},null,1)}
 
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
-  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove"].includes(a))delArm=null;
+  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove","udel"].includes(a))delArm=null;
   if(a==="editdone"){setEdit(false);return}
   else if(a==="banx"){$("banner").hidden=true;return}
   else if(a==="bango"){$("banner").hidden=true;mode="set";rtab="backup";$("ovRep").hidden=false}
@@ -1302,8 +1487,18 @@ document.addEventListener("click",e=>{
     if(used.length){toast("Əvvəlcə reseptlərdən çıxarın: "+used.map(i=>i.name).join(", "));return}
     if(delArm!==id)delArm=id;else{S.materials=S.materials.filter(m=>m.id!==id);delArm=null;save();renderHeader();toast("Material silindi")}
   }
-  else if(a==="wadd"){const n=$("nw").value.trim();if(!n||S.workers.includes(n))return;S.workers.push(n);save();renderHeader()}
-  else if(a==="wdel"){if(S.workers.length<2){toast("Ən azı bir işçi qalmalıdır");return}S.workers=S.workers.filter(w=>w!==t.dataset.w);save();renderHeader()}
+  else if(a==="uadd"){if(!isAdmin())return;
+    const n=$("nu_name").value.trim(),pin=$("nu_pin").value.trim();
+    if(!n){toast("Kassirin adını yazın");return}
+    if(S.users.some(u=>norm(u.name)===norm(n))){toast(`"${n}" adlı işçi artıq var`);return}
+    if(pin&&!pinOk(pin)){toast("PIN yalnız 4–6 rəqəm ola bilər");return}
+    S.users.push({id:newId("u"),name:n,pin:pin?pinHash(pin):"",role:"kassir",perms:{...KASSIR_DEFAULT}});syncWorkers();save();toast(`"${n}" kassir kimi əlavə olundu`)}
+  else if(a==="upin"){if(!isAdmin())return;const u=userById(t.dataset.id),pin=$("u_p_"+t.dataset.id).value.trim();
+    if(!u)return;if(!pinOk(pin)){toast("PIN 4–6 rəqəm olmalıdır, məs. 1234");return}
+    u.pin=pinHash(pin);save();toast(`${u.name}: PIN yadda saxlandı. Növbəti girişdə soruşulacaq`)}
+  else if(a==="upinx"){if(!isAdmin())return;const u=userById(t.dataset.id);if(!u)return;u.pin="";save();toast(`${u.name}: PIN silindi`)}
+  else if(a==="udel"){if(!isAdmin())return;const id=t.dataset.id,u=userById(id);if(!u||id===me.id)return;
+    if(delArm!==id){delArm=id}else{delArm=null;S.users=S.users.filter(x=>x.id!==id);syncWorkers();save();toast(`"${u.name}" silindi. Onun keçmiş satışları yerində qalır`)}}
   else if(a==="bexp"){
     try{const b=new Blob([backupText()],{type:"application/json"}),u=URL.createObjectURL(b),l=document.createElement("a");
       l.href=u;l.download=`kassa-ehtiyat-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(l);l.click();l.remove();
@@ -1315,6 +1510,7 @@ document.addEventListener("click",e=>{
     (NATIVE?window.erpBackup(backupText(),"el").catch(()=>{}):Promise.resolve()).then(()=>{
       S=next;upgrade();save();order=[];backups=null;renderAll();renderRep();toast("Məlumat ehtiyat nüsxədən bərpa olundu")});return}
   else if(a==="bimpx"){pendingImport=null}
+  else if(a==="bkind"){bKind=t.dataset.k;fillBackupList();return}
   else if(a==="bnow"){window.erpBackup(backupText(),"el").then(p=>{S.lastBackup=Date.now();backups=null;save();renderRep();toast("Ehtiyat nüsxə yaradıldı ✓")},e=>toast("Alınmadı: "+e));return}
   else if(a==="bopen"){window.erpOpenFolder().catch(e=>toast("Qovluq açılmadı: "+e));return}
   else if(a==="brest"){window.erpBackupRead(t.dataset.n).then(txt=>{const d=parseData(txt);if(!d)throw "fayl düzgün deyil";
@@ -1326,6 +1522,16 @@ document.addEventListener("click",e=>{
   if(draft&&["edit","new","qedit","qnew"].includes(a))$("editor")?.scrollIntoView({behavior:"smooth",block:"start",inline:"nearest"});
 });
 document.addEventListener("change",e=>{
+  const ds=e.target.dataset||{};
+  if((ds.un||ds.ur||ds.up)&&isAdmin()){
+    const u=userById(ds.un||ds.ur||ds.up);if(!u)return;
+    if(ds.un){const n=e.target.value.trim();
+      if(!n||S.users.some(x=>x!==u&&norm(x.name)===norm(n))){toast(n?`"${n}" adlı işçi artıq var`:"Ad boş ola bilməz");renderRep();return}
+      u.name=n;toast("Ad dəyişdi. Köhnə satışlarda əvvəlki ad qalır")}
+    else if(ds.ur){if(u.id===me.id)return;u.role=e.target.value==="admin"?"admin":"kassir";toast(`${u.name}: ${roleName(u)}`)}
+    else{u.perms[ds.k]=e.target.checked?1:0}
+    syncWorkers();save();applyPerms();renderRep();return;
+  }
   if(["e_type","e_cat"].includes(e.target.id)&&draft){syncDraft();if(e.target.id==="e_cat")draft.parent=undefined;renderRep();return}
   const cid=e.target.dataset?.cid;
   if(cid){const c=S.cats.find(x=>x.id===cid),n=e.target.value.trim();if(c&&n){c.name=n;save();renderTabs();toast("Bölmənin adı dəyişdi")}return}
@@ -1354,6 +1560,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="payCard"){pay="kart";renderOrder()}
   else if(t.id==="btnDone")finishSale();
   else if(t.id==="btnClear"){order=[];renderGrid();renderOrder()}
+  else if(t.id==="btnUser")logout();
   else if(t.id==="btnZay")openZay();
   else if(t.id==="zSave")saveZay();
   else if(t.id==="btnRep"){mode="rep";rtab="gun";draft=null;renderRep();$("ovRep").hidden=false}
@@ -1366,7 +1573,7 @@ document.addEventListener("click",e=>{
     S.materials.forEach(m=>{
       const c=parseFloat($("c_"+m.id).value);if(!isNaN(c))m.cost=c;
       const b=parseInt($("b_"+m.id).value);if(b>0)m.stock+=b;
-      const f=$("f_"+m.id).value;if(f!==""){const d=m.stock-parseInt(f);if(d>0){S.waste.push({ts:Date.now(),mat:m.id,q:d,reason:"Sayım fərqi",worker:$("worker").value,note:"qeydə alınmayan",cost:m.cost*d});diff.push(`${m.name}: −${d}`)}m.stock=parseInt(f)}
+      const f=$("f_"+m.id).value;if(f!==""){const d=m.stock-parseInt(f);if(d>0){S.waste.push({ts:Date.now(),mat:m.id,q:d,reason:"Sayım fərqi",worker:curName(),note:"qeydə alınmayan",cost:m.cost*d});diff.push(`${m.name}: −${d}`)}m.stock=parseInt(f)}
     });
     save();renderHeader();renderRep();toast(diff.length?"Sayım fərqi: "+diff.join(", "):"Anbar yeniləndi");
   }
@@ -1376,7 +1583,7 @@ document.addEventListener("change",e=>{
   const o=order.find(x=>x.id===id);if(!o)return;o.q=Math.max(1,parseInt(e.target.value)||1);
   setTimeout(()=>{renderGrid();renderOrder()},0); // blur zamanı DOM-u dərhal dəyişməmək üçün
 });
-document.querySelectorAll(".ov").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
+document.querySelectorAll(".ov:not(.lock)").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
 document.addEventListener("change",e=>{
   if(e.target.id!=="k_open"&&e.target.id!=="k_cnt")return;
   const d=dayKey(Date.now()),c=S.cash[d]||(S.cash[d]={}),v=e.target.value===""?null:+e.target.value;
@@ -1436,7 +1643,7 @@ $("ver").textContent="v"+APP_VERSION;
   await loadData();
   if(NATIVE){try{PATHS=await window.erpPaths()}catch(e){}}
   if(firstRun)$("banner").hidden=false;
-  renderAll();renderDebtBadge();
+  startSession();renderDebtBadge();
   if(migrated)toast("Məlumat yeni fayl yaddaşına köçürüldü ✓");
   autoBackup();
 })();

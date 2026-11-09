@@ -130,6 +130,7 @@ func main() {
 	w.Bind("erpSave", st.save)
 	w.Bind("erpBackup", func(json, kind string) (string, error) { return st.backup(json, kind, time.Now()) })
 	w.Bind("erpBackupList", st.list)
+	w.Bind("erpBackupKinds", backupKinds)
 	w.Bind("erpBackupRead", st.read)
 	w.Bind("erpPaths", func() map[string]string {
 		return map[string]string{"data": st.dataFile, "backup": st.backupDir}
