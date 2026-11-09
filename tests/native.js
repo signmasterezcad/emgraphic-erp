@@ -12,10 +12,10 @@ let clock = 0;
     const p = await ctx.newPage(); p.on('pageerror', e => errs.push(e.message));
     await p.exposeFunction('erpLoad', () => fs.data);
     await p.exposeFunction('erpSave', j => { if (j[0] !== '{') throw new Error('bad'); fs.data = j; });
-    await p.exposeFunction('erpBackup', (j, kind) => { const name = `kassa-2026-11-${String(10 + clock++).padStart(2, '0')}_10-00-00-${kind === 'avto' ? 'avto' : 'el'}.json`; fs.backups.unshift({ name, size: j.length, time: Date.now(), j }); return 'C:\\EMGRAPHIC-ERP\\ehtiyat\\' + name; });
+    await p.exposeFunction('erpBackup', (j, kind) => { const name = `kassa-2026-11-${String(10 + clock++).padStart(2, '0')}_10-00-00-${kind === 'avto' ? 'avto' : 'el'}.json`; fs.backups.unshift({ name, size: j.length, time: Date.now(), j }); return 'C:\\KASSA\\ehtiyat\\' + name; });
     await p.exposeFunction('erpBackupList', () => fs.backups.map(({ name, size, time }) => ({ name, size, time })));
     await p.exposeFunction('erpBackupRead', n => fs.backups.find(x => x.name === n).j);
-    await p.exposeFunction('erpPaths', () => ({ data: 'C:\\Users\\x\\AppData\\Roaming\\KASSA\\data\\kassa-data.json', backup: 'C:\\EMGRAPHIC-ERP\\ehtiyat' }));
+    await p.exposeFunction('erpPaths', () => ({ data: 'C:\\Users\\x\\AppData\\Roaming\\KASSA\\data\\kassa-data.json', backup: 'C:\\KASSA\\ehtiyat' }));
     await p.exposeFunction('erpOpenFolder', () => null);
     if (seedLocal !== undefined) await p.addInitScript(v => { if (v) localStorage.setItem('fotoerp.v1', v); else localStorage.clear(); }, seedLocal);
     await p.goto('file://' + path.resolve('app/index.html'));
@@ -50,7 +50,7 @@ let clock = 0;
 
   // 4) Ehtiyat ekranı: qovluq yolu, siyahı, əl ilə nüsxə, bərpa
   await p.click('#btnSet'); await p.click('[data-rt=backup]'); await p.waitForSelector('#blist table');
-  ok((await p.textContent('#rbody')).includes('C:\\EMGRAPHIC-ERP\\ehtiyat'), 'ehtiyat qovluğunun yolu göstərilir');
+  ok((await p.textContent('#rbody')).includes('C:\\KASSA\\ehtiyat'), 'ehtiyat qovluğunun yolu göstərilir');
   await p.click('[data-act=bnow]'); await p.waitForTimeout(200);
   ok(fs.backups.length === 3 && fs.backups[0].name.includes('-el'), '"İndi ehtiyat nüsxə yarat" işləyir');
   ok(await p.locator('#blist tr').count() === 4, 'siyahıda 3 nüsxə görünür');

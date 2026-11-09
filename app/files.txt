@@ -4,4 +4,3 @@ kassa.svg
 fonts/notosans-latin.woff2
 fonts/notosans-latin-ext.woff2
 ../KASSA.exe
-../EMGRAPHIC ERP.exe

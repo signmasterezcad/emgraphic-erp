@@ -352,7 +352,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.21.0";
+const APP_VERSION="0.21.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1228,8 +1228,6 @@ async function fillBackupList(){
     <td><button class="btn ghost sm" data-act="brest" data-n="${esc(b.name)}">Bu nüsxəni bərpa et</button></td></tr>`).join("")}</table>`
     :`<p class="sub">Hələ ehtiyat nüsxə yoxdur. "İndi ehtiyat nüsxə yarat" basın.</p>`;
 }
-// Keçid dövrü: v0.17.0-dan əvvəlki YENILE skriptləri yüklənən faylda "EMGRAPHIC ERP" sözünü axtarır.
-// Bütün quraşdırmalar yeni skriptə keçəndən sonra bu sətri silmək olar.
 function backupText(){return JSON.stringify({app:"KASSA",version:APP_VERSION,exported:new Date().toISOString(),data:S},null,1)}
 
 document.addEventListener("click",e=>{
