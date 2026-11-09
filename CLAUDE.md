@@ -51,6 +51,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Qruplar (`S.mig.sublimQruplar`, hamısı boş, istifadəçi zamanla yazacaq): Plaket (`g_plaket`), Suvenir (`g_suvenir`),
   Bayraq təkli/ikili/üçlü (`g_bayraq1/2/3`), Medal (`g_medal`), Alışqan (`g_alisqan`), Body (`g_body`).
 - Qiyməti 0 olan düymə "⚠ qiymət yoxdur" göstərir və satılmır.
+- **Başlıq quruluşu** (v0.38.0, sahibinin seçimi): **📦 Anbar** (`#btnStock`, `mode="stock"`, `RT_STOCK`: Qalıq / Sayım `anbar`, Materiallar `mat`,
+  ⚠ Az qalanlar `low`; icazə `stock`) — Hesabatdan "Anbar / Sayım", Ayarlardan "Materiallar" bura köçdü. **💳 Borclar** (`#btnCust`, pəncərə `#ovCDebt`):
+  🏢 Bizə borclular (`debt`, custDebt) / 🚚 Bizim borclarımız (`sdebt`, suppDebt — `suppDebtHtml()`, Tədarükçü pəncərəsindəki Borclar tabı silindi) /
+  Müəssisələr (admin); həmişə birinci tabla açılır; başlıqda iki nişan: `#custBadge` "bizə …", `#suppBadge` (qırmızı) "biz …". `data-s` düymələri
+  `#ovCDebt` içində də işləyir. **📊 Hesabat** (adı "Hesabat / Anbar" idi) → yeni **💳 Borclar** tabı (`borc`, yalnız baxış, dövrlə: indiki borclar,
+  dövrdə nisyə satış/alınan, nisyə alış/ödənən; mal alışı nisyəsi `purchDebt()` də sayılır).
 - **✏️ Düzəliş** (v0.37.0): başlıqda yoxdur (`#btnEdit` gizli), **⚙️ Ayarlar**-ın yuxarısında "✏️ Düzəliş rejimini aç" (`data-act="goedit"`, `can("edit")`) —
   Ayarlar bağlanır, `setEdit(true)`; çıxış əvvəlki kimi "Hazır" (`editdone`).
 - **Kəsim Plotter** (id `plotter`) və **Fiber Lazer** (id `lazer`) bölmələri (`S.mig.plotterLazer`) — hələ boşdur.

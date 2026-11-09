@@ -265,6 +265,8 @@ const path = require('path');
   ok(await p.locator('[data-act=ldel][data-id=kser]').count() === 0 && !(await p.textContent('#tabs')).includes('📑'), 'siyahıdan Sil ilə düymə silindi');
 
   // Materiallar
+  await p.click('#ovRep [data-close]'); await p.click('#btnStock');
+  ok((await p.textContent('#rt')).includes('Anbar') && (await p.locator('#rtabs .tab').allTextContents()).join('|') === 'Qalıq / Sayım|Materiallar|⚠ Az qalanlar', '📦 Anbar: Qalıq / Sayım, Materiallar, Az qalanlar');
   await p.click('[data-rt=mat]');
   await p.fill('#nm_name', 'A3 80 qr'); await p.fill('#nm_cost', '0.04'); await p.fill('#nm_stock', '500');
   await p.click('[data-act=madd]');
@@ -272,6 +274,10 @@ const path = require('path');
   await p.click('[data-act=mdel][data-id=a4]');
   ok(await p.isVisible('#toast') && (await p.textContent('#toast')).includes('reseptlərdən'), 'istifadədə olan material silinmir');
 
+  await p.click('[data-rt=low]');
+  ok((await p.textContent('#rbody')).includes('Az qalanlar') || (await p.textContent('#rbody')).includes('kifayət'), 'Az qalanlar tabı açılır');
+  await p.click('#ovRep [data-close]'); await p.click('#btnSet');
+  ok(!(await p.textContent('#rtabs')).includes('Materiallar'), 'Ayarlarda Materiallar tabı yoxdur (Anbara köçüb)');
   // Ehtiyat nüsxə: fayla yaz və geri yüklə
   await p.click('[data-rt=backup]');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('[data-act=bexp]')]);
