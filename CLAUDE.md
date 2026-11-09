@@ -102,6 +102,15 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   üstünə ödəniş olunmuş nisyə alışı silmək olmur.
   İcazələr: `supp` (alışı yazmaq, nisyə daxil; kassirlərə standart, `S.mig.suppPerm` mövcud kassirlərə verdi), `suppRep` (aylıq hesabat).
   Kassir yalnız bu gün öz yazdığını silə bilər, admin hamısını; tarixi yalnız admin seçə bilir.
+  **Mal-mal qeyd** (v0.25.0): alış formasında sətirlər (`sl_n_i` ad, `sl_q_i` say, `sl_s_i` məbləğ), cəmi özü; qeyddə `lines:[{name,qty,sum}]`,
+  `note` = "Ad ×say, …". Əvvəlki adlar datalist ilə təklif olunur. Aylıq hesabatda "nə alınıb" cədvəli (tədarükçü + mal üzrə cəm).
+- **🏢 Borclular — müəssisələrə borca satış** (v0.25.0): "Cari sifariş"də `#payDebt` "📝 Borca" → `#ovCust` müəssisə seçimi
+  (yenisini orada əlavə etmək olar) → `pay="borc"`, `ordCust`; düymə "Borca yaz ✓". Satış: `pay:"borc", cust, custName`.
+  `S.customers=[{id,name}]`, pul alınanda `S.custPays=[{id,cust,name,ts,amount,by,worker}]` (hissə-hissə). Borc = `custOwed(id)`.
+  Satış həmin gün satış/mənfəət sayılır; kassaya yalnız nağd alınan pul düşür (`cashDay().custIn`, "+ Borclulardan alınan nağd").
+  Başlıqda `#btnCust` "🏢 Borclular" + `#custBadge`, pəncərə `#ovCDebt` (Borclar / Müəssisələr — admin). Tarixçədə "📝 Borca" süzgəci.
+  İcazələr: `custSale` (kassirə standart, `S.mig.custPerm`), `custDebt` (borcları görmək və pulu almaq, standart bağlı).
+  Üstünə pul alınmış borca satışı silmək olmur.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
