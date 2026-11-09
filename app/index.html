@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KASSA</title>
 <link rel="icon" href="kassa.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f141b">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 @font-face{font-family:"Noto Sans";font-style:normal;font-weight:400 800;font-display:swap;src:url(fonts/notosans-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -76,6 +78,13 @@ header h1{font-size:18px;margin:0;font-weight:800;flex:1 1 auto}
 .stile .sm2{font-size:12px;font-weight:600;opacity:.9}
 .sform{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px;background:var(--panel2)}
 .sform h4{margin:0;font-size:17px}
+.cloudst{display:inline-flex;align-items:center;gap:6px}
+.cloudst.ok{color:var(--ok)}.cloudst.wait{color:var(--warn)}.cloudst.bad{color:var(--bad)}
+.cform{display:grid;gap:10px;max-width:560px}
+.cform input{padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);width:100%}
+.steps{margin:0;padding-left:20px;display:grid;gap:8px;line-height:1.55}
+.steps code,.rules{background:var(--panel2);border-radius:6px;padding:1px 6px;font-size:12px;overflow-wrap:anywhere}
+.rules{display:block;white-space:pre-wrap;padding:10px;font-family:ui-monospace,Consolas,monospace}
 .syncbar{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:35;background:var(--bad);color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .phonebox{display:grid;gap:10px}
 .phonebox .addr{font-size:22px;font-weight:800;letter-spacing:.02em;user-select:all}
@@ -316,6 +325,7 @@ h4{margin:6px 0 0;font-size:14px}
   <button class="hbtn" id="btnSupp">🚚 Tədarükçü <span class="badge" id="suppBadge" hidden></span></button>
   <button class="hbtn" id="btnEdit">✏️ Düzəliş</button>
   <button class="hbtn" id="btnSet">⚙️ Ayarlar</button>
+  <button class="hbtn" id="btnCloud" hidden title="Bulud (Firebase) sinxronu">☁️ <span id="cloudTxt"></span></button>
   <div class="today" id="today"></div>
 </header>
 <div class="chips wrap" id="chips" hidden></div>
@@ -440,6 +450,13 @@ h4{margin:6px 0 0;font-size:14px}
   </div>
 </div>
 
+<div class="ov lock" id="ovCloud" hidden>
+  <div class="modal login" role="dialog" aria-labelledby="clt">
+    <div class="mh"><h3 id="clt"><img src="kassa.svg" class="logo" alt="" width="24" height="24">KASSA · ☁️ Bulud</h3></div>
+    <div class="mb" id="cloudLoginBody"></div>
+  </div>
+</div>
+
 <div class="ov lock" id="ovKey" hidden>
   <div class="modal login" role="dialog" aria-labelledby="kt">
     <div class="mh"><h3 id="kt"><img src="kassa.svg" class="logo" alt="" width="24" height="24">KASSA · Telefon</h3></div>
@@ -526,7 +543,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.29.0";
+const APP_VERSION="0.30.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -740,8 +757,10 @@ async function loadData(){
       try{S=parseData(localStorage.getItem(KEY)||"");if(S)migrated=true}catch(e){}
     }
   }else{
-    try{S=parseData(localStorage.getItem(KEY)||"")}catch(e){}
+    if(PHONE_CLOUD){S=parseData(await KV.get("data")||"")}
+    else try{S=parseData(localStorage.getItem(KEY)||"")}catch(e){}
   }
+  if(!S&&PHONE_CLOUD)S=await cloudFirstLoad(); // telefon: məlumat buluddan gəlir, nümunə məlumat yaradılmır
   if(!S){S=structuredClone(SEED);firstRun=true}
   if(NATIVE&&!firstRun&&!S.mig?.anbarSifir&&S.materials?.length)
     try{await window.erpBackup(backupText(),"el")}catch(e){}   // anbar silinməzdən əvvəl
@@ -755,13 +774,14 @@ const save=()=>{
   const txt=JSON.stringify(S);
   if(NATIVE){
     if(loadBroken){toast("Məlumat faylı xarab olduğu üçün yazılmır. Proqramçıya müraciət edin.");return}
-    if(SYNC){schedulePush();opBackupSoon();return}
+    if(SYNC){schedulePush();opBackupSoon();cloudSoon();return}
     saving=saving.then(()=>window.erpSave(txt)).then(
       ()=>{if(saveFailed){saveFailed=false;toast("Məlumat yenidən diskə yazılır ✓")}},
       e=>{saveFailed=true;toast("Diqqət: məlumat diskə yazılmadı: "+e)});
-    opBackupSoon();
+    opBackupSoon();cloudSoon();
     return;
   }
+  if(PHONE_CLOUD){kvSaveSoon("data",txt);cloudSoon();return}
   try{localStorage.setItem(KEY,txt)}catch(e){toast("Diqqət: məlumat yadda saxlanmadı (brauzer yaddaşı dolub)")}
 };
 // Hər əməliyyatdan sonra ehtiyat nüsxə (v0.22.0). Bir neçə saniyə ərzindəki dəyişikliklər bir nüsxəyə yığılır;
@@ -855,6 +875,266 @@ function merge3(b,l,r,k){
   }
   return l;
 }
+// ================= ☁️ BULUD (Google Firebase: Firestore + Auth, REST ilə) =================
+// Hər cihaz öz məlumatını saxlayır (kompüter faylda, telefon brauzerin yaddaşında) və internet olanda buludla
+// dəyişiklik mübadiləsi edir. Məlumat "vahidlərə" bölünür: hər satış, xərc, düymə, material… ayrıca sənəddir.
+// Göndər: son ortaq vəziyyətdən (base) fərqlənən vahidlər. Al: bulud sənədləri "t" (server vaxtı) üzrə, kursordan sonrakılar.
+// Toqquşmada merge3; anbar qalığı (stock) buluda artım/azalma kimi yazılır, ona görə iki yerdə satış toplanır.
+const CLOUD_SHOP="main",PAGES_URL="https://signmasterezcad.github.io/kassa/app/";
+const KEYED=["items","cats","users","materials","suppliers","customers","recurring","sales","expenses","purchases","waste","custPays","suppPays"];
+const ORDERED=new Set(["items","cats","users","materials","suppliers","customers","recurring"]);
+const PERSUB=new Set(["cash"]), LOCALONLY=new Set(["lastAuto","lastBackup"]);
+// Yaddaş: kompüterdə exe faylları (bulud-*.json), telefonda IndexedDB
+const KV=(()=>{
+  if(typeof window.erpKVGet==="function")return{get:n=>window.erpKVGet(n),set:(n,v)=>window.erpKVSet(n,v)};
+  let dbp=null;const db=()=>dbp||(dbp=new Promise((res,rej)=>{try{const r=indexedDB.open("kassa",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}}));
+  const tx=(m,f)=>db().then(d=>new Promise((res,rej)=>{const t=d.transaction("kv",m),q=f(t.objectStore("kv"));t.oncomplete=()=>res(q.result);t.onerror=()=>rej(t.error)}));
+  return{get:n=>tx("readonly",o=>o.get(n)).then(v=>v??"").catch(()=>""),set:(n,v)=>tx("readwrite",o=>v?o.put(v,n):o.delete(n))};
+})();
+const kvT={};function kvSaveSoon(n,v){clearTimeout(kvT[n]);kvT[n]=setTimeout(()=>KV.set(n,typeof v==="function"?v():v).catch(()=>{}),400)}
+// Telefon (GitHub Pages-dən açılan): exe yoxdur, Wi-Fi rejimi deyil, internet səhifəsidir
+let PHONE_CLOUD=false;
+const CL={cfg:null,base:{},cursor:0,seen:{},dev:"",on:false,busy:false,again:false,online:navigator.onLine!==false,last:0,err:"",pend:0,tok:null,tokExp:0,timer:null,soonT:null};
+const cUrls=()=>Object.assign({auth:"https://identitytoolkit.googleapis.com/v1",token:"https://securetoken.googleapis.com/v1",fs:"https://firestore.googleapis.com/v1"},CL.cfg?.urls||{});
+async function cfetch(method,url,headers,body){
+  if(typeof window.erpFetch==="function")return window.erpFetch(method,url,JSON.stringify(headers||{}),body||"");
+  const r=await fetch(url,{method,headers,body:body||undefined});return{status:r.status,body:await r.text()};
+}
+const CLOUD_ERR={INVALID_LOGIN_CREDENTIALS:"E-poçt və ya parol səhvdir",INVALID_PASSWORD:"Parol səhvdir",EMAIL_NOT_FOUND:"Bu e-poçtla istifadəçi yoxdur (Firebase → Authentication → Users)",
+  USER_DISABLED:"İstifadəçi bağlanıb",TOO_MANY_ATTEMPTS_TRY_LATER:"Çox cəhd oldu, bir az sonra yoxlayın",INVALID_REFRESH_TOKEN:"Giriş vaxtı bitib, yenidən daxil olun",TOKEN_EXPIRED:"Giriş vaxtı bitib, yenidən daxil olun",
+  PERMISSION_DENIED:"İcazə yoxdur: Firestore qaydalarını (Rules) yoxlayın",NOT_FOUND:"Firestore bazası tapılmadı: Project ID-ni və Firestore-un yaradıldığını yoxlayın"};
+function cloudErr(r){let m="";try{const j=JSON.parse(r.body);const e=Array.isArray(j)?j[0]?.error:j.error;m=e?.message||e?.status||""}catch(e){m=r.body?.slice(0,120)||""}
+  const k=Object.keys(CLOUD_ERR).find(x=>m.includes(x)||(r.status===403&&x==="PERMISSION_DENIED")||(r.status===404&&x==="NOT_FOUND"));
+  if(/API key not valid/i.test(m))return new Error("API Key səhvdir");
+  const e=new Error(k?CLOUD_ERR[k]:`Xəta ${r.status}: ${m}`);e.auth=["INVALID_REFRESH_TOKEN","TOKEN_EXPIRED","USER_DISABLED"].includes(k);return e}
+async function cloudSignIn(apiKey,projectId,email,password,urls){
+  CL.cfg={apiKey,projectId,email,urls};
+  const r=await cfetch("POST",`${cUrls().auth}/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`,{"Content-Type":"application/json"},JSON.stringify({email,password,returnSecureToken:true}));
+  if(r.status!==200){CL.cfg=null;throw cloudErr(r)}
+  const j=JSON.parse(r.body);
+  CL.cfg={apiKey,projectId,email,urls,refresh:j.refreshToken,uid:j.localId};CL.tok=j.idToken;CL.tokExp=Date.now()+(+j.expiresIn||3600)*1000;
+  await KV.set("cfg",JSON.stringify(CL.cfg));
+}
+async function cloudToken(){
+  if(CL.tok&&Date.now()<CL.tokExp-60000)return CL.tok;
+  const r=await cfetch("POST",`${cUrls().token}/token?key=${encodeURIComponent(CL.cfg.apiKey)}`,{"Content-Type":"application/x-www-form-urlencoded"},"grant_type=refresh_token&refresh_token="+encodeURIComponent(CL.cfg.refresh));
+  if(r.status!==200)throw cloudErr(r);
+  const j=JSON.parse(r.body);CL.tok=j.id_token;CL.tokExp=Date.now()+(+j.expires_in||3600)*1000;
+  if(j.refresh_token&&j.refresh_token!==CL.cfg.refresh){CL.cfg.refresh=j.refresh_token;KV.set("cfg",JSON.stringify(CL.cfg))}
+  return CL.tok;
+}
+const docRoot=()=>`projects/${CL.cfg.projectId}/databases/(default)/documents`;
+const shopPath=()=>`${docRoot()}/shops/${CLOUD_SHOP}`;
+async function fsCall(path,body){
+  const tok=await cloudToken();
+  const r=await cfetch("POST",`${cUrls().fs}/${path}`,{"Content-Type":"application/json","Authorization":"Bearer "+tok},JSON.stringify(body));
+  if(r.status!==200)throw cloudErr(r);
+  return JSON.parse(r.body);
+}
+// Məlumatı vahidlərə böl / vahidlərdən yığ
+function unitsOf(D){const U=new Map();
+  for(const [K,v] of Object.entries(D||{})){if(LOCALONLY.has(K))continue;
+    if(KEYED.includes(K)&&Array.isArray(v)&&v.every(x=>rkey(x))){v.forEach(x=>U.set(K+"~"+rkey(x),x));if(ORDERED.has(K))U.set("@ord~"+K,v.map(rkey))}
+    else if(PERSUB.has(K)&&isObj(v))Object.entries(v).forEach(([k2,x])=>U.set(K+"."+k2,x));
+    else U.set("@"+K,v)}
+  return U}
+function compose(U){const D={},arr={},ord={};
+  for(const [id,v] of U){
+    if(id.startsWith("@ord~"))ord[id.slice(5)]=v;
+    else if(id[0]==="@")D[id.slice(1)]=v;
+    else{const i=id.indexOf("~");if(i>0){const K=id.slice(0,i);(arr[K]=arr[K]||[]).push(v)}else{const j=id.indexOf(".");if(j>0)(D[id.slice(0,j)]=D[id.slice(0,j)]||{})[id.slice(j+1)]=v}}}
+  KEYED.forEach(K=>{const list=arr[K]||[],o=ord[K];
+    if(o){const pos=new Map(o.map((k,i)=>[k,i]));list.sort((a,b)=>(pos.get(rkey(a))??1e12)-(pos.get(rkey(b))??1e12)||(a.ts||0)-(b.ts||0))}
+    else list.sort((a,b)=>(a.ts||0)-(b.ts||0));
+    D[K]=list});
+  PERSUB.forEach(K=>{D[K]=D[K]||{}});
+  return D}
+const tsNum=s=>{const m=String(s||"").match(/^(.*?)(?:\.(\d+))?Z$/);if(!m)return 0;return Date.parse(m[1]+"Z")*1000+Math.floor(+((m[2]||"0")+"000000").slice(0,6))};
+const fromDoc=f=>{if(f.del?.booleanValue)return undefined;let v;try{v=JSON.parse(f.d?.stringValue??"null")}catch(e){return undefined}
+  if(f.stock&&isObj(v))v.stock=Number(f.stock.doubleValue??f.stock.integerValue??0);return v};
+// Göndər: dəyişən vahidlər bir neçə sorğu ilə (hər birində ən çox 400 yazı)
+async function cloudPushNow(){
+  const U=unitsOf(S),writes=[],done=[];
+  const W=(id,v,js)=>{const name=`${shopPath()}/u/${encodeURIComponent(id)}`,tr=[{fieldPath:"t",setToServerValue:"REQUEST_TIME"}];
+    if(v===undefined){writes.push({update:{name,fields:{del:{booleanValue:true},d:{stringValue:""},dev:{stringValue:CL.dev}}},updateMask:{fieldPaths:["del","d","dev"]},updateTransforms:tr});return}
+    const fields={del:{booleanValue:false},dev:{stringValue:CL.dev}},mask=["del","d","dev"];
+    if(isObj(v)&&typeof v.stock==="number"){const{stock,...rest}=v;fields.d={stringValue:JSON.stringify(rest)};
+      let b=null;try{b=CL.base[id]?JSON.parse(CL.base[id]):null}catch(e){}
+      if(b&&typeof b.stock==="number"){const dlt=stock-b.stock;if(dlt)tr.push({fieldPath:"stock",increment:{doubleValue:dlt}})}
+      else{fields.stock={doubleValue:stock};mask.push("stock")}}
+    else fields.d={stringValue:js};
+    writes.push({update:{name,fields},updateMask:{fieldPaths:mask},updateTransforms:tr})};
+  for(const [id,v] of U){const js=JSON.stringify(v);if(CL.base[id]===js)continue;W(id,v,js);done.push([id,js])}
+  for(const id of Object.keys(CL.base))if(!U.has(id)){W(id,undefined);done.push([id,undefined])}
+  CL.pend=writes.length;
+  for(let i=0;i<writes.length;i+=400){
+    await fsCall(`${docRoot()}:commit`,{writes:writes.slice(i,i+400)});
+    done.slice(i,i+400).forEach(([id,js])=>{if(js===undefined)delete CL.base[id];else CL.base[id]=js});
+    CL.pend=Math.max(0,writes.length-i-400);saveCloudState();
+  }
+  return writes.length;
+}
+// Al: kursordan sonra dəyişən sənədlər (2 saniyə üst-üstə düşmə + təkrarı süzmək)
+async function cloudPullNow(){
+  let total=0;
+  for(let page=0;page<200;page++){
+    const from=new Date(Math.max(0,Math.floor(CL.cursor/1000)-2000)).toISOString();
+    const res=await fsCall(`${shopPath()}:runQuery`,{structuredQuery:{from:[{collectionId:"u"}],
+      where:{fieldFilter:{field:{fieldPath:"t"},op:"GREATER_THAN_OR_EQUAL",value:{timestampValue:from}}},orderBy:[{field:{fieldPath:"t"},direction:"ASCENDING"}],limit:500}});
+    const docs=(res||[]).map(x=>x.document).filter(Boolean);
+    const ch=[];let maxT=CL.cursor;
+    docs.forEach(d=>{const id=decodeURIComponent(d.name.split("/").pop()),t=tsNum(d.fields?.t?.timestampValue),ut=d.updateTime;
+      if(t>maxT)maxT=t;if(CL.seen[id]&&CL.seen[id][0]===ut)return;CL.seen[id]=[ut,t];ch.push([id,fromDoc(d.fields||{})])});
+    if(ch.length){applyCloud(ch);total+=ch.length}
+    const moved=maxT>CL.cursor;CL.cursor=maxT;
+    Object.keys(CL.seen).forEach(k=>{if(CL.seen[k][1]<CL.cursor-10e6)delete CL.seen[k]});
+    if(docs.length<500||!moved)break;
+  }
+  return total;
+}
+function applyCloud(ch){
+  const L=unitsOf(S),keep={};LOCALONLY.forEach(k=>{if(k in S)keep[k]=S[k]});
+  ch.forEach(([id,rv])=>{const lv=L.get(id),ls=lv===undefined?undefined:JSON.stringify(lv),bs=CL.base[id];
+    let nv;
+    if(ls===bs)nv=rv;
+    else if(rv===undefined)nv=lv;                                   // buludda silinib, burada dəyişib: qalsın
+    else if(lv===undefined)nv=bs!==undefined&&same(JSON.parse(bs),rv)?undefined:rv;
+    else nv=merge3(bs===undefined?undefined:JSON.parse(bs),lv,rv,id.includes("~")?undefined:id.slice(1));
+    if(nv===undefined)L.delete(id);else L.set(id,nv);
+    if(rv===undefined)delete CL.base[id];else CL.base[id]=JSON.stringify(rv)});
+  S=Object.assign(compose(L),keep);
+  if(CL.loading)return;                       // ilk yükləmə hələ bitməyib: yarımçıq məlumatda köçürmə (upgrade) işlətmə
+  upgrade();
+  if(me){me=S.users.find(u=>u.id===me.id)||null;if(!me){logout()}}
+  order=order.filter(o=>item(o.id));
+  if(draft&&!item(draft.id)&&!draft.isNew)draft=null;
+  if(document.readyState!=="loading"&&$("today")){renderHeader();renderTabs();renderGrid();renderOrder();renderDebtBadge();if(me)applyPerms()}
+  localSaveOnly();
+}
+// Buluddan gələni yalnız bu cihazda yaz (bulud üçün təkrar göndərmə lazım deyil; LAN telefonlara da çatsın)
+function localSaveOnly(){const txt=JSON.stringify(S);
+  if(PHONE_CLOUD){kvSaveSoon("data",txt);return}
+  if(!NATIVE)return;
+  if(SYNC){schedulePush();opBackupSoon();return}
+  window.erpSave(txt).catch(()=>{});opBackupSoon();
+}
+let csT=null;
+function saveCloudState(){clearTimeout(csT);csT=setTimeout(()=>{KV.set("sync",JSON.stringify({base:CL.base,cursor:CL.cursor,seen:CL.seen})).catch(()=>{})},1500)}
+async function cloudTick(){
+  if(!CL.on||!CL.cfg)return;
+  if(CL.busy){CL.again=true;return}
+  CL.busy=true;
+  try{await cloudPullNow();await cloudPushNow();await cloudPullNow();CL.online=true;CL.err="";CL.last=Date.now();saveCloudState()}
+  catch(e){CL.online=false;CL.err=String(e.message||e);if(e.auth){CL.on=false;CL.err+=" — ☁️ Bulud bölməsindən yenidən daxil olun"}}
+  finally{CL.busy=false;renderCloudBadge();if(CL.again){CL.again=false;cloudSoon()}}
+}
+function cloudSoon(){if(!CL.on)return;clearTimeout(CL.soonT);CL.soonT=setTimeout(cloudTick,1500)}
+function cloudStart(){
+  CL.on=true;clearInterval(CL.timer);
+  CL.timer=setInterval(()=>{if(PHONE_CLOUD&&document.hidden)return;cloudTick()},PHONE_CLOUD?5000:10000);
+  cloudTick();renderCloudBadge();
+}
+function cloudStop(){CL.on=false;clearInterval(CL.timer);renderCloudBadge()}
+async function cloudInit(){
+  try{CL.cfg=JSON.parse(await KV.get("cfg")||"null")}catch(e){CL.cfg=null}
+  CL.dev=await KV.get("dev");if(!CL.dev){CL.dev=newId("d");KV.set("dev",CL.dev)}
+  try{const st=JSON.parse(await KV.get("sync")||"null");if(st){CL.base=st.base||{};CL.cursor=st.cursor||0;CL.seen=st.seen||{}}}catch(e){}
+  window.addEventListener("online",()=>cloudSoon());
+}
+// Telefon ilk dəfə: məlumatı buluddan yığ
+async function cloudFirstLoad(){
+  if(!CL.cfg)return null;
+  for(;;){
+    showCloudMsg("☁️ Məlumat buluddan yüklənir…");
+    try{CL.base={};CL.cursor=0;CL.seen={};S=compose(new Map());CL.loading=true;try{await cloudPullNow()}finally{CL.loading=false}
+      if(!S.items.length){showCloudMsg("Bulud hələ boşdur. Əvvəlcə kompüterdə ⚙️ Ayarlar → ☁️ Bulud bölməsindən qoşulun, sonra bu səhifəni yeniləyin.",true);await new Promise(()=>{})}
+      saveCloudState();KV.set("data",JSON.stringify(S));$("ovCloud").hidden=true;return S}
+    catch(e){showCloudMsg("Buluda qoşulmaq olmadı: "+(e.message||e)+". İnterneti yoxlayın. 5 saniyəyə yenidən cəhd ediləcək.",true);await new Promise(r=>setTimeout(r,5000))}
+  }
+}
+function showCloudMsg(t,bad){$("cloudLoginBody").innerHTML=`<p style="${bad?"color:var(--bad)":""}">${esc(t)}</p>`;$("ovCloud").hidden=false}
+// Telefon: link (#bulud=…) ilə gəlib, parolu soruş
+function cloudLinkCfg(){const m=location.hash.match(/bulud=([A-Za-z0-9_-]+)/);if(!m)return null;
+  try{const j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));return j.a&&j.p&&j.e?{apiKey:j.a,projectId:j.p,email:j.e,urls:j.u}:null}catch(e){return null}}
+function askCloudLogin(pre){
+  return new Promise(res=>{
+    const f=pre||{};
+    $("cloudLoginBody").innerHTML=`<p class="sub">${pre?"Parolunuzu yazın (Firebase-də yaratdığınız istifadəçinin parolu). Bunu bu telefonda yalnız bir dəfə edirsiniz.":"Bu səhifəni kompüterdəki <b>⚙️ Ayarlar → ☁️ Bulud → Telefon üçün link</b> ilə açın. Və ya məlumatları əl ilə yazın."}</p>
+      <div class="cform">
+        ${pre?"":`<label class="f">API Key<input id="clk" autocomplete="off"></label><label class="f">Project ID<input id="clp" autocomplete="off"></label>`}
+        <label class="f">E-poçt<input id="cle" type="email" value="${esc(f.email||"")}" autocomplete="username"></label>
+        <label class="f">Parol<input id="clw" type="password" autocomplete="current-password"></label>
+        <button class="btn" id="clgo">Daxil ol</button><p class="pinerr" id="clerr"></p></div>`;
+    $("ovCloud").hidden=false;setTimeout(()=>$(pre?"clw":"clk")?.focus(),0);
+    const go=async()=>{const k=pre?f.apiKey:$("clk").value.trim(),p=pre?f.projectId:$("clp").value.trim(),em=$("cle").value.trim(),pw=$("clw").value;
+      if(!k||!p||!em||!pw){$("clerr").textContent="Bütün xanaları doldurun";return}
+      $("clgo").disabled=true;$("clerr").textContent="Yoxlanır…";
+      try{await cloudSignIn(k,p,em,pw,f.urls);history.replaceState(null,"",location.pathname);$("ovCloud").hidden=true;res()}
+      catch(e){$("clerr").textContent=String(e.message||e);$("clgo").disabled=false}};
+    $("clgo").onclick=go;$("clw").onkeydown=e=>{if(e.key==="Enter")go()};
+  });
+}
+function renderCloudBadge(){
+  const b=$("btnCloud");if(!b)return;
+  b.hidden=!(CL.cfg&&me&&isAdmin());
+  if(b.hidden)return;
+  const st=!CL.on?["bad","bağlı"]:!CL.online?["bad","internet yoxdur"]:CL.pend?["wait",CL.pend+" gözləyir"]:["ok","✓"];
+  $("cloudTxt").className="cloudst "+st[0];$("cloudTxt").textContent=st[1];
+  b.title=CL.last?`Son sinxron: ${fmtDate(CL.last)} ${fmtTime(CL.last)}`+(CL.err?` · ${CL.err}`:""):(CL.err||"Bulud sinxronu");
+}
+function cloudPhoneLink(){if(!CL.cfg)return"";const j={a:CL.cfg.apiKey,p:CL.cfg.projectId,e:CL.cfg.email};if(CL.cfg.urls)j.u=CL.cfg.urls;
+  return PAGES_URL+"#bulud="+btoa(unescape(encodeURIComponent(JSON.stringify(j)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+const cloudRules=email=>`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.token.email == "${email||"SIZIN@EPOCT.COM"}";
+    }
+  }
+}`;
+function renderCloud(){
+  const c=CL.cfg;
+  if(PHONE_CLOUD)return `<p>☁️ Bu telefon buludla işləyir: <b>${esc(c?.email||"")}</b>. İnternet olanda kompüterlə məlumat mübadiləsi özü gedir, internet olmayanda telefon son vəziyyəti göstərir və etdiyiniz dəyişiklikləri sonra göndərir.</p>
+    <div class="kpis"><div class="kpi"><span>Vəziyyət</span><b style="font-size:16px">${!CL.online?"⚠ internet yoxdur":CL.pend?`⏳ ${CL.pend} dəyişiklik gözləyir`:"✓ sinxrondur"}</b></div>
+      <div class="kpi"><span>Son sinxron</span><b style="font-size:16px">${CL.last?fmtDate(CL.last)+" "+fmtTime(CL.last):"—"}</b></div></div>
+    ${CL.err?`<p class="pill bad">${esc(CL.err)}</p>`:""}
+    <div class="frow"><button class="btn" data-act="clnow">🔄 İndi sinxronlaşdır</button><button class="btn ghost" data-act="cloff">Bu telefonu buluddan ayır</button></div>`;
+  if(!c)return `<p>☁️ <b>Bulud</b>: işdə olmasanız da telefonunuzdan internetlə satışlara, hesabatlara baxa, dəyişiklik edə bilərsiniz. Kompüter internetsiz də işləyir: internet gələndə yığılan əməliyyatlar özü buluda gedir.</p>
+    <h4>Bir dəfəlik quraşdırma (Google Firebase, pulsuz)</h4>
+    <ol class="steps">
+      <li><b>console.firebase.google.com</b> açın, Google hesabınızla girin → <b>Create a project</b> (Layihə yarat) → ad: <code>kassa</code> → Google Analytics lazım deyil (söndürün) → Create.</li>
+      <li>Sol menyu: <b>Build → Firestore Database → Create database</b> → yer: <code>eur3 (Europe)</code> → <b>Start in production mode</b> → Create.</li>
+      <li>Sol menyu: <b>Build → Authentication → Get started → Email/Password</b> → Enable → Save. Sonra <b>Users → Add user</b>: e-poçtunuz və parol (yadda saxlayın).</li>
+      <li><b>Firestore Database → Rules</b> bölməsində olan yazını silin, bunu yapışdırın (e-poçtu öz e-poçtunuzla dəyişin) → <b>Publish</b>:
+        <code class="rules">${esc(cloudRules(""))}</code></li>
+      <li>Yuxarıda ⚙️ → <b>Project settings → General</b> → aşağıda <b>Your apps → &lt;/&gt; (Web)</b> → ad: <code>kassa</code> → Register app. Göstərilən koddan iki şeyi götürün: <code>apiKey</code> və <code>projectId</code>.</li>
+      <li>Aşağıdakı xanaları doldurun və <b>Qoşul</b> basın.</li>
+    </ol>
+    <div class="cform">
+      <label class="f">API Key (apiKey)<input id="cf_k" autocomplete="off" placeholder="AIza…"></label>
+      <label class="f">Project ID (projectId)<input id="cf_p" autocomplete="off" placeholder="kassa-12345"></label>
+      <label class="f">E-poçt (3-cü addımdakı istifadəçi)<input id="cf_e" type="email" autocomplete="off"></label>
+      <label class="f">Parol<input id="cf_w" type="password" autocomplete="off"></label>
+      <div><button class="btn" data-act="clcon">☁️ Qoşul</button></div>
+    </div>`;
+  return `<div class="kpis">
+      <div class="kpi"><span>Bulud</span><b style="font-size:16px">${esc(c.projectId)}</b><span>${esc(c.email)}</span></div>
+      <div class="kpi"><span>Vəziyyət</span><b style="font-size:16px">${!CL.on?"bağlı":!CL.online?"⚠ internet yoxdur":CL.pend?`⏳ ${CL.pend} dəyişiklik gözləyir`:"✓ sinxrondur"}</b></div>
+      <div class="kpi"><span>Son sinxron</span><b style="font-size:16px">${CL.last?fmtDate(CL.last)+" "+fmtTime(CL.last):"—"}</b></div></div>
+    ${CL.err?`<p class="pill bad">${esc(CL.err)}</p>`:""}
+    <p class="sub">İnternet olanda kompüter hər 10 saniyədən bir dəyişiklikləri buluda göndərir və oradan alır. İnternet kəsiləndə kassirlər işləməyə davam edir: yığılan əməliyyatlar internet gələn kimi özü gedir.</p>
+    <div class="frow"><button class="btn" data-act="clnow">🔄 İndi sinxronlaşdır</button><button class="btn ghost" data-act="cloff">Buluddan ayır</button></div>
+    <h4>📱 Telefonunuzda açmaq</h4>
+    <ol class="steps">
+      <li>Bu linki telefonunuza göndərin (məs. WhatsApp-da özünüzə) və telefonda <b>Chrome</b> ilə açın:
+        <code class="rules" id="cl_link">${esc(cloudPhoneLink())}</code><button class="btn ghost sm" data-act="clcopy">Linki kopyala</button></li>
+      <li>Telefonda parolunuzu yazın (bir dəfə). Sonra adınızı seçib PIN-inizi yazın.</li>
+      <li>Chrome menyusu (⋮) → <b>“Ana ekrana əlavə et”</b>. Telefonda KASSA ikonu olacaq, internetsiz də açılacaq.</li>
+    </ol>
+    <p class="sub">Firestore qaydası (Rules) — sizin e-poçtunuzla:</p><code class="rules">${esc(cloudRules(c.email))}</code>`;
+}
+
 // Telefon kodu (yalnız telefonda)
 let keyWait=null;
 function askKey(msg){
@@ -930,7 +1210,7 @@ const pinOk=p=>/^\d{4,6}$/.test(p);
 const openAdmin=()=>S.users.find(u=>u.role==="admin"&&!u.pin);
 function syncWorkers(){S.workers=S.users.map(u=>u.name)}
 const repTabs=()=>RT_REP.filter(([k])=>can(TAB_PERM[k]));
-const setTabs=()=>RT_SET.filter(([k])=>k==="users"||k==="phone"?isAdmin()&&(k!=="phone"||REMOTE||typeof window.erpPhoneInfo==="function"):can(TAB_PERM[k]));
+const setTabs=()=>RT_SET.filter(([k])=>k==="users"||k==="phone"||k==="cloud"?isAdmin()&&(k!=="phone"||REMOTE||typeof window.erpPhoneInfo==="function")&&(k!=="cloud"||(!REMOTE&&(NATIVE||PHONE_CLOUD))):can(TAB_PERM[k]));
 function applyPerms(){
   const show=(id,on)=>{const el=$(id);if(el)el.hidden=!on};
   show("btnZay",can("zay"));show("btnRep",repTabs().length>0);show("btnExp",can("exp"));show("btnEdit",can("edit"));
@@ -997,7 +1277,7 @@ document.addEventListener("keydown",e=>{
 
 function renderHeader(){
   if(me)$("userName").textContent=curName()+(isAdmin()?" (admin)":"");
-  renderSuppBadge();renderCustBadge();
+  renderSuppBadge();renderCustBadge();renderCloudBadge();
   const ts=S.sales.filter(s=>isToday(s.ts));
   $("today").innerHTML=`Bu gün: <b>${ts.length}</b> satış · <b>${m2(ts.reduce((a,s)=>a+s.total,0))} ₼</b>`;
   $("chips").innerHTML=S.materials.map(m=>`<span class="chip ${m.stock<=m.min?"low":""}">${m.name}: <b>${m.stock}</b>${m.stock<=m.min?" ⚠":""}</span>`).join("");
@@ -1157,7 +1437,7 @@ const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=doneTxt()}
 const doneTxt=()=>pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden;
 function finishSale(){
   disarmPay();
   if(pay==="borc"){if(!can("custSale"))pay="nağd";else if(!custById(ordCust)){openCustPick();return}}
@@ -1822,7 +2102,7 @@ function saveZay(){
 
 // ---------- Hesabat ----------
 const RT_REP=[["gun","Bu gün"],["ay","📅 Aylıq"],["mal","Məhsul + mənfəət"],["zay","Zay"],["anbar","Anbar / Sayım"]];
-const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["mat","Materiallar"],["users","👥 Kassirlər"],["phone","📱 Telefon"],["backup","💾 Ehtiyat nüsxə"]];
+const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["mat","Materiallar"],["users","👥 Kassirlər"],["phone","📱 Telefon"],["cloud","☁️ Bulud"],["backup","💾 Ehtiyat nüsxə"]];
 function renderRep(){
   refreshCats();
   $("rt").textContent=mode==="set"?"⚙️ Ayarlar":"📊 Hesabat / Anbar";
@@ -1891,6 +2171,7 @@ function renderRep(){
   if(rtab==="mat") h=renderMatAdmin();
   if(rtab==="backup") h=renderBackup();
   if(rtab==="users") h=renderUsers();
+  if(rtab==="cloud") h=renderCloud();
   if(rtab==="phone") h=`<div id="phoneBox" class="phonebox"><p class="sub">Yüklənir…</p></div>`;
   $("rbody").innerHTML=h;
   if(rtab==="backup")fillBackupList();
@@ -2125,7 +2406,7 @@ function backupText(){return JSON.stringify({app:"KASSA",version:APP_VERSION,exp
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
-  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove","udel"].includes(a))delArm=null;
+  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove","udel","cloff"].includes(a))delArm=null;
   if(a==="editdone"){setEdit(false);return}
   else if(a==="banx"){$("banner").hidden=true;return}
   else if(a==="bango"){$("banner").hidden=true;mode="set";rtab="backup";$("ovRep").hidden=false}
@@ -2218,6 +2499,15 @@ document.addEventListener("click",e=>{
       S=next;upgrade();save();order=[];backups=null;renderAll();renderRep();toast("Məlumat ehtiyat nüsxədən bərpa olundu")});return}
   else if(a==="bimpx"){pendingImport=null}
   else if(a==="phon"||a==="phoff"){if(!isAdmin())return;window.erpPhone(a==="phon").then(()=>{renderRep();toast(a==="phon"?"Telefon üçün açıldı":"Telefon üçün bağlandı")},e=>{toast("Alınmadı: "+e);renderRep()});return}
+  else if(a==="clcon"){if(!isAdmin())return;const k=$("cf_k").value.trim(),pr=$("cf_p").value.trim(),em=$("cf_e").value.trim(),pw=$("cf_w").value;
+    if(!k||!pr||!em||!pw){toast("Bütün xanaları doldurun");return}
+    t.disabled=true;t.textContent="Yoxlanır…";
+    cloudSignIn(k,pr,em,pw,window.KASSA_CLOUD_URLS).then(()=>{toast("☁️ Buluda qoşuldu. İlk sinxron başlayır…");cloudStart();renderRep()},e=>{toast("Qoşulmaq olmadı: "+(e.message||e));renderRep()});return}
+  else if(a==="clnow"){cloudTick().then(()=>{renderRep();toast(CL.online?"Sinxron ✓":"Alınmadı: "+CL.err)});return}
+  else if(a==="clcopy"){const l=cloudPhoneLink();navigator.clipboard?.writeText(l).then(()=>toast("Link kopyalandı"),()=>toast("Kopyalamaq olmadı: linki seçib kopyalayın"));return}
+  else if(a==="cloff"){if(!isAdmin())return;if(delArm!=="cloff"){delArm="cloff";t.textContent="Əminsiniz? Bəli, ayır";return}
+    delArm=null;cloudStop();CL.cfg=null;CL.base={};CL.cursor=0;CL.seen={};
+    Promise.all([KV.set("cfg",""),KV.set("sync","")]).then(()=>{if(PHONE_CLOUD){KV.set("data","").then(()=>location.reload())}else{renderHeader();renderRep();toast("Buluddan ayrıldı. Məlumat bu kompüterdə qalır")}});return}
   else if(a==="phcode"){if(!isAdmin())return;window.erpPhoneNewCode().then(()=>{renderRep();toast("Yeni kod yaradıldı")});return}
   else if(a==="pkeyx"){try{localStorage.removeItem("kassa.key")}catch(e){}location.reload();return}
   else if(a==="bkind"){bKind=t.dataset.k;fillBackupList();return}
@@ -2273,6 +2563,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="btnDone")finishSale();
   else if(t.id==="btnClear"){order=[];renderGrid();renderOrder()}
   else if(t.id==="btnUser")logout();
+  else if(t.id==="btnCloud"){mode="set";rtab="cloud";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="btnZay")openZay();
   else if(t.id==="zSave")saveZay();
   else if(t.id==="btnRep"){mode="rep";rtab="gun";draft=null;renderRep();$("ovRep").hidden=false}
@@ -2357,6 +2648,14 @@ $("mobGo").addEventListener("click",()=>document.querySelector(".order").scrollI
 $("keyIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryKey()}});
 (async()=>{
   await ensureKey();
+  if(!NATIVE&&!REMOTE&&/^https?:$/.test(location.protocol)){
+    await cloudInit();
+    const lc=cloudLinkCfg();
+    if(lc&&(!CL.cfg||CL.cfg.email!==lc.email||CL.cfg.projectId!==lc.projectId))await askCloudLogin(lc);
+    else if(!CL.cfg&&/github\.io$/.test(location.hostname))await askCloudLogin(null);
+    PHONE_CLOUD=!!CL.cfg;
+    if(PHONE_CLOUD&&"serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }else if(NATIVE&&!REMOTE)await cloudInit();
   await loadData();
   if(NATIVE){try{PATHS=await window.erpPaths()}catch(e){}}
   if(firstRun)$("banner").hidden=false;
@@ -2364,6 +2663,7 @@ $("keyIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault()
   if(migrated)toast("Məlumat yeni fayl yaddaşına köçürüldü ✓");
   autoBackup();
   if(SYNC){setInterval(pollSync,2000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollSync()})}
+  if(CL.cfg&&(PHONE_CLOUD||(NATIVE&&!REMOTE))){cloudStart();document.addEventListener("visibilitychange",()=>{if(!document.hidden)cloudSoon()})}
 })();
 </script>
 </body>

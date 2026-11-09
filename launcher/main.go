@@ -166,6 +166,11 @@ func main() {
 		return ps.info(), nil
 	})
 	w.Bind("erpPhoneNewCode", func() map[string]any { ps.newCode(); return ps.info() })
+	// ☁️ Bulud (cloud.go): vəziyyət faylları və Google-a sorğu
+	dataDir := filepath.Dir(st.dataFile)
+	w.Bind("erpKVGet", func(name string) (string, error) { return kvGet(dataDir, name) })
+	w.Bind("erpKVSet", func(name, text string) error { return kvSet(dataDir, name, text) })
+	w.Bind("erpFetch", doFetch)
 	w.Bind("erpLoad", st.load)
 	w.Bind("erpSave", st.save)
 	w.Bind("erpBackup", func(json, kind string) (string, error) { return st.backup(json, kind, time.Now()) })

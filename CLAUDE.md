@@ -143,6 +143,21 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Telefon ekranı: ≤640px kiçik düymələr, ≤860px aşağıda `#mobBar` ("Sifariş: n ədəd · cəmi · Ödənişə keç ↓"); əlaqə yoxdursa `#syncBar` (qırmızı).
   Windows Firewall ilk dəfə icazə soruşur ("Allow access"). Sonrakı mərhələ (istəsə): internet üzərindən (Firebase).
 
+- **☁️ Bulud — Google Firebase (Firestore + Auth, REST, SDK yoxdur)** (v0.30.0; istifadəçinin seçimi: hər yerdən internetlə).
+  Hər cihaz öz məlumatını saxlayır (kompüter: fayl; telefon: IndexedDB `kassa/kv` → "data"), internet olanda buludla mübadilə edir.
+  Firestore: `shops/main/u/{vahid}` sənədləri: `d` (JSON), `del` (silinib), `t` (server vaxtı), `dev`, materiallarda `stock` (rəqəm, **increment** ilə).
+  Vahidlər (`unitsOf/compose`): `KEYED` siyahıların hər elementi `K~rkey` (items, cats, users, materials, suppliers, customers, recurring,
+  sales, expenses, purchases, waste, custPays, suppPays), sıralı olanlarda `@ord~K`; `cash.gün`; qalanı `@K`. `lastAuto/lastBackup` yalnız yerli.
+  `cloudPushNow` (base-dən fərqlənənlər, 400-lük commit, updateMask), `cloudPullNow` (`t >= kursor−2 san`, 500-lük səhifə, `seen` ilə təkrar süzülür),
+  `applyCloud` (yerli dəyişiklik yoxdursa buludunku, varsa `merge3`; `stock` fərqləri toplanır). `cloudTick`: al → göndər → al; kompüter 10 san, telefon 5 san (görünəndə).
+  Vəziyyət: `KV` "cfg" (apiKey, projectId, email, refresh token — parol saxlanmır), "sync" (base, kursor, seen), "dev". Kompüterdə exe faylları
+  `%APPDATA%\KASSA\data\bulud-*.json` (`erpKVGet/erpKVSet`), Google sorğuları exe-dən (`erpFetch`, yalnız *.googleapis.com; `launcher/cloud.go`).
+  İlk yükləmədə (`CL.loading`) `upgrade()` işləmir — yarımçıq məlumatda köçürmələr (anbarSifir!) işə düşməsin.
+  Telefon: `PAGES_URL` = https://signmasterezcad.github.io/kassa/app/ (GitHub Pages: main, kök; `.nojekyll`), link `#bulud=` (apiKey, projectId, email),
+  yalnız parol soruşulur; `PHONE_CLOUD`; `sw.js` + `manifest.webmanifest` (internetsiz açılır). Ayarlar → "☁️ Bulud" (admin): quraşdırma addımları,
+  qoşul / indi sinxronlaşdır / ayır, telefon linki, Rules mətni (`request.auth.token.email == ...`). Başlıqda `#btnCloud` (✓ / n gözləyir / internet yoxdur).
+  Sınaq: `node tests/cloud.js` (yaddaşda sınaq Firebase-i). GitHub Pages-i API ilə açmaq bu mühitdə qadağandır — istifadəçi Settings → Pages-dən açmalıdır.
+
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
   İstifadəçi "deyəndə" anbarı yenidən dolduracağıq və materialları düymələrə qoşacağıq.
@@ -167,14 +182,15 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 2. Yeni fayl əlavə edirsənsə, `app/files.txt`-ə yaz.
 3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o ../KASSA.exe .`
 4. Testlər: `node tests/smoke.js` (brauzer), `node tests/native.js` (exe simulyasiyası), `node tests/users.js` (kassirlər + əməliyyat nüsxəsi)
-   və `node tests/sync.js` (telefon serveri + iki cihazın sinxronu; Go lazımdır) — hamısı OK olmalıdır.
+   , `node tests/sync.js` (Wi-Fi telefon serveri; Go lazımdır) və `node tests/cloud.js` (bulud) — hamısı OK olmalıdır.
 5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/kassa/main/app/index.html` yeni versiyanı verir (GitHub 5 dəqiqəyə qədər köhnəni göstərə bilər; yeni versiya görünənə qədər gözlə, sonra istifadəçiyə "hazırdır" de).
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)
 
 ## Açıq məsələlər
 - `YENILE.bat` Windows-da işləyir (istifadəçi v0.8.4-ə yenilənib, ekran şəklində görünür).
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
-- Təklif olunub, hələ edilməyib: setup (quraşdırma) faylı, telefonun internet (bulud) versiyası. Google Disk-ə nüsxə — istifadəçi istəmədi.
+- Təklif olunub, hələ edilməyib: setup (quraşdırma) faylı. Google Disk-ə nüsxə — istifadəçi istəmədi.
+- Bulud real Firebase ilə hələ yoxlanmayıb (istifadəçi layihəni yaradandan sonra). GitHub Pages açılmalıdır. Depo Private olsa, Pages pulsuz işləmir.
 - Telefon Windows-da real Wi-Fi ilə hələ yoxlanmayıb (Firewall icazəsi, IP ünvanı).
 
 ## Brauzer versiyası (nümayiş üçün)
