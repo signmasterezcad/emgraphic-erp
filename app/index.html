@@ -557,7 +557,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.38.0";
+const APP_VERSION="0.39.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1024,6 +1024,19 @@ function applyCloud(ch){
   if(draft&&!item(draft.id)&&!draft.isNew)draft=null;
   if(document.readyState!=="loading"&&$("today")){renderHeader();renderTabs();renderGrid();renderOrder();renderDebtBadge();if(me)applyPerms()}
   localSaveOnly();
+}
+// Yeni kompüter (hələ satış/xərc yoxdur): nümunə məlumatı buluda qatma — buluddakını götür
+function pristineLocal(){return !S.sales.length&&!(S.expenses||[]).length&&!(S.purchases||[]).length&&!(S.waste||[]).length&&!(S.custPays||[]).length&&!(S.suppPays||[]).length}
+async function cloudAdopt(){
+  const old=S,keep={};LOCALONLY.forEach(k=>{if(k in S)keep[k]=S[k]});
+  CL.base={};CL.cursor=0;CL.seen={};S=compose(new Map());CL.loading=true;
+  try{await cloudPullNow()}catch(e){S=old;CL.base={};CL.cursor=0;CL.seen={};throw e}finally{CL.loading=false}
+  if(!S.items.length){S=old;CL.base={};CL.cursor=0;CL.seen={};return false}   // bulud boşdur: bu kompüterin məlumatı göndəriləcək
+  S=Object.assign(S,keep);upgrade();saveCloudState();
+  order=[];draft=null;localSaveOnly();
+  if(me){me=S.users.find(u=>u.id===me.id)||null}
+  if(!me)logout();else{renderAll();renderDebtBadge();applyPerms()}
+  return true;
 }
 // Buluddan gələni yalnız bu cihazda yaz (bulud üçün təkrar göndərmə lazım deyil; LAN telefonlara da çatsın)
 function localSaveOnly(){const txt=JSON.stringify(S);
@@ -2595,7 +2608,7 @@ document.addEventListener("click",e=>{
   else if(a==="clcon"){if(!isAdmin())return;const k=$("cf_k").value.trim(),pr=$("cf_p").value.trim(),em=$("cf_e").value.trim(),pw=$("cf_w").value;
     if(!k||!pr||!em||!pw){toast("Bütün xanaları doldurun");return}
     t.disabled=true;t.textContent="Yoxlanır…";
-    cloudSignIn(k,pr,em,pw,window.KASSA_CLOUD_URLS).then(()=>{toast("☁️ Buluda qoşuldu. İlk sinxron başlayır…");cloudStart();renderRep()},e=>{toast("Qoşulmaq olmadı: "+(e.message||e));renderRep()});return}
+    cloudSignIn(k,pr,em,pw,window.KASSA_CLOUD_URLS).then(()=>pristineLocal()?cloudAdopt():false).then(ad=>{toast(ad?"☁️ Buluda qoşuldu. Məlumat buluddan yükləndi":"☁️ Buluda qoşuldu. İlk sinxron başlayır…");cloudStart();renderRep()},e=>{toast("Qoşulmaq olmadı: "+(e.message||e));renderRep()});return}
   else if(a==="clnow"){cloudTick().then(()=>{renderRep();toast(CL.online?"Sinxron ✓":"Alınmadı: "+CL.err)});return}
   else if(a==="clcopy"){const l=cloudPhoneLink();navigator.clipboard?.writeText(l).then(()=>toast("Link kopyalandı"),()=>toast("Kopyalamaq olmadı: linki seçib kopyalayın"));return}
   else if(a==="cloff"){if(!isAdmin())return;if(delArm!=="cloff"){delArm="cloff";t.textContent="Əminsiniz? Bəli, ayır";return}

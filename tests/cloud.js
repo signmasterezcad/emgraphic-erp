@@ -182,6 +182,30 @@ const srv = http.createServer((req, res) => {
     await An.fill('#clw', USER.password); await An.click('#clgo');
     await An.waitForFunction(() => typeof S === 'object' && S && S.sales && S.sales.length === 5, null, { timeout: 20000 });
     ok(true, 'APK: buluddan bütün məlumat gəldi (5 satış)');
+
+    // ---------- 7) Yeni kompüter (Setup ilə quraşdırılıb): nümunə məlumat buluda qarışmır, buluddakı gəlir ----------
+    const pc2 = { data: '', kv: {} };
+    const ctx2 = await b.newContext({ viewport: { width: 1366, height: 768 } });
+    const P2 = await ctx2.newPage(); P2.on('pageerror', e => errs.push('PC2: ' + e.message));
+    await P2.addInitScript(u => { window.KASSA_CLOUD_URLS = u; }, URLS);
+    const fns = { erpLoad: () => pc2.data, erpSave: j => { pc2.data = j; }, erpBackup: () => 'x', erpBackupList: () => [], erpBackupRead: () => '',
+      erpBackupKinds: () => ['avto', 'el', 'emel'], erpPaths: () => ({ data: 'C:\\d', backup: 'C:\\e' }), erpOpenFolder: () => null,
+      erpKVGet: n => pc2.kv[n] || '', erpKVSet: (n, v) => { if (v) pc2.kv[n] = v; else delete pc2.kv[n]; },
+      erpFetch: async (m, url, h, body) => { const r = await fetch(url, { method: m, headers: JSON.parse(h || '{}'), body: body || undefined }); return { status: r.status, body: await r.text() }; } };
+    for (const [k, f] of Object.entries(fns)) await P2.exposeFunction(k, f);
+    await P2.goto('file://' + path.join(APP, 'index.html'));
+    await P2.waitForFunction(() => document.querySelector('#today')?.textContent.includes('Bu gün'));
+    await P2.evaluate(() => { S.items.find(i => i.id === 'fc_termo').tiers[0][1] = 99; save(); });
+    const before = docs.size;
+    await P2.click('#btnSet'); await P2.click('[data-rt=cloud]');
+    await P2.fill('#cf_k', 'KEY1'); await P2.fill('#cf_p', 'kassa-test'); await P2.fill('#cf_e', USER.email); await P2.fill('#cf_w', USER.password);
+    await P2.click('[data-act=clcon]');
+    await P2.waitForFunction(() => CL.last > 0 && S.sales.length === 5, null, { timeout: 20000 });
+    await sleep(1500);
+    ok(true, 'yeni kompüter: buluda qoşulanda bütün məlumat gəldi (5 satış)');
+    ok(await P2.evaluate(() => S.items.find(i => i.id === 'fc_termo').tiers[0][1]) === 11 && await PC.evaluate(() => S.items.find(i => i.id === 'fc_termo').tiers[0][1]) === 11,
+      'yeni kompüterin nümunə qiyməti (99) buluda düşmədi — buluddakı (11) qaldı');
+    ok(JSON.parse(pc2.data).sales.length === 5 && docs.size >= before, 'yeni kompüterin faylına yazıldı');
   } finally {
     ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
     await b.close(); srv.close();

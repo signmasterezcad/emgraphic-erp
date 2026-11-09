@@ -1,1 +1,2 @@
-*.exe
+setup/payload/*
+!setup/payload/.keep

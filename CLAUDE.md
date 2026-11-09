@@ -182,6 +182,15 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Hazır fayl: `android/KASSA.apk` (Pages-dən: https://signmasterezcad.github.io/kassa/android/KASSA.apk). **İmza açarı depoda deyil**
   (sessiyanın müvəqqəti qovluğunda idi) — yeni APK başqa açarla imzalansa, telefonda köhnəni silib yenisini qurmaq lazımdır (məlumat buluddan gəlir).
 
+- **💿 Quraşdırma faylı `KASSA-Setup.exe`** (v0.39.0, depo kökündə; Pages: https://signmasterezcad.github.io/kassa/KASSA-Setup.exe):
+  öz Go quraşdırıcımız `launcher/setup/` (NSIS yoxdur). İçində (`//go:embed payload`) KASSA.exe, YENILE.bat, yenile.ps1, files.txt-dəki `app/` faylları.
+  Yığma: `cd launcher && ./build-setup.sh` (versiya APP_VERSION-dan, payload sonra təmizlənir; `setup/payload/` gitignore-dadır).
+  Quraşdırır: `%LOCALAPPDATA%\Programs\KASSA` (admin icazəsi lazım deyil), qısayollar iş masası + Start menyusu, Windows "Proqramlar"
+  siyahısında (HKCU Uninstall, `uninstall.exe /uninstall`). Silinəndə `ehtiyat\` və `%APPDATA%\KASSA` məlumatı qalır. KASSA açıqdırsa bağlamağı xahiş edir.
+  Hər dəyişiklikdə Setup-ı yenidən yığmaq **vacib deyil** (quraşdırılandan sonra YENILE.bat yeniləyir), amma böyük versiyalarda yığmaq yaxşıdır.
+  **Yeni kompüterdə buluda qoşulma** (`cloudAdopt()`): yerli məlumatda satış/xərc/alış/zay/ödəniş yoxdursa (`pristineLocal()`), nümunə (SEED) buluda
+  qatılmır — buluddakı məlumat götürülür (bulud boşdursa yerli göndərilir). Sınaq: `tests/cloud.js` 7-ci hissə.
+
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
   İstifadəçi "deyəndə" anbarı yenidən dolduracağıq və materialları düymələrə qoşacağıq.
@@ -213,7 +222,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 ## Açıq məsələlər
 - `YENILE.bat` Windows-da işləyir (istifadəçi v0.8.4-ə yenilənib, ekran şəklində görünür).
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
-- Təklif olunub, hələ edilməyib: setup (quraşdırma) faylı. Google Disk-ə nüsxə — istifadəçi istəmədi.
+- Google Disk-ə nüsxə — istifadəçi istəmədi. Setup Windows-da hələ yoxlanmayıb (istifadəçi işdə sınayacaq; SmartScreen xəbərdarlığı gözlənilir — imza yoxdur).
 - Bulud real Firebase ilə işləyir (layihə `kassa-7bad5`, istifadəçi təsdiqlədi: kompüter + telefon sinxron). GitHub Pages açıqdır. Depo Private olsa, Pages pulsuz işləmir.
 - APK real telefonda hələ yoxlanmayıb (emulyator yoxdur).
 - Telefon Windows-da real Wi-Fi ilə hələ yoxlanmayıb (Firewall icazəsi, IP ünvanı).
