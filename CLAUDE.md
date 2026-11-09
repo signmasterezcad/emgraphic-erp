@@ -74,7 +74,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Mal alışı mənfəətdən çıxılmır (anbardır); maya satışda reseptlə çıxılır.
   2-ci mərhələ (v0.19.0): **🧾 Digər xərclər** (`S.expenses`, növlər `S.expCats` — əlavə etmək olur), ay seçimi və növ üzrə cəmlər;
   **🔁 aylıq təkrarlanan** (`S.recurring`; xərcdə `rec` = şablon id; "bu ay ödənilib" monKey ilə yoxlanır).
-  **💰 Kassa** (Hesabat → Bu gün, `cashDay()`): səhər kassada (`S.cash[gün].open`) + nağd satış − nağd alış − nağd ödənmiş borc − nağd xərc
+  **Hesabat dövrü** (v0.36.0): "📆 Gün / Dövr" (əvvəl "Bu gün"), "Məhsul + mənfəət" və "Zay" tablarında `rFrom`/`rTo` "Tarixdən – Tarixədək"
+  (`rrPreset`: Bu gün / Dünən / Bu həftə / Bu ay / Keçən ay / Bütün dövr; Hesabat açılanda bu gün). Bir neçə gündə "📅 Günlər üzrə" cədvəli (`data-rd`),
+  kassa bloku yalnız bir gün seçiləndə (o günün `cashDay`; k_open/k_cnt o günə yazılır).
+  **💰 Kassa** (Hesabat → Gün / Dövr, `cashDay()`): səhər kassada (`S.cash[gün].open`) + nağd satış − nağd alış − nağd ödənmiş borc − nağd xərc
   = kassada olmalıdır; "saydım" (`counted`) ilə fərq. "Xalis qazanc" adı "Satışdan qazanc" oldu (xərclər aylıq hesabatda çıxılacaq).
   3-cü mərhələ (v0.20.0): **📅 Aylıq** tab (Hesabat / Anbar; `monthStats()`, `renderMonthly()`): xalis = satış − satış sətirlərinin `cost`-u
   − zay `cost` − digər xərclər (mal alışı çıxılmır). Ay seçimi, əvvəlki ayla ▲/▼ % (xərclərdə azalma yaşıl), son 12 ayın SVG sütun

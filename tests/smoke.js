@@ -352,6 +352,23 @@ const path = require('path');
   ok((await p.inputValue('#hFrom')) === (await p.inputValue('#hTo')), 'günlər cədvəlində günə basanda yalnız o gün açılır');
   await p.evaluate(() => { S.sales = S.sales.filter(s => !s.id || !s.id.startsWith('old')); });
   await p.click('[data-h=today]');
+  // Hesabat: dövr (tarixdən – tarixədək)
+  await p.click('#ovHist [data-close]');
+  await p.evaluate(() => { S.sales.push({ id: 'rr1', ts: Date.now() - 3 * 864e5, worker: 'Admin', pay: 'kart', lines: [{ id: 'x', name: 'Dövr satışı', q: 2, price: 5, sum: 10, cost: 2 }], total: 10 }); });
+  await p.click('#btnRep');
+  ok((await p.textContent('#rbody')).includes('Bu gün,') && (await p.textContent('#rbody')).includes('Kassa (yalnız nağd pul)'), 'Hesabat açılır: bu gün, kassa görünür');
+  await p.click('[data-rr=week]');
+  await p.click('[data-rr=month]');
+  const rb = await p.textContent('#rbody');
+  const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
+  ok(!inMonth || (rb.includes('Günlər üzrə') && rb.includes('Kassa hesabı bir gün üçündür')), 'Bu ay: günlər üzrə cədvəl, kassa yalnız bir gündə');
+  await p.click('[data-rr=all]'); await p.click('[data-rt=mal]');
+  ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Məhsul + mənfəət: bütün dövrdə köhnə satış var');
+  await p.click('[data-rr=today]');
+  ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Məhsul + mənfəət: bu gün seçiləndə köhnə satış yoxdur');
+  await p.click('#ovRep [data-close]');
+  await p.evaluate(() => { S.sales = S.sales.filter(s => s.id !== 'rr1'); });
+  await p.click('#btnHist');
   // satışı silmək: material geri qayıdır
   const lamBefore = await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock);
   const target = await p.evaluate(() => { const s = [...S.sales].reverse().find(s => s.used && s.used.lam === 1 && s.lines.length === 1); return s && s.id; });

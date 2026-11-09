@@ -86,7 +86,7 @@ let n = 0;
   ok(await p.isVisible('#btnRep') && await p.isHidden('#btnSet'), 'Nigar: Hesabat görünür, Ayarlar yox');
   await p.click('#btnRep');
   const tabs = await p.locator('#rtabs .tab').allTextContents();
-  ok(tabs.join('|') === 'Bu gün|Zay', 'Nigar: yalnız "Bu gün" və "Zay" tabları (Aylıq, Mənfəət, Anbar yox)');
+  ok(tabs.join('|') === '📆 Gün / Dövr|Zay', 'Nigar: yalnız "Bu gün" və "Zay" tabları (Aylıq, Mənfəət, Anbar yox)');
   const rb = await p.textContent('#rbody');
   ok(rb.includes('Kassa') && !rb.includes('Satışdan qazanc') && !rb.includes('mayası'), 'Nigar: kassa görünür, maya və qazanc gizlidir');
   await p.click('#ovRep [data-close]');
@@ -204,6 +204,7 @@ let n = 0;
   ok(g.includes('Borclulardan alınan nağd') && g.includes('10.00'), 'kassa: borcludan alınan 10 ₼ nağd əlavə olunur');
   await p.click('#ovRep [data-close]');
   await p.click('#btnHist'); await p.click('#ovHist [data-hp=borc]'); await p.click('#hBody [data-h=ask] >> nth=0'); await p.click('#hBody [data-h=del]');
+  await p.waitForTimeout(400);
   ok(JSON.parse(fs.data).sales.filter(s => s.pay === 'borc').length === 1, 'admin borca satışı silə bilir (ödənişdən artıq deyilsə)');
   await p.click('#ovHist [data-close]');
 
