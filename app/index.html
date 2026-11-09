@@ -63,7 +63,9 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .note{color:var(--muted);font-size:12px;margin-top:14px;max-width:70ch;line-height:1.5}
 
 .order{background:var(--panel);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;align-self:start;position:sticky;top:12px}
-.order h2{font-size:16px;margin:0;padding:16px;border-bottom:1px solid var(--line)}
+.ordhead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.order h2{font-size:16px;margin:0}
+.hbtn.sm{padding:6px 10px;font-size:13px}
 .lines{padding:8px 16px;min-height:90px;max-height:46vh;overflow:auto}
 .empty{color:var(--muted);text-align:center;padding:26px 0;font-size:14px}
 .line{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line)}
@@ -152,6 +154,10 @@ body.editing .svc:not(.addtile){outline:2px dashed rgba(255,255,255,.55);outline
 .tab .tx{margin-left:6px;font-size:12px;padding:2px 4px;border-radius:6px;background:var(--panel2)}
 .tab.add{border-style:dashed;color:var(--accent)}
 .btn.del{color:var(--bad)}
+.pill.card{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+table.hist td{vertical-align:middle}
+table.hist td.wrap{white-space:normal;min-width:180px}
+table.hist .pill{font-size:12px;padding:3px 10px}
 .done.armed{background:var(--warn);color:#111;animation:pulse .5s ease-in-out infinite alternate}
 @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.03)}}
 @media (prefers-reduced-motion:reduce){.done.armed{animation:none}}
@@ -198,7 +204,7 @@ h4{margin:6px 0 0;font-size:14px}
   </section>
 
   <aside class="order">
-    <h2>Cari sifariş</h2>
+    <div class="ordhead"><h2>Cari sifariş</h2><button class="hbtn sm" id="btnHist">🧾 Satış Tarixçəsi</button></div>
     <div class="lines" id="lines"></div>
     <div class="foot">
       <div class="total"><span>Cəmi</span><b id="total">0.00 ₼</b></div>
@@ -212,6 +218,23 @@ h4{margin:6px 0 0;font-size:14px}
     </div>
   </aside>
 </main>
+
+<div class="ov" id="ovHist" hidden>
+  <div class="modal" role="dialog" aria-labelledby="ht">
+    <div class="mh"><h3 id="ht">🧾 Satış Tarixçəsi</h3><button class="hbtn" data-close>Bağla</button></div>
+    <div class="mb">
+      <div class="frow">
+        <label class="f">Gün<input type="date" id="hDate"></label>
+        <button class="btn ghost sm" data-h="today">Bu gün</button>
+        <button class="btn ghost sm" data-h="yday">Dünən</button>
+        <button class="btn ghost sm" data-h="all">Bütün günlər</button>
+        <span class="sub">Ödəniş:</span>
+        <button class="tab sm" data-hp="all">Hamısı</button><button class="tab sm" data-hp="nağd">💵 Nağd</button><button class="tab sm" data-hp="kart">💳 Kart</button>
+      </div>
+      <div id="hBody"></div>
+    </div>
+  </div>
+</div>
 
 <div class="ov" id="ovZay" hidden>
   <div class="modal sm" role="dialog" aria-labelledby="zt">
@@ -279,7 +302,7 @@ const KEY="fotoerp.v1";
 // Brauzerdə (sınaq versiyası) isə brauzerin öz yaddaşında.
 const NATIVE=typeof window.erpLoad==="function";
 let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken=false;
-const APP_VERSION="0.14.0";
+const APP_VERSION="0.15.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.waste=S.waste||[];
@@ -577,16 +600,69 @@ let keyArm=0,keyArmT=null;
 const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=DONE_TXT}
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden;
 function finishSale(){
   disarmPay();
   const lines=order.map(o=>{const it=item(o.id),p=unitPrice(it,o.q);return{id:o.id,name:it.name,q:o.q,price:p,sum:p*o.q,cost:unitCost(it)*o.q}});
-  const short=[];
-  order.forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;if(M.stock<0)short.push(M.name)}));
-  S.sales.push({ts:Date.now(),worker:$("worker").value,pay,lines,total:lines.reduce((a,l)=>a+l.sum,0)});
+  const short=[],used={};
+  order.forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;used[m]=(used[m]||0)+q*o.q;if(M.stock<0)short.push(M.name)}));
+  S.sales.push({id:newId("s"),ts:Date.now(),worker:$("worker").value,pay,lines,total:lines.reduce((a,l)=>a+l.sum,0),used});
   save();order=[];renderAll();autoBackup();
   toast(short.length?`Satıldı. Diqqət: ${short.join(", ")} mənfiyə düşdü`:"Satış yazıldı ✓");
 }
+
+// ---------- Satış Tarixçəsi ----------
+let hDay="",hPay="all",hDel=null;
+const pad=n=>String(n).padStart(2,"0");
+const dayKey=ts=>{const d=new Date(ts);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
+const fmtDate=ts=>{const d=new Date(ts);return pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear()};
+const fmtTime=ts=>{const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes())};
+const saleKey=s=>s.id||("t"+s.ts);
+function openHist(){hDay=dayKey(Date.now());hPay="all";hDel=null;renderHist();$("ovHist").hidden=false}
+function renderHist(){
+  $("hDate").value=hDay;
+  document.querySelectorAll("[data-hp]").forEach(b=>b.classList.toggle("on",b.dataset.hp===hPay));
+  const list=S.sales.filter(s=>(!hDay||dayKey(s.ts)===hDay)&&(hPay==="all"||s.pay===hPay)).sort((a,b)=>b.ts-a.ts);
+  const sum=f=>list.filter(f).reduce((a,s)=>a+s.total,0);
+  const title=hDay?fmtDate(new Date(hDay+"T12:00").getTime()):"Bütün günlər";
+  $("hBody").innerHTML=`<div class="kpis">
+      <div class="kpi"><span>${esc(title)} · satış sayı</span><b>${list.length}</b></div>
+      <div class="kpi"><span>Cəmi</span><b>${m2(sum(()=>1))} ₼</b></div>
+      <div class="kpi"><span>💵 Nağd</span><b style="color:var(--ok)">${m2(sum(s=>s.pay==="nağd"))} ₼</b></div>
+      <div class="kpi"><span>💳 Kart</span><b style="color:var(--accent)">${m2(sum(s=>s.pay!=="nağd"))} ₼</b></div></div>
+    ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Saat</th><th>Ödəniş</th><th>Nə satılıb</th><th>İşçi</th><th class="n">Məbləğ</th><th></th></tr>
+    ${list.slice(0,500).map(s=>{const k=saleKey(s);return `<tr class="${hDel===k?"confirm":""}">
+      <td><b>${fmtDate(s.ts)}</b></td><td><b>${fmtTime(s.ts)}</b></td>
+      <td>${s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':'<span class="pill card">💳 Kart</span>'}</td>
+      <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}</td>
+      <td>${esc(s.worker||"")}</td><td class="n"><b>${m2(s.total)} ₼</b></td>
+      <td>${hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
+        :`<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
+    ${list.length>500?`<p class="sub">Son 500 satış göstərilir. Konkret günü seçin.</p>`:""}`
+    :`<p class="sub empty-grp">${hDay?"Bu gün":"Hələ"} satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
+}
+async function deleteSale(k){
+  const i=S.sales.findIndex(s=>saleKey(s)===k);if(i<0)return;
+  if(NATIVE)await window.erpBackup(backupText(),"el").catch(()=>{});
+  const s=S.sales[i];
+  Object.entries(s.used||{}).forEach(([m,q])=>{const M=mat(m);if(M)M.stock+=q});
+  S.sales.splice(i,1);hDel=null;backups=null;save();renderHeader();renderHist();
+  toast(`${fmtDate(s.ts)} ${fmtTime(s.ts)} — ${m2(s.total)} ₼ satış silindi`+(Object.keys(s.used||{}).length?", material anbara qaytarıldı":""));
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-h],[data-hp]");if(!t)return;
+  if(t.dataset.hp){hPay=t.dataset.hp;hDel=null}
+  else{const a=t.dataset.h;
+    if(a==="today")hDay=dayKey(Date.now());
+    else if(a==="yday")hDay=dayKey(Date.now()-864e5);
+    else if(a==="all")hDay="";
+    else if(a==="ask")hDel=t.dataset.k;
+    else if(a==="delx")hDel=null;
+    else if(a==="del"){deleteSale(t.dataset.k);return}
+    if(a!=="ask"&&a!=="delx"&&a!=="del")hDel=null;
+  }
+  renderHist();
+});
 
 // ---------- Zay ----------
 function openZay(){
@@ -933,7 +1009,7 @@ document.addEventListener("click",e=>{
   const t=e.target.closest("button");if(!t)return;
   if(editMode&&t.dataset.add)return;
   if(t.dataset.cat){cat=t.dataset.cat;grp=null;renderTabs();renderGrid();if(cat==="search")setTimeout(()=>$("q").focus(),0)}
-  else if(t.id==="qClear"){q="";$("q").value="";$("qClear").hidden=true;renderGrid();$("q").focus()}
+  else if(t.id==="qClear"){q="";qAdded=null;$("q").value="";$("qClear").hidden=true;renderGrid();$("q").focus()}
   else if(t.dataset.grp){grp=t.dataset.grp;delArm=null;renderGrid()}
   else if(t.hasAttribute("data-back")){grp=null;delArm=null;renderGrid()}
   else if(t.dataset.add){addItem(t.dataset.add,1);t.blur()}
@@ -950,6 +1026,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="zSave")saveZay();
   else if(t.id==="btnRep"){mode="rep";rtab="gun";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="btnEdit"){setEdit(!editMode)}
+  else if(t.id==="btnHist"){openHist()}
   else if(t.id==="btnSet"){mode="set";rtab="bolme";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="stSave"){
     let diff=[];
@@ -967,8 +1044,25 @@ document.addEventListener("change",e=>{
   setTimeout(()=>{renderGrid();renderOrder()},0); // blur zamanı DOM-u dərhal dəyişməmək üçün
 });
 document.querySelectorAll(".ov").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
-$("q").addEventListener("input",e=>{q=e.target.value;$("qClear").hidden=!q;renderGrid()});
-$("q").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const b=document.querySelector("#grid [data-add],#grid [data-grp]");if(b){b.click();if(b.dataset.add)$("q").blur()}}else if(e.key==="Escape"){$("qClear").click()}});
+$("hDate").addEventListener("change",e=>{hDay=e.target.value;hDel=null;renderHist()});
+$("q").addEventListener("input",e=>{q=e.target.value;qAdded=null;$("qClear").hidden=!q;renderGrid()});
+// Axtarışda Enter: birinci nəticəni əlavə et. Yazı dəyişməyibsə və sifariş varsa, növbəti Enter ödəniş sayılır.
+let qAdded=null;
+$("q").addEventListener("keydown",e=>{
+  if(e.key==="Escape"){$("qClear").click();return}
+  if(e.key!=="Enter")return;
+  e.preventDefault();
+  if(order.length&&qAdded===q){payKey(e);return}
+  const b=document.querySelector("#grid [data-add],#grid [data-grp]");
+  if(b){b.click();if(b.dataset.add){qAdded=q;$("q").blur()}}
+});
+function payKey(e){
+  e.preventDefault();
+  if(e.repeat)return;
+  if(keyArm&&Date.now()-keyArm<1500){pay="nağd";renderOrder();finishSale();return}
+  keyArm=Date.now();const b=$("btnDone");b.classList.add("armed");b.textContent="Nağd: təsdiq üçün bir də basın";
+  clearTimeout(keyArmT);keyArmT=setTimeout(disarmPay,1500);
+}
 document.addEventListener("keydown",e=>{
   const tgt=e.target,isSpace=e.code==="Space",isEnter=e.code==="Enter"||e.code==="NumpadEnter";
   if(!isSpace&&!isEnter){
@@ -979,11 +1073,7 @@ document.addEventListener("keydown",e=>{
   if(tgt.id==="q")return;
   if(isEnter&&tgt.matches?.(".line input")){e.preventDefault();tgt.blur();return}
   if(isTyping(tgt)||!noModal()||editMode||!order.length)return;
-  e.preventDefault();
-  if(e.repeat)return;
-  if(keyArm&&Date.now()-keyArm<1500){pay="nağd";renderOrder();finishSale();return}
-  keyArm=Date.now();const b=$("btnDone");b.classList.add("armed");b.textContent="Nağd: təsdiq üçün bir də basın";
-  clearTimeout(keyArmT);keyArmT=setTimeout(disarmPay,1500);
+  payKey(e);
 });
 // Space düymənin üstündə "basılma" yaratmasın
 document.addEventListener("keyup",e=>{if(e.code==="Space"&&!isTyping(e.target)&&order.length&&noModal())e.preventDefault()});

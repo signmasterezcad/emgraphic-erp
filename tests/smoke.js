@@ -309,6 +309,45 @@ const path = require('path');
   ok(await salesNow() === n0 + 5 && await p.evaluate(() => S.sales.at(-1).lines[0].name) === 'Fincan Termo', 'axtar → Enter (əlavə et) → Enter Enter (nağd ödə)');
   await p.click('[data-add=fc_termo]'); await p.click('#btnDone');
   ok(await salesNow() === n0 + 6, 'siçanla "Ödənildi" əvvəlki kimi işləyir');
+  // fokus axtarış xanasında qalsa da: Enter (əlavə) → Enter Enter (ödə), məhsul ikinci dəfə əlavə olunmur
+  await p.click('#q'); await p.fill('#q', 'acarliq');
+  await p.press('#q', 'Enter'); await p.focus('#q'); await p.press('#q', 'Enter'); await p.press('#q', 'Enter');
+  ok(await salesNow() === n0 + 7 && await p.evaluate(() => S.sales.at(-1).lines[0].q) === 1, 'fokus xanada qalsa belə: 1 Açarlıq əlavə olunur və nağd ödənir');
+
+  // Satış Tarixçəsi
+  await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });
+  await p.click('[data-add=g_lamA3]'); await p.click('#payCard'); await p.click('#btnDone'); await p.click('#payCash');
+  await p.click('[data-cat=search]', { position: { x: 12, y: 12 } }); await p.fill('#q', 'termo');
+  await p.click('[data-add=fc_termo]'); await p.click('#btnDone');
+  await p.click('#btnHist');
+  ok(await p.isVisible('#ovHist') && (await p.textContent('#ht')).includes('Satış Tarixçəsi'), 'Satış Tarixçəsi pəncərəsi açıldı');
+  const todayN = await p.evaluate(() => S.sales.filter(s => new Date(s.ts).toDateString() === new Date().toDateString()).length);
+  ok(await p.locator('table.hist tr').count() === todayN + 1, `bu günün bütün satışları göstərilir (${todayN})`);
+  const first = await p.locator('table.hist tr').nth(1).textContent();
+  ok(/\d{2}\.\d{2}\.\d{4}/.test(first) && /\d{2}:\d{2}/.test(first) && first.includes('Fincan Termo'), 'tarix (gg.aa.iiii), saat (ss:dd) və ən yeni satış birinci');
+  ok((await p.textContent('table.hist')).includes('💵 Nağd') && (await p.textContent('table.hist')).includes('💳 Kart'), 'ödəniş növü aydın görünür (Nağd / Kart)');
+  await p.click('[data-hp=kart]');
+  const kartRows = await p.locator('table.hist tr').count() - 1;
+  ok(kartRows >= 1 && !(await p.textContent('table.hist')).includes('💵 Nağd'), 'Kart filtri: yalnız kartla satışlar');
+  await p.click('[data-hp=all]'); await p.click('[data-h=yday]');
+  ok((await p.textContent('#hBody')).includes('satış yoxdur'), 'Dünən: satış yoxdur');
+  await p.click('[data-h=today]');
+  // satışı silmək: material geri qayıdır
+  const lamBefore = await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock);
+  const target = await p.evaluate(() => { const s = [...S.sales].reverse().find(s => s.used && s.used.lam === 1 && s.lines.length === 1); return s && s.id; });
+  const nBefore = await p.evaluate(() => S.sales.length);
+  await p.click(`[data-h=ask][data-k="${target}"]`);
+  ok(await p.locator('[data-h=del]').count() === 1 && await p.evaluate(() => S.sales.length) === nBefore, 'Sil: əvvəlcə təsdiq soruşur');
+  await p.click('[data-h=delx]');
+  ok(await p.locator('[data-h=del]').count() === 0, 'Ləğv: heç nə silinmədi');
+  await p.click(`[data-h=ask][data-k="${target}"]`); await p.click('[data-h=del]'); await p.waitForTimeout(100);
+  ok(await p.evaluate(() => S.sales.length) === nBefore - 1 && await p.evaluate(t => !S.sales.some(s => s.id === t), target), 'Bəli, sil: satış silindi');
+  ok(await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock) === lamBefore + 1, 'silinən satışın materialı anbara qaytarıldı (+1 plyonka)');
+  ok((await p.textContent('#today')).includes(String(todayN - 1)), 'yuxarıdakı "Bu gün" sayı da azaldı');
+  await p.keyboard.press('Enter'); await p.keyboard.press('Enter');
+  ok(await p.evaluate(() => S.sales.length) === nBefore - 1, 'tarixçə açıq ikən Enter satış etmir');
+  await p.click('#ovHist [data-close]');
+  ok(!(await p.isVisible('#ovHist')), 'Bağla işləyir');
 
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();

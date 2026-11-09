@@ -43,7 +43,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - İndi bölmələr: Axtarış, ÇAP, Poliqrafiya Xidmətləri, Sublim, Kəsim Plotter, Fiber Lazer.
 - **Klaviatura ilə nağd ödəniş** (v0.14.0): sifarişdə məhsul varsa, Space və ya Enter 1.5 saniyə ərzində iki dəfə → nağd satış.
   Birinci basış "Ödənildi" düyməsini sarı edir. Pəncərə açıq, düzəliş rejimi və ya yazı xanasında işləmir.
-  Axtarışda: hərf yaz → Enter (birinci nəticə əlavə olunur, xana fokusdan çıxır) → Enter Enter (ödə).
+  Axtarışda: hərf yaz → Enter (birinci nəticə əlavə olunur) → Enter Enter (ödə). Yazı dəyişməyibsə (`qAdded===q`),
+  xanadakı Enter də ödəniş sayılır — fokus xanada qalsa belə məhsul ikinci dəfə əlavə olunmur.
+- **🧾 Satış Tarixçəsi** (v0.15.0, "Cari sifariş" başlığının sağında): gün seçimi (Bu gün / Dünən / Bütün günlər), Nağd/Kart filtri,
+  tarix gg.aa.iiii, saat ss:dd, cəmlər. Admin istənilən satışı silə bilər (təsdiqlə); silmədən əvvəl ehtiyat nüsxə,
+  satışın `used` sahəsindəki material anbara qaytarılır (v0.15.0-dan əvvəlki satışlarda `used` yoxdur).
+- Hazırda bütün funksiyalar Admin üçündür; istifadəçi (işçi) üçün nə görünəcəyini sahibi sonra deyəcək.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
