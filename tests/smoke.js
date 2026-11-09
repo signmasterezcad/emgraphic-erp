@@ -436,6 +436,27 @@ const path = require('path');
   ok((await p.textContent('.kassa')).includes('Çatışmır: 5.00'), '5 ₼ az: "Çatışmır: 5.00 ₼"');
   await p.click('#ovRep [data-close]');
 
+  // 📅 Aylıq mənfəət hesabatı (keçən ay üçün nümunə məlumat)
+  await p.evaluate(() => {
+    const d = new Date(); const prev = new Date(d.getFullYear(), d.getMonth() - 1, 15, 12).getTime();
+    S.sales.push({ id: 'old1', ts: prev, worker: 'Admin', pay: 'nağd', total: 1000, lines: [{ id: 'x', name: 'Köhnə satış', q: 10, price: 100, sum: 1000, cost: 200 }], used: {} });
+    S.waste.push({ ts: prev, mat: 'a4', q: 5, reason: 'Test', worker: 'Admin', cost: 30 });
+    S.expenses.push({ id: 'oldx', ts: prev, cat: 'İcarə', amount: 500, pay: 'kart', note: '', rec: null });
+  });
+  await p.click('#btnRep'); await p.click('[data-rt=ay]');
+  const cur = await p.evaluate(() => monthStats()[0]), prv = await p.evaluate(() => monthStats()[1]);
+  ok(Math.abs(prv.net - (1000 - 200 - 30 - 500)) < 1e-9, 'keçən ay: 1000 − 200 − 30 − 500 = 270 xalis');
+  ok(Math.abs(cur.net - (cur.sales - cur.cost - cur.waste - cur.exp)) < 1e-9 && cur.exp > 0, `bu ay: ${cur.sales.toFixed(2)} − ${cur.cost.toFixed(2)} − ${cur.waste.toFixed(2)} − ${cur.exp.toFixed(2)} = ${cur.net.toFixed(2)}`);
+  ok(await p.evaluate(() => monthStats()[0].sales === S.sales.filter(s => monKey(s.ts) === monKey(Date.now())).reduce((a, s) => a + s.total, 0)), 'bu ayın satışı satışların cəmi ilə üst-üstə düşür');
+  ok(await p.locator('.mchart rect.s1').count() === 2 && await p.locator('.legend').count() === 1, 'qrafik: 2 ay, satış sütunları, legend var');
+  ok((await p.textContent('#rbody')).includes('Müqayisə:'), 'əvvəlki ayla müqayisə yazısı');
+  await p.click(`button.link[data-mk="${prv.k}"]`);
+  ok((await p.inputValue('#m_sel')) === prv.k && (await p.textContent('.kpi.hero')).includes('270.00'), 'cədvəldə keçən aya basanda o ay seçilir (xalis 270.00)');
+  ok((await p.textContent('.cols2')).includes('İcarə') && (await p.textContent('.cols2')).includes('Köhnə satış'), 'ayın detalı: xərc növləri və ən çox satılanlar');
+  await p.selectOption('#m_sel', cur.k);
+  ok((await p.locator('tr.selrow').textContent()).includes(await p.evaluate(k => monName(k), cur.k)), 'ay seçimi: cədvəldə sətir işarələnir');
+  await p.click('#ovRep [data-close]');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
 })();

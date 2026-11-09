@@ -72,7 +72,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   **🔁 aylıq təkrarlanan** (`S.recurring`; xərcdə `rec` = şablon id; "bu ay ödənilib" monKey ilə yoxlanır).
   **💰 Kassa** (Hesabat → Bu gün, `cashDay()`): səhər kassada (`S.cash[gün].open`) + nağd satış − nağd alış − nağd ödənmiş borc − nağd xərc
   = kassada olmalıdır; "saydım" (`counted`) ilə fərq. "Xalis qazanc" adı "Satışdan qazanc" oldu (xərclər aylıq hesabatda çıxılacaq).
-  Qalan: 3) aylıq mənfəət hesabatı (satış − satılanın mayası − zay − digər xərclər).
+  3-cü mərhələ (v0.20.0): **📅 Aylıq** tab (Hesabat / Anbar; `monthStats()`, `renderMonthly()`): xalis = satış − satış sətirlərinin `cost`-u
+  − zay `cost` − digər xərclər (mal alışı çıxılmır). Ay seçimi, əvvəlki ayla ▲/▼ % (xərclərdə azalma yaşıl), son 12 ayın SVG sütun
+  qrafiki (Satış `--series-1`, Xalis `--series-2`, validator hər iki mövzuda keçib), 24 aylıq cədvəl, ayın xərc növləri və ən çox satılanlar.
 - Hazırda bütün funksiyalar Admin üçündür; istifadəçi (işçi) üçün nə görünəcəyini sahibi sonra deyəcək.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
