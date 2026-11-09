@@ -165,23 +165,12 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .custsel{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid var(--warn);border-radius:10px;padding:8px 10px;font-size:13px}
 .ctile{background:#b45309}
 .blines{display:grid;gap:8px}
-/* Telefon: bugünkü satış kartı (yalnız dar ekranda) */
-.daycard{display:none}
-@media (max-width:860px){
-  .daycard:not([hidden]){display:grid;gap:12px;position:relative;overflow:hidden;margin-bottom:12px;padding:18px;border-radius:20px;color:#fff;
-    background:linear-gradient(135deg,#2563eb,#1d4ed8);box-shadow:0 8px 24px rgba(29,78,216,.28)}
-  .daycard::before,.daycard::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none}
-  .daycard::before{width:160px;height:160px;right:-50px;top:-50px}
-  .daycard::after{width:120px;height:120px;left:-40px;bottom:-50px}
-  .daycard h3{margin:0;font-size:17px;font-weight:800;position:relative}
-  .daycard .big{font-size:38px;font-weight:800;line-height:1.05;position:relative}
-  .daycard .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
-  .daycard .t{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:10px 12px;display:grid;gap:4px}
-  .daycard .t span{font-size:13px;font-weight:700;opacity:.92}
-  .daycard .t b{font-size:18px}
-  .daycard .nis{font-size:13px;font-weight:700;opacity:.92;position:relative}
-  header .today{display:none}
-}
+/* Boş sifarişdə: bu günün nağd və kart cəmi (düymə) */
+.epay{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 0}
+.epay button{border:2px solid var(--line);background:var(--panel2);border-radius:14px;padding:14px 10px;display:grid;gap:4px;justify-items:center;font-weight:800;font-size:15px}
+.epay button b{font-size:22px}
+.epay button.c{color:var(--ok)}.epay button.k{color:var(--accent)}
+.epay button:hover{border-color:var(--muted)}
 .m2grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
 .m2info{background:var(--panel2);border-radius:10px;padding:10px 12px;display:grid;gap:4px;font-size:14px}
 .m2info b{font-size:16px}
@@ -351,7 +340,6 @@ h4{margin:6px 0 0;font-size:14px}
 
 <main class="wrap">
   <section style="min-width:0">
-    <div class="daycard" id="dayCard" hidden aria-label="Bugünkü satış"></div>
     <div class="tabs" id="tabs"></div>
     <div class="searchbar" id="searchbar" hidden><input id="q" type="search" placeholder="🔍 Düymə axtar: məs. surət, fincan, 10x15…" autocomplete="off" aria-label="Düymə axtar"><button class="btn ghost sm" id="qClear" hidden>Təmizlə</button></div>
     <div class="crumb" id="crumb" hidden></div>
@@ -561,7 +549,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.32.0";
+const APP_VERSION="0.33.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1301,14 +1289,6 @@ function renderHeader(){
   renderSuppBadge();renderCustBadge();renderCloudBadge();
   const ts=S.sales.filter(s=>isToday(s.ts));
   $("today").innerHTML=`Bu gün: <b>${ts.length}</b> satış · <b>${m2(ts.reduce((a,s)=>a+s.total,0))} ₼</b>`;
-  // Telefon: bugünkü satış kartı (cəmi, müştəri sayı, satılan ədəd, nağd, kart) — günlük hesabat icazəsi olana
-  const dc=$("dayCard");
-  if(dc){dc.hidden=!(me&&can("reports"));
-    if(!dc.hidden){const sum=f=>ts.filter(f).reduce((a,s)=>a+s.total,0),qty=ts.reduce((a,s)=>a+s.lines.reduce((b,l)=>b+(+l.q||0),0),0),nis=sum(s=>s.pay==="borc");
-      dc.innerHTML=`<h3>Bugünkü satış</h3><div class="big">${m2(sum(()=>1))} ₼</div>
-        <div class="tiles"><div class="t"><span>👥 Müştəri sayı</span><b>${ts.length}</b></div><div class="t"><span>📦 Satılan ədəd</span><b>${+qty.toFixed(2)}</b></div>
-        <div class="t"><span>💵 Nağd</span><b>${m2(sum(s=>s.pay==="nağd"))}</b></div><div class="t"><span>💳 Kart</span><b>${m2(sum(s=>s.pay==="kart"))}</b></div></div>
-        ${nis>0.004?`<div class="nis">📝 Nisyə: ${m2(nis)} ₼</div>`:""}`}}
   $("chips").innerHTML=S.materials.map(m=>`<span class="chip ${m.stock<=m.min?"low":""}">${m.name}: <b>${m.stock}</b>${m.stock<=m.min?" ⚠":""}</span>`).join("");
 }
 function renderTabs(){
@@ -1360,7 +1340,11 @@ function renderGrid(){
     +(editMode&&!S_?`<button class="svc addtile" data-act="qnew"><span class="ic">＋</span><span class="nm">Yeni düymə</span><span class="pr">${g?"“"+esc(g.name)+"” qrupuna":esc(cn)}</span></button>`:"");
 }
 function renderOrder(){
-  if(!order.length){$("lines").innerHTML=`<div class="empty">Xidmət düyməsinə toxunun</div>`}
+  if(!order.length){
+    // Bu günün nağd və kart cəmi; basanda Satış Tarixçəsi həmin ödəniş növü ilə açılır
+    if(me&&can("reports")){const ts=S.sales.filter(s=>isToday(s.ts)),sum=k=>ts.filter(s=>s.pay===k).reduce((a,s)=>a+s.total,0);
+      $("lines").innerHTML=`<div class="epay"><button class="c" data-epay="nağd" title="Bu günün nağd satışları">💵 Nağd<b>${m2(sum("nağd"))} ₼</b></button><button class="k" data-epay="kart" title="Bu günün kart satışları">💳 Kart<b>${m2(sum("kart"))} ₼</b></button></div>`}
+    else $("lines").innerHTML=`<div class="empty">Xidmət düyməsinə toxunun</div>`}
   else $("lines").innerHTML=order.map(o=>{const it=item(o.id),p=lineUnit(o),k=okey(o);
     return `<div class="line"><div><div class="t">${esc(it.name)}${o.area?` ${areaTxt(o)}`:""}</div>${it.src?`<div class="src">${o.from?"🚚 "+esc(suppName(o.from)||"Tədarükçü"):"🖨 Özümüz"}</div>`:""}<div class="s">${m2(p)} ₼ × ${o.q}${o.area?` · 1 m² ${m2(o.cp/o.area)} ₼`:""}</div></div>
       <div class="qty"><button data-dec="${k}" aria-label="azalt">−</button><input data-q="${k}" type="number" min="1" value="${o.q}" aria-label="say"><button data-inc="${k}" aria-label="artır">+</button></div>
@@ -1580,7 +1564,8 @@ const dayKey=ts=>{const d=new Date(ts);return d.getFullYear()+"-"+pad(d.getMonth
 const fmtDate=ts=>{const d=new Date(ts);return pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear()};
 const fmtTime=ts=>{const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes())};
 const saleKey=s=>s.id||("t"+s.ts);
-function openHist(){hDay=dayKey(Date.now());hPay="all";hDel=null;renderHist();$("ovHist").hidden=false}
+function openHist(p){hDay=dayKey(Date.now());hPay=p||"all";hDel=null;renderHist();$("ovHist").hidden=false}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-epay]");if(!t)return;if(can("hist"))openHist(t.dataset.epay)});
 function renderHist(){
   $("hDate").value=hDay;
   document.querySelectorAll("[data-hp]").forEach(b=>b.classList.toggle("on",b.dataset.hp===hPay));

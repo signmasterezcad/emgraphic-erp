@@ -141,8 +141,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `lastAuto/lastBackup` — max, qalan toqquşmada bu cihaz qalib. Telefon ehtiyat nüsxə yazmır — telefonun dəyişikliyinin nüsxəsini kompüter yazır.
   Ayarlar → "📱 Telefon" (yalnız admin): aç/bağla, ünvanlar (http://IP:8765), kod, qoşulan cihazlar, "Kodu dəyiş"; telefonda "bu telefonu ayır".
   Telefon ekranı: ≤640px kiçik düymələr, ≤860px aşağıda `#mobBar` ("Sifariş: n ədəd · cəmi · Ödənişə keç ↓"); əlaqə yoxdursa `#syncBar` (qırmızı).
-  **Bugünkü satış kartı** (v0.32.0, `#dayCard`, yalnız ≤860px və `can("reports")`): cəmi, müştəri sayı (satış sayı), satılan ədəd, nağd, kart (+ nisyə varsa);
-  telefonda başlıqdakı `#today` gizlidir.
+  **Boş sifarişdə** (v0.33.0; v0.32.0-dakı göy `#dayCard` sahibinin istəyi ilə silindi): "Xidmət düyməsinə toxunun" yerinə iki düymə
+  `.epay` — 💵 Nağd / 💳 Kart, bu günün cəmi (`can("reports")`); basanda Satış Tarixçəsi o ödəniş növü ilə (`openHist(p)`). Kompüterdə də.
   Windows Firewall ilk dəfə icazə soruşur ("Allow access"). Sonrakı mərhələ (istəsə): internet üzərindən (Firebase).
 
 - **☁️ Bulud — Google Firebase (Firestore + Auth, REST, SDK yoxdur)** (v0.30.0; istifadəçinin seçimi: hər yerdən internetlə).
