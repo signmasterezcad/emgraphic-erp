@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -179,6 +180,18 @@ func main() {
 	w.Bind("erpBackupRead", st.read)
 	w.Bind("erpPaths", func() map[string]string {
 		return map[string]string{"data": st.dataFile, "backup": st.backupDir}
+	})
+	// 🔄 Yenilə (update.go)
+	w.Bind("erpLatest", latestVersion)
+	w.Bind("erpUpdate", func() error {
+		script := filepath.Join(programDir, "yenile.ps1")
+		if !fileExists(script) {
+			return errors.New("yenile.ps1 tapılmadı: " + script)
+		}
+		c := exec.Command("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", updateCommand(script))
+		c.Dir = programDir
+		c.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x00000010} // CREATE_NEW_CONSOLE: görünən pəncərə
+		return c.Start()
 	})
 	w.Bind("erpOpenFolder", func() error { return exec.Command("explorer.exe", st.backupDir).Start() })
 

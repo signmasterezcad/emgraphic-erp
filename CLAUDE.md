@@ -191,6 +191,13 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   **Yeni kompüterdə buluda qoşulma** (`cloudAdopt()`): yerli məlumatda satış/xərc/alış/zay/ödəniş yoxdursa (`pristineLocal()`), nümunə (SEED) buluda
   qatılmır — buluddakı məlumat götürülür (bulud boşdursa yerli göndərilir). Sınaq: `tests/cloud.js` 7-ci hissə.
 
+- **🔄 Yenilə düyməsi** (v0.40.0, sahibinin istəyi): başlıqda versiyanın yanında `#btnUpd` (yalnız exe-də, `CAN_UPD` = `erpUpdate`+`erpLatest` var; telefonda yox).
+  exe `erpLatest()` (`launcher/update.go`) GitHub raw index.html-dən APP_VERSION-u oxuyur — açılışdan 4 san. sonra və hər 3 saatdan bir; yeni versiya varsa
+  düymə sarı "🔄 Yenilə v0.x". Basanda: yoxlayır → "ən son versiya var" / təsdiq ("✓ Bəli, … yenilə", 6 san.) → cari sifariş varsa yeniləmir →
+  məlumatı yazır (push / erpSave), əməliyyat nüsxəsi, bulud vəziyyəti → `erpUpdate()`: `powershell -Command updateCommand(yenile.ps1)` yeni konsolda
+  (CREATE_NEW_CONSOLE); yenile.ps1 KASSA-nı bağlayır, yeniləyir, yenidən açır; səhvdə pəncərə açıq qalır. Köhnə exe-lərdə düymə görünmür — bir dəfə YENILE.bat lazımdır.
+  Sınaq: `node tests/update.js`.
+
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
   (yuxarıda yazılan "1 vərəq A4" kimi reseptlər artıq yoxdur). Silmədən əvvəl ehtiyat nüsxə yazılıb.
   İstifadəçi "deyəndə" anbarı yenidən dolduracağıq və materialları düymələrə qoşacağıq.
@@ -215,7 +222,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 2. Yeni fayl əlavə edirsənsə, `app/files.txt`-ə yaz.
 3. Launcher dəyişibsə: `cd launcher && go test ./... && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o ../KASSA.exe .`
 4. Testlər: `node tests/smoke.js` (brauzer), `node tests/native.js` (exe simulyasiyası), `node tests/users.js` (kassirlər + əməliyyat nüsxəsi)
-   , `node tests/sync.js` (Wi-Fi telefon serveri; Go lazımdır) və `node tests/cloud.js` (bulud + APK ilk açılışı) — hamısı OK olmalıdır.
+   , `node tests/sync.js` (Wi-Fi telefon serveri; Go lazımdır) `node tests/cloud.js` (bulud + APK ilk açılışı) və `node tests/update.js` (Yenilə düyməsi) — hamısı OK olmalıdır.
 5. Push-dan sonra yoxla: `https://raw.githubusercontent.com/signmasterezcad/kassa/main/app/index.html` yeni versiyanı verir (GitHub 5 dəqiqəyə qədər köhnəni göstərə bilər; yeni versiya görünənə qədər gözlə, sonra istifadəçiyə "hazırdır" de).
 6. İstifadəçiyə **tam ZIP göndərmə** — `YENILE.bat` ilə yeniləsin. (Keçmişdə iki dəfə söz verib ZIP göndərmişik, bu, etimadı sarsıdıb.)
 

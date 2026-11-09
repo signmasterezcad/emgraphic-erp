@@ -239,6 +239,11 @@ label.chk{display:flex;gap:6px;align-items:center;font-size:13px}
 td input.wide{width:200px;text-align:left}
 .chip .x{background:none;border:0;color:var(--muted);font-weight:800;padding:0 0 0 4px}
 .ver{color:var(--muted);font-size:11px;font-weight:600}
+.updbtn{font:inherit;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);cursor:pointer;vertical-align:middle;margin-left:4px}
+.updbtn:hover{border-color:var(--accent)}
+.updbtn.new{background:var(--warn);color:#111;border-color:var(--warn)}
+.updbtn.arm{background:var(--accent);color:#fff;border-color:var(--accent)}
+.updbtn:disabled{opacity:.6;cursor:wait}
 .tab.sm{padding:6px 12px;font-size:13px}
 td.arrows{white-space:nowrap}
 td.arrows .btn{padding:4px 8px;margin-right:2px}
@@ -325,7 +330,7 @@ h4{margin:6px 0 0;font-size:14px}
 <body>
 
 <header class="wrap">
-  <h1><img src="kassa.svg" class="logo" alt="" width="28" height="28">KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span></h1>
+  <h1><img src="kassa.svg" class="logo" alt="" width="28" height="28">KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span> <button class="updbtn" id="btnUpd" type="button" hidden title="Proqramı yenilə">🔄 Yenilə</button></h1>
   <button class="hbtn user" id="btnUser" title="Çıxış: başqa işçi ilə gir">👤 <span class="un" id="userName"></span> · Çıxış</button>
   <button class="hbtn" id="btnZay">🗑️ Zay</button>
   <button class="hbtn" id="btnStock">📦 Anbar</button>
@@ -557,7 +562,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.39.0";
+const APP_VERSION="0.40.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2752,6 +2757,40 @@ document.addEventListener("keydown",e=>{
 // Space düymənin üstündə "basılma" yaratmasın
 document.addEventListener("keyup",e=>{if(e.code==="Space"&&!isTyping(e.target)&&order.length&&noModal())e.preventDefault()});
 $("ver").textContent="v"+APP_VERSION;
+// 🔄 Yenilə (v0.40.0): exe GitHub-dakı son versiyanı yoxlayır, basanda yenile.ps1 özü işləyir (proqram bağlanıb yenidən açılır)
+const CAN_UPD=NATIVE&&!REMOTE&&typeof window.erpUpdate==="function"&&typeof window.erpLatest==="function";
+let updLatest=null,updArm=0;
+function verGt(a,b){const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);
+  for(let i=0;i<Math.max(x.length,y.length);i++){const p=x[i]||0,q=y[i]||0;if(p!==q)return p>q}return false}
+async function checkUpd(){if(!CAN_UPD)return null;try{updLatest=await window.erpLatest()}catch(e){updLatest=null}renderUpd();return updLatest}
+function renderUpd(){const b=$("btnUpd");b.hidden=!CAN_UPD;if(!CAN_UPD)return;
+  const nw=!!updLatest&&verGt(updLatest,APP_VERSION);b.classList.toggle("new",nw);b.classList.remove("arm");
+  b.innerHTML=nw?`🔄 Yenilə <b>v${esc(updLatest)}</b>`:"🔄 Yenilə";b.title=nw?`Yeni versiya var: v${updLatest} (sizdə v${APP_VERSION})`:"Yeni versiya olub-olmadığını yoxla"}
+async function doUpdate(){
+  const b=$("btnUpd");
+  if(updArm&&Date.now()-updArm<6000&&updLatest&&verGt(updLatest,APP_VERSION)){
+    updArm=0;
+    if(order.length){toast("Əvvəlcə cari sifarişi bitirin (və ya silin), sonra yeniləyin");renderUpd();return}
+    b.disabled=true;b.textContent="⏳ Yenilənir…";
+    try{
+      clearTimeout(pushT);if(SYNC){await push()}else{await window.erpSave(JSON.stringify(S))}
+      clearTimeout(opT);if(opReady())await opBackup();
+      if(CL.cfg)await KV.set("sync",JSON.stringify({base:CL.base,cursor:CL.cursor,seen:CL.seen})).catch(()=>{});
+      await window.erpUpdate();
+      toast("Yenilənir… Qara pəncərə açılacaq, proqram özü bağlanıb yenidən açılacaq. Gözləyin.");
+    }catch(e){b.disabled=false;renderUpd();toast("Yeniləmək olmadı: "+(e.message||e))}
+    return;
+  }
+  b.disabled=true;b.textContent="⏳ Yoxlanır…";
+  const v=await checkUpd();b.disabled=false;
+  if(!v){toast("Yoxlamaq olmadı — internet bağlantısını yoxlayın");return}
+  if(!verGt(v,APP_VERSION)){toast(`Sizdə ən son versiya var: v${APP_VERSION} ✓`);return}
+  updArm=Date.now();b.classList.add("arm");b.innerHTML=`✓ Bəli, v${esc(v)}-ə yenilə`;
+  toast(`Yeni versiya var: v${v}. Yeniləmək üçün düyməyə bir də basın`);
+  setTimeout(()=>{if(updArm&&Date.now()-updArm>=6000){updArm=0;renderUpd()}},6100);
+}
+$("btnUpd").addEventListener("click",doUpdate);
+if(CAN_UPD){renderUpd();setTimeout(checkUpd,4000);setInterval(checkUpd,3*3600*1000)}
 $("keyGo").addEventListener("click",tryKey);
 $("mobGo").addEventListener("click",()=>document.querySelector(".order").scrollIntoView({behavior:"smooth",block:"end"}));
 $("keyIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();tryKey()}});
