@@ -62,6 +62,14 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **🧾 Satış Tarixçəsi** (v0.15.0, "Cari sifariş" başlığının sağında): gün seçimi (Bu gün / Dünən / Bütün günlər), Nağd/Kart filtri,
   tarix gg.aa.iiii, saat ss:dd, cəmlər. Admin istənilən satışı silə bilər (təsdiqlə); silmədən əvvəl ehtiyat nüsxə,
   satışın `used` sahəsindəki material anbara qaytarılır (v0.15.0-dan əvvəlki satışlarda `used` yoxdur).
+- **💸 Xərclər** (v0.18.0, başlıqda): 1-ci mərhələ hazırdır — **📦 Mal alışı** (`S.purchases`): təchizatçı, ödəniş nağd/kart/nisyə,
+  bir qəbzdə bir neçə mal; "Say × 1 paçkada" = anbara düşən say; yeni mal yerindəcə yaradılır (vahid: ədəd/vərəq/…);
+  "Olduğu kimi satıram" seçilən düymənin reseptinə [mal, 1] əlavə edir. Anbar artır, maya **orta qiymətlə** yenilənir:
+  (köhnə qalıq × köhnə maya + alış məbləği) / (köhnə qalıq + alınan say). Alış silinəndə anbar və maya geri hesablanır.
+  **📋 Alış tarixçəsi** (bu ay cəmləri), **💳 Borclar** (nisyə, təchizatçı üzrə, "Ödədim: nağd/kart"), başlıqda borc nişanı.
+  Mal alışı mənfəətdən çıxılmır (anbardır); maya satışda reseptlə çıxılır.
+  Qalan mərhələlər: 2) 🧾 Digər xərclər (Maaş, İcarə, İşıq, Su/Qaz, İnternet, Çay-su, Təsərrüfat, Reklam, Təmir, Digər; aylıq təkrarlanan)
+  + gün sonu "kassada olmalı olan pul" (nağd satış − nağd alış/xərc); 3) aylıq mənfəət hesabatı (satış − satılanın mayası − zay − digər xərclər).
 - Hazırda bütün funksiyalar Admin üçündür; istifadəçi (işçi) üçün nə görünəcəyini sahibi sonra deyəcək.
 
 - **Anbar sıfırlanıb (v0.12.1, `S.mig.anbarSifir`):** bütün materiallar silinib, bütün reseptlər boşdur
