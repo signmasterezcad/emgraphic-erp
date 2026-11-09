@@ -381,9 +381,13 @@ h4{margin:6px 0 0;font-size:14px}
     <div class="mh"><h3 id="ht">🧾 Satış Tarixçəsi</h3><button class="hbtn" data-close>Bağla</button></div>
     <div class="mb">
       <div class="frow">
-        <label class="f">Gün<input type="date" id="hDate"></label>
+        <label class="f">Tarixdən<input type="date" id="hFrom"></label>
+        <label class="f">Tarixədək<input type="date" id="hTo"></label>
         <button class="btn ghost sm" data-h="today">Bu gün</button>
         <button class="btn ghost sm" data-h="yday">Dünən</button>
+        <button class="btn ghost sm" data-h="week">Bu həftə</button>
+        <button class="btn ghost sm" data-h="month">Bu ay</button>
+        <button class="btn ghost sm" data-h="pmonth">Keçən ay</button>
         <button class="btn ghost sm" data-h="all">Bütün günlər</button>
         <span class="sub">Ödəniş:</span>
         <button class="tab sm" data-hp="all">Hamısı</button><button class="tab sm" data-hp="nağd">💵 Nağd</button><button class="tab sm" data-hp="kart">💳 Kart</button><button class="tab sm" data-hp="borc">📝 Nisyə</button>
@@ -550,7 +554,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.34.1";
+const APP_VERSION="0.35.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1561,26 +1565,34 @@ function cashDay(day){
 }
 
 // ---------- Satış Tarixçəsi ----------
-let hDay="",hPay="all",hDel=null;
+let hFrom="",hTo="",hPay="all",hDel=null; // tarix aralığı (boş = həddsiz)
 const pad=n=>String(n).padStart(2,"0");
 const dayKey=ts=>{const d=new Date(ts);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
 const fmtDate=ts=>{const d=new Date(ts);return pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear()};
 const fmtTime=ts=>{const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes())};
 const saleKey=s=>s.id||("t"+s.ts);
-function openHist(p){hDay=dayKey(Date.now());hPay=p||"all";hDel=null;renderHist();$("ovHist").hidden=false}
+function openHist(p){hFrom=hTo=dayKey(Date.now());hPay=p||"all";hDel=null;renderHist();$("ovHist").hidden=false}
 document.addEventListener("click",e=>{const t=e.target.closest("[data-epay]");if(!t)return;if(can("hist"))openHist(t.dataset.epay)});
 function renderHist(){
-  $("hDate").value=hDay;
+  if(hFrom&&hTo&&hFrom>hTo)[hFrom,hTo]=[hTo,hFrom];
+  $("hFrom").value=hFrom;$("hTo").value=hTo;
   document.querySelectorAll("[data-hp]").forEach(b=>b.classList.toggle("on",b.dataset.hp===hPay));
-  const list=S.sales.filter(s=>(!hDay||dayKey(s.ts)===hDay)&&(hPay==="all"||s.pay===hPay)).sort((a,b)=>b.ts-a.ts);
+  const inRange=ts=>{const k=dayKey(ts);return(!hFrom||k>=hFrom)&&(!hTo||k<=hTo)};
+  const list=S.sales.filter(s=>inRange(s.ts)&&(hPay==="all"||s.pay===hPay)).sort((a,b)=>b.ts-a.ts);
   const sum=f=>list.filter(f).reduce((a,s)=>a+s.total,0);
-  const title=hDay?fmtDate(new Date(hDay+"T12:00").getTime()):"Bütün günlər";
+  const fd=k=>fmtDate(new Date(k+"T12:00").getTime());
+  const title=!hFrom&&!hTo?"Bütün günlər":hFrom===hTo?fd(hFrom):`${hFrom?fd(hFrom):"əvvəldən"} – ${hTo?fd(hTo):"bu günədək"}`;
+  // bir neçə gün seçiləndə: günlər üzrə cəmlər
+  const days={};list.forEach(s=>{const k=dayKey(s.ts),d=days[k]||(days[k]={n:0,c:0,k:0,b:0,t:0});d.n++;d.t+=s.total;if(s.pay==="nağd")d.c+=s.total;else if(s.pay==="kart")d.k+=s.total;else d.b+=s.total});
+  const dk=Object.keys(days).sort().reverse();
   $("hBody").innerHTML=`<div class="kpis">
       <div class="kpi"><span>${esc(title)} · satış sayı</span><b>${list.length}</b></div>
       <div class="kpi"><span>Cəmi</span><b>${m2(sum(()=>1))} ₼</b></div>
       <div class="kpi"><span>💵 Nağd</span><b style="color:var(--ok)">${m2(sum(s=>s.pay==="nağd"))} ₼</b></div>
       <div class="kpi"><span>💳 Kart</span><b style="color:var(--accent)">${m2(sum(s=>s.pay==="kart"))} ₼</b></div>
       <div class="kpi"><span>📝 Nisyə</span><b style="color:var(--warn)">${m2(sum(s=>s.pay==="borc"))} ₼</b></div></div>
+    ${dk.length>1?`<details open><summary><b>📅 Günlər üzrə (${dk.length} gün)</b></summary><div class="tw"><table><tr><th>Gün</th><th class="n">Satış</th><th class="n">💵 Nağd</th><th class="n">💳 Kart</th><th class="n">📝 Nisyə</th><th class="n">Cəmi</th></tr>
+      ${dk.map(k=>{const d=days[k];return `<tr><td><button class="link" data-hd="${k}">${fd(k)}</button></td><td class="n">${d.n}</td><td class="n">${m2(d.c)}</td><td class="n">${m2(d.k)}</td><td class="n">${m2(d.b)}</td><td class="n"><b>${m2(d.t)} ₼</b></td></tr>`}).join("")}</table></div></details>`:""}
     ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Saat</th><th>Ödəniş</th><th>Nə satılıb</th><th>İşçi</th><th class="n">Məbləğ</th><th></th></tr>
     ${list.slice(0,500).map(s=>{const k=saleKey(s);return `<tr class="${hDel===k?"confirm":""}">
       <td><b>${fmtDate(s.ts)}</b></td><td><b>${fmtTime(s.ts)}</b></td>
@@ -1589,8 +1601,8 @@ function renderHist(){
       <td>${esc(s.worker||"")}</td><td class="n"><b>${m2(s.total)} ₼</b></td>
       <td>${!can("delSale")?"":hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
         :`<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
-    ${list.length>500?`<p class="sub">Son 500 satış göstərilir. Konkret günü seçin.</p>`:""}`
-    :`<p class="sub empty-grp">${hDay?"Bu gün":"Hələ"} satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
+    ${list.length>500?`<p class="sub">Son 500 satış göstərilir (cəmlər hamısı üzrədir). Tarix aralığını daraldın.</p>`:""}`
+    :`<p class="sub empty-grp">${title}: satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
 }
 const salePill=s=>s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>';
 async function deleteSale(k){
@@ -1607,9 +1619,13 @@ document.addEventListener("click",e=>{
   const t=e.target.closest("[data-h],[data-hp]");if(!t)return;
   if(t.dataset.hp){hPay=t.dataset.hp;hDel=null}
   else{const a=t.dataset.h;
-    if(a==="today")hDay=dayKey(Date.now());
-    else if(a==="yday")hDay=dayKey(Date.now()-864e5);
-    else if(a==="all")hDay="";
+    const now=new Date(),D=(y,m,d)=>dayKey(new Date(y,m,d).getTime());
+    if(a==="today")hFrom=hTo=dayKey(Date.now());
+    else if(a==="yday")hFrom=hTo=dayKey(Date.now()-864e5);
+    else if(a==="week"){const wd=(now.getDay()+6)%7;hFrom=D(now.getFullYear(),now.getMonth(),now.getDate()-wd);hTo=dayKey(Date.now())}
+    else if(a==="month"){hFrom=D(now.getFullYear(),now.getMonth(),1);hTo=dayKey(Date.now())}
+    else if(a==="pmonth"){hFrom=D(now.getFullYear(),now.getMonth()-1,1);hTo=D(now.getFullYear(),now.getMonth(),0)}
+    else if(a==="all")hFrom=hTo="";
     else if(a==="ask")hDel=t.dataset.k;
     else if(a==="delx")hDel=null;
     else if(a==="del"){deleteSale(t.dataset.k);return}
@@ -2626,7 +2642,9 @@ document.querySelectorAll(".ov").forEach(ov=>{
   mh.addEventListener("dblclick",e=>{if(!e.target.closest("button,input,select"))toggleMax(ov)});
   applyMax(ov);
 });
-$("hDate").addEventListener("change",e=>{hDay=e.target.value;hDel=null;renderHist()});
+$("hFrom").addEventListener("change",e=>{hFrom=e.target.value;hDel=null;renderHist()});
+$("hTo").addEventListener("change",e=>{hTo=e.target.value;hDel=null;renderHist()});
+document.addEventListener("click",e=>{const t=e.target.closest("[data-hd]");if(!t)return;hFrom=hTo=t.dataset.hd;hDel=null;renderHist()});
 $("q").addEventListener("input",e=>{q=e.target.value;qAdded=null;$("qClear").hidden=!q;renderGrid()});
 // Axtarışda Enter: birinci nəticəni əlavə et. Yazı dəyişməyibsə və sifariş varsa, növbəti Enter ödəniş sayılır.
 let qAdded=null;

@@ -338,6 +338,19 @@ const path = require('path');
   ok(kartRows >= 1 && !(await p.textContent('table.hist')).includes('💵 Nağd'), 'Kart filtri: yalnız kartla satışlar');
   await p.click('[data-hp=all]'); await p.click('[data-h=yday]');
   ok((await p.textContent('#hBody')).includes('satış yoxdur'), 'Dünən: satış yoxdur');
+  // tarix aralığı: köhnə satışlar əlavə et (3 və 10 gün əvvəl)
+  await p.evaluate(() => { const d = n => Date.now() - n * 864e5; S.sales.push({ id: 'old3', ts: d(3), worker: 'Admin', pay: 'nağd', lines: [{ id: 'x', name: 'Köhnə A', q: 1, price: 5, sum: 5, cost: 0 }], total: 5 }, { id: 'old10', ts: d(10), worker: 'Admin', pay: 'kart', lines: [{ id: 'x', name: 'Köhnə B', q: 1, price: 7, sum: 7, cost: 0 }], total: 7 }); });
+  const dk = n => { const x = new Date(Date.now() - n * 864e5); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  await p.fill('#hFrom', dk(5)); await p.dispatchEvent('#hFrom', 'change'); await p.fill('#hTo', dk(0)); await p.dispatchEvent('#hTo', 'change');
+  const r1 = await p.textContent('#hBody');
+  ok(r1.includes('Köhnə A') && !r1.includes('Köhnə B') && r1.includes('Günlər üzrə'), 'tarix aralığı (5 gün əvvəldən bu günədək): 3 gün əvvəlki satış var, 10 gün əvvəlki yox; günlər üzrə cədvəl');
+  await p.fill('#hFrom', dk(0)); await p.dispatchEvent('#hFrom', 'change'); await p.fill('#hTo', dk(12)); await p.dispatchEvent('#hTo', 'change');
+  ok((await p.inputValue('#hFrom')) === dk(12) && (await p.textContent('#hBody')).includes('Köhnə B'), 'tarixlər tərs yazılanda özü düzəlir');
+  await p.click('[data-h=all]');
+  ok((await p.textContent('#hBody')).includes('Bütün günlər') && (await p.inputValue('#hFrom')) === '', 'Bütün günlər: tarix boşdur');
+  await p.click('#hBody [data-hd] >> nth=0');
+  ok((await p.inputValue('#hFrom')) === (await p.inputValue('#hTo')), 'günlər cədvəlində günə basanda yalnız o gün açılır');
+  await p.evaluate(() => { S.sales = S.sales.filter(s => !s.id || !s.id.startsWith('old')); });
   await p.click('[data-h=today]');
   // satışı silmək: material geri qayıdır
   const lamBefore = await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock);

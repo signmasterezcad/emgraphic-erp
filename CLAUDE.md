@@ -61,7 +61,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Birinci basış "Ödənildi" düyməsini sarı edir. Pəncərə açıq, düzəliş rejimi və ya yazı xanasında işləmir.
   Axtarışda: hərf yaz → Enter (birinci nəticə əlavə olunur) → Enter Enter (ödə). Yazı dəyişməyibsə (`qAdded===q`),
   xanadakı Enter də ödəniş sayılır — fokus xanada qalsa belə məhsul ikinci dəfə əlavə olunmur.
-- **🧾 Satış Tarixçəsi** (v0.15.0, "Cari sifariş" başlığının sağında): gün seçimi (Bu gün / Dünən / Bütün günlər), Nağd/Kart filtri,
+- **🧾 Satış Tarixçəsi** (v0.15.0, "Cari sifariş" başlığının sağında): **tarix aralığı** (v0.35.0: `hFrom`/`hTo` "Tarixdən – Tarixədək", boş = həddsiz;
+  Bu gün / Dünən / Bu həftə (bazar ertəsindən) / Bu ay / Keçən ay / Bütün günlər; tərs yazılsa özü dəyişir; bir neçə gündə "📅 Günlər üzrə" cədvəli,
+  günə basanda o gün açılır), Nağd/Kart/Nisyə filtri,
   tarix gg.aa.iiii, saat ss:dd, cəmlər. Admin istənilən satışı silə bilər (təsdiqlə); silmədən əvvəl ehtiyat nüsxə,
   satışın `used` sahəsindəki material anbara qaytarılır (v0.15.0-dan əvvəlki satışlarda `used` yoxdur).
 - **💸 Xərclər** (v0.18.0, başlıqda): 1-ci mərhələ hazırdır — **📦 Mal alışı** (`S.purchases`): təchizatçı, ödəniş nağd/kart/nisyə,
