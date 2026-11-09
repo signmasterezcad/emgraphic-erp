@@ -186,8 +186,15 @@ const path = require('path');
   ok(await p.locator('#grid .svc.grpt').count() === 3 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 3 qrup (A4 Sadə, Foto, Sənəd Surəti), köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
   ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === '10x15|13x18|15x21|20x25|21x30|25x38|30x40|30x42|30x45', 'Foto Kağızlar: 9 ölçü');
-  await p.click('[data-add=fk_1015]'); await p.click('[data-add=fk_3045]'); await p.click('[data-add=fk_2538]');
+  await p.click('[data-add=fk_1015]');
+  ok(await p.isVisible('#ovSrc') && (await p.textContent('#srcBody')).includes('Samir Foto'), '10x15: "Özümüz / Samir Foto" seçimi çıxır');
+  await p.click('[data-src=own]'); await p.click('[data-add=fk_3045]');
+  ok(await p.isHidden('#ovSrc'), '30x45: Samir-də yoxdur — seçim çıxmır');
+  await p.click('[data-add=fk_2538]'); await p.keyboard.press('2');
   ok((await p.textContent('#total')).startsWith('23.40'), '10x15 (0.40) + 30x45 (15) + 25x38 (8) = 23.40');
+  ok((await p.textContent('#lines')).includes('🖨 Özümüz') && (await p.textContent('#lines')).includes('🚚 Samir Foto'), 'sifarişdə mənbə görünür: Özümüz / Samir Foto');
+  await p.click('[data-add=fk_1015]'); await p.keyboard.press('2');
+  ok(await p.locator('#lines .line').count() === 4 && (await p.textContent('[data-add=fk_1015] .cnt')) === '2', '10x15 özümüz və Samir ayrı sətirdir, düymədə cəmi 2');
   await p.click('#btnClear'); await p.click('[data-back]');
   // boş qrup üçün yeni qrup yarat
   await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=cap]'); await p.click('[data-act=new]');

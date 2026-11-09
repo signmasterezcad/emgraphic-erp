@@ -223,6 +223,23 @@ let n = 0;
   ok(sf.items[0].price === 0.35 && sf.items.length === 8, 'admin qiyməti dəyişdi (0.35) və yeni mal əlavə etdi');
   await p.click('#ovSupp [data-close]');
 
+  // 12) Foto: özümüz / Samir Foto — satış ayrı yazılır, aylıq hesabatda ayrılır
+  await p.fill('#q', '15x21'); await p.press('#q', 'Enter');
+  ok(await p.isVisible('#ovSrc'), 'axtarış + Enter: 15x21 üçün mənbə soruşulur');
+  await p.keyboard.press('1');
+  await p.fill('.line input', '10'); await p.dispatchEvent('.line input', 'change');
+  await p.click('#qClear'); await p.fill('#q', '15x21'); await p.press('#q', 'Enter'); await p.keyboard.press('2');
+  await p.fill('#lines .line:nth-child(2) input', '20'); await p.dispatchEvent('#lines .line:nth-child(2) input', 'change');
+  await p.click('#btnDone');
+  const ls = JSON.parse(fs.data).sales.at(-1).lines;
+  ok(ls.length === 2 && !ls[0].from && ls[1].from === 'sp1' && ls[1].cost === 0 && Math.abs(ls[1].scost - 9) < 1e-9 && ls[1].sum === 20, 'satış: özümüz 10 əd + Samir 20 əd (alış 20×0.45=9, maya 0)');
+  await p.click('#btnRep'); await p.click('[data-rt=ay]');
+  const mr = await p.textContent('#rbody');
+  ok(mr.includes('özümüz çap etdik') && mr.includes('Samir Foto Studio: satış') && mr.includes('11.00'), 'aylıq: Samir Foto-dan satış 20, alış qiyməti 9, qazanc 11');
+  await p.click('[data-rt=mal]');
+  ok((await p.textContent('#rbody')).includes('15x21 · 🚚 Samir Foto') && (await p.textContent('#rbody')).includes('15x21 · 🖨 özümüz'), 'Məhsul + mənfəət: 15x21 iki ayrı sətir');
+  await p.click('#ovRep [data-close]');
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

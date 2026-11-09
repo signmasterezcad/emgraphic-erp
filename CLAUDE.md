@@ -108,6 +108,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   basanda sətir əlavə olunur / say +1, məbləğ = say × qiymət (sətirdə `price`). Admin "⚙️ Tədarükçülər → 💲 Qiymətlər"-də dəyişir.
   Samir Foto (`S.mig.samirQiymet`): Foto 10x15 0.30, 13x18 0.40, 15x21 0.45, 20x25 2, 21x30 2, 25x30 4, 25x38 4.
   Bu alış qiymətləri satış düymələrinin mayasına (resept) **qoşulmayıb** — alış artıq xərc kimi çıxılır, qoşsaq iki dəfə çıxılar.
+  **Özümüz / Tədarükçü** (v0.27.0): düymədə `src:{supp,item}` (redaktorda "Tədarükçüdən hazır da alınır?" `#e_src`).
+  `S.mig.fotoSrc`: Foto Kağızlar (`g_foto`) düymələri ölçüyə görə Samir Foto-ya qoşuldu (10x15, 13x18, 15x21, 20x25, 21x30, 25x38; 30x40+ yox).
+  Basanda `#ovSrc` (1 = Özümüz, 2 = tədarükçü, Esc). Sifariş sətri `{id,q,from}`, açar `okey()` = "id@from"; satış qiyməti eynidir.
+  Tədarükçü sətri: anbardan material silinmir, `cost:0` (alış xərclərdədir — iki dəfə çıxılmasın), `from`, `fromName`, `scost` = say × alış qiyməti.
+  Hesabat: "Məhsul + mənfəət"də ayrı sətir (maya = scost); 📅 Aylıq-da `srcSection()`: özümüz satış, tədarükçü satışı / alış qiyməti ilə / qazanc, ölçü cədvəli.
 - **🏢 Borclular — müəssisələrə borca satış** (v0.25.0): "Cari sifariş"də `#payDebt` "📝 Borca" → `#ovCust` müəssisə seçimi
   (yenisini orada əlavə etmək olar) → `pay="borc"`, `ordCust`; düymə "Borca yaz ✓". Satış: `pay:"borc", cust, custName`.
   `S.customers=[{id,name}]`, pul alınanda `S.custPays=[{id,cust,name,ts,amount,by,worker}]` (hissə-hissə). Borc = `custOwed(id)`.
