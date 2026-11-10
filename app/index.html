@@ -576,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.44.0";
+const APP_VERSION="0.44.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1188,6 +1188,8 @@ function renderCloud(){
       <li>Aşağıdakı xanaları doldurun və <b>Qoşul</b> basın.</li>
     </ol>
     <div class="cform">
+      <p class="sub"><b>Artıq başqa kompüterdə qoşulmusunuzsa</b> (yuxarıdakı addımlar lazım deyil): o kompüterdə <b>⚙️ Ayarlar → ☁️ Bulud → Linki kopyala</b> basın, linki özünüzə göndərin (WhatsApp, e-poçt) və buraya yapışdırın — xanalar özü dolacaq, yalnız parolu yazırsınız.</p>
+      <label class="f">Linki buraya yapışdırın<textarea id="cf_link" rows="2" placeholder="https://signmasterezcad.github.io/kassa/app/#bulud=…" style="padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);width:100%;font:inherit;font-size:13px"></textarea></label>
       <label class="f">API Key (apiKey)<input id="cf_k" autocomplete="off" placeholder="AIza…"></label>
       <label class="f">Project ID (projectId)<input id="cf_p" autocomplete="off" placeholder="kassa-12345"></label>
       <label class="f">E-poçt (3-cü addımdakı istifadəçi)<input id="cf_e" type="email" autocomplete="off"></label>
@@ -1531,6 +1533,8 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-m2],[data-
   syncM2();const a=t.dataset.m2;
   if(a==="mode"){m2D.mode=t.dataset.k;renderM2();setTimeout(()=>$(m2D.mode==="wh"?"m2_w":"m2_a")?.focus(),0)}
   else if(a==="add")addM2()});
+document.addEventListener("input",e=>{if(e.target.id!=="cf_link")return;const c=cloudLinkCfg(e.target.value);if(!c)return;
+  $("cf_k").value=c.apiKey;$("cf_p").value=c.projectId;$("cf_e").value=c.email;$("cf_w").focus();toast("Link tanındı ✓ — indi parolu yazın")});
 document.addEventListener("input",e=>{if($("ovM2").hidden||!/^m2_/.test(e.target.id||""))return;syncM2();
   if(e.target.id==="m2_pm")m2D.last="pm";if(e.target.id==="m2_tot")m2D.last="tot";updM2()});
 document.addEventListener("keydown",e=>{if($("ovM2").hidden)return;

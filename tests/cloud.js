@@ -198,7 +198,9 @@ const srv = http.createServer((req, res) => {
     await P2.evaluate(() => { S.items.find(i => i.id === 'fc_termo').tiers[0][1] = 99; save(); });
     const before = docs.size;
     await P2.click('#btnSet'); await P2.click('[data-rt=cloud]');
-    await P2.fill('#cf_k', 'KEY1'); await P2.fill('#cf_p', 'kassa-test'); await P2.fill('#cf_e', USER.email); await P2.fill('#cf_w', USER.password);
+    await P2.fill('#cf_link', 'Link: ' + link);
+    ok((await P2.inputValue('#cf_k')) === 'KEY1' && (await P2.inputValue('#cf_p')) === 'kassa-test' && (await P2.inputValue('#cf_e')) === USER.email, 'yeni kompüter: linki yapışdıranda xanalar özü dolur');
+    await P2.fill('#cf_w', USER.password);
     await P2.click('[data-act=clcon]');
     await P2.waitForFunction(() => CL.last > 0 && S.sales.length === 5, null, { timeout: 20000 });
     await sleep(1500);
