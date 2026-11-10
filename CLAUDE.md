@@ -68,6 +68,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   **💬 Qiyməti razılaşma ilə** (`free:1`, redaktorda `#e_free`): basanda `#ovM2` "free" rejimi — "Nə çəkildi" qeydi (`m2_note`, istəyə görə), Ədəd,
   1 ədədin qiyməti ⇄ cəmi. Sifariş sətri `{uid,id,q,cp,note}`; satış sətri ad "Digər — qeyd", `plain` (hesabatda düymənin adı ilə qruplaşır), `note`. Sahibi sıranı özü dəyişib (ekranda: ÇAP, Banner / Vinil, Sublim, Fiber Lazer, Kəsim Plotter, Poliqrafiya…).
   Bölmə düymələri (`.tabs`, v0.28.1) sığmayanda ikinci sıraya düşür — sürüşdürmə çubuğu olmamalıdır (sahibinin istəyi).
+- **🎨 İkon seçimi** (v0.43.0): `pickIcon(cur,title,cb)` → `#ovIcon` (`ICONS`: Foto/Studiya, Çap/Ofis, Reklam, Hədiyyə/Sublim, Texnika, Rəng/Digər;
+  "özünüz yazın" `#ic_own` (Win + .), "İkonsuz"). Düymə redaktorunda `data-act="eicon"` (+ köhnə `#e_icon` xanası, maxlength 8);
+  Ayarlar → Bölmələr: "İkon" sütunu (`cicon`, yeni bölmə üçün `ncicon`/`ncIcon`). Bölmədə `S.cats[].icon` (istəyə görə) — tabda adın qabağında (`catIcon()`).
 - **Klaviatura ilə nağd ödəniş** (v0.14.0): sifarişdə məhsul varsa, Space və ya Enter 1.5 saniyə ərzində iki dəfə → nağd satış.
   Birinci basış "Ödənildi" düyməsini sarı edir. Pəncərə açıq, düzəliş rejimi və ya yazı xanasında işləmir.
   Axtarışda: hərf yaz → Enter (birinci nəticə əlavə olunur) → Enter Enter (ödə). Yazı dəyişməyibsə (`qAdded===q`),

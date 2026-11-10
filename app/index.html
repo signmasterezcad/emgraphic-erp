@@ -249,6 +249,13 @@ td.arrows{white-space:nowrap}
 td.arrows .btn{padding:4px 8px;margin-right:2px}
 .btn:disabled{opacity:.35;cursor:default}
 .mini{display:inline-block;color:#fff;border-radius:8px;padding:3px 9px;font-weight:700;font-size:12px}
+.icgrp{display:grid;gap:6px;margin-bottom:12px}
+.icgrid{display:flex;flex-wrap:wrap;gap:6px}
+.icgrid button{font-size:26px;line-height:1;width:48px;height:48px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;display:grid;place-items:center}
+.icgrid button:hover{border-color:var(--accent)}
+.icgrid button.on{border:2px solid var(--accent);background:var(--panel)}
+.icpick{font-size:20px;min-width:44px;padding:4px 10px}
+#ovIcon{z-index:60}
 .swatches{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:16px}
 .sw{width:24px;height:24px;border-radius:50%;border:2px solid transparent}
 .sw.on{border-color:var(--fg)}
@@ -412,6 +419,13 @@ h4{margin:6px 0 0;font-size:14px}
   </div>
 </div>
 
+<div class="ov" id="ovIcon" hidden>
+  <div class="modal" role="dialog" aria-labelledby="ict">
+    <div class="mh"><h3 id="ict">İkon seçin</h3><button class="hbtn" data-icx>Bağla</button></div>
+    <div class="mb" id="icBody"></div>
+  </div>
+</div>
+
 <div class="ov" id="ovM2" hidden>
   <div class="modal sm" role="dialog" aria-labelledby="m2t">
     <div class="mh"><h3 id="m2t">Ölçü və qiymət</h3><button class="hbtn" data-m2x>Ləğv</button></div>
@@ -562,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.42.0";
+const APP_VERSION="0.43.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1331,7 +1345,7 @@ function renderHeader(){
 }
 function renderTabs(){
   refreshCats();
-  $("tabs").innerHTML=CATS.map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${esc(l)}${editMode&&k!=="search"?
+  $("tabs").innerHTML=CATS.map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${catIcon(k)?esc(catIcon(k))+" ":""}${esc(l)}${editMode&&k!=="search"?
     `<span class="tx" role="button" data-act="qcren" data-c="${k}" title="Adını dəyiş">✏️</span><span class="tx" role="button" data-act="qcdel" data-c="${k}" title="Sil">${delArm===k?(S.items.some(it=>it.cat===k)?`${S.items.filter(it=>it.cat===k).length} düymə ilə sil?`:"Sil?"):"🗑"}</span>`:""}</button>`).join("")
     +(editMode?`<button class="tab add" data-act="qcadd">+ Bölmə</button>`:"");
 }
@@ -1419,6 +1433,30 @@ function addItem(key,d=1){
 const srcSup=it=>it?.src&&S.suppliers.find(x=>x.id===it.src.supp);
 const srcItem=it=>srcSup(it)?.items?.find(y=>y.id===it.src.item);
 let srcFor=null;
+// 🎨 İkon seçimi (v0.43.0): düymə və bölmə üçün
+const ICONS=[["📷 Foto / Studiya","📷 📸 🎞️ 🖼️ 🪪 🤵 👰 👶 🧒 👪 🐶 🐱 🎥 💡 🪞 🌄"],
+  ["🖨️ Çap / Ofis","🖨️ 📄 📃 📑 🗂️ 📁 📋 📝 ✏️ 🖊️ 📐 📏 ✂️ 📎 📌 🧾 📚 📓 📒 🔍"],
+  ["🪧 Reklam / Poliqrafiya","🪧 🏷️ 🎫 💳 📇 📰 🗞️ 📢 🏳️ 🚩 🎌 🎟️ 🔖 📜 🗺️"],
+  ["🎁 Hədiyyə / Sublim","☕ 🍵 🥤 👕 🧢 🎒 👜 🔑 🎁 🏆 🥇 🏅 🎖️ ⌚ 🧸 🪔 🔥 ⭐ ❤️ 💍 🎈 🎂"],
+  ["⚙️ Texnika / Lazer / Plotter","💻 📱 💾 💿 🔌 ⚙️ 🔧 🛠️ ✨ 🔦 🧲 🪚 🔩 ⚡"],
+  ["🎨 Rəng / Digər","🎨 🖌️ 🖍️ 🌈 🔴 🟠 🟡 🟢 🔵 🟣 ⚫ ⚪ 📦 🚚 💰 💵 ❓ ✅"]].map(([t,l])=>[t,l.split(" ")]);
+let icCb=null;
+function pickIcon(cur,title,cb){icCb=cb;$("ict").textContent=title||"İkon seçin";
+  $("icBody").innerHTML=ICONS.map(([t,l])=>`<div class="icgrp"><span class="sub">${t}</span><div class="icgrid">${l.map(e=>`<button type="button" data-ic="${e}" class="${e===cur?"on":""}" aria-label="${e}">${e}</button>`).join("")}</div></div>`).join("")
+    +`<div class="frow"><label class="f">və ya özünüz yazın / yapışdırın (Windows: Win + . )<input id="ic_own" maxlength="8" value="${esc(cur||"")}"></label><button class="btn" data-ic="own">✓ Bu ikon</button>
+      ${cur!==undefined?`<button class="btn ghost" data-ic="none">İkonsuz</button>`:""}</div>`;
+  $("ovIcon").hidden=false}
+function closeIcon(){icCb=null;$("ovIcon").hidden=true}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-ic],[data-icx]");if(!t||$("ovIcon").hidden)return;e.stopPropagation();
+  if(t.hasAttribute("data-icx")){closeIcon();return}
+  let v=t.dataset.ic;if(v==="own")v=$("ic_own").value.trim();else if(v==="none")v="";
+  const cb=icCb;closeIcon();cb?.(v)},true);
+$("ovIcon").addEventListener("click",e=>{if(e.target===$("ovIcon"))closeIcon()});
+document.addEventListener("keydown",e=>{if($("ovIcon").hidden)return;
+  if(e.key==="Escape"){e.preventDefault();e.stopImmediatePropagation();closeIcon()}
+  else if(e.key==="Enter"&&e.target.id==="ic_own"){e.preventDefault();e.stopImmediatePropagation();const v=e.target.value.trim(),cb=icCb;closeIcon();cb?.(v)}},true);
+const catIcon=k=>S.cats.find(c=>c.id===k)?.icon||"";
+let ncIcon="";
 let m2For=null,m2D=null;
 function openM2(id){const it=item(id);m2For=id;m2D={mode:it.area?"wh":"free",w:"",h:"",a:"",n:"1",pm:"",tot:"",last:"pm",note:""};
   $("m2t").textContent=`${it.icon||""} ${it.name}: ${it.area?"ölçü və qiymət":"qiymət (razılaşma ilə)"}`;renderM2();$("ovM2").hidden=false;setTimeout(()=>$(it.area?"m2_w":"m2_note")?.focus(),0)}
@@ -1500,7 +1538,7 @@ const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=doneTxt()}
 const doneTxt=()=>pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden;
 function finishSale(){
   disarmPay();
   if(pay==="borc"){if(!can("custSale"))pay="nağd";else if(!custById(ordCust)){openCustPick();return}}
@@ -2344,7 +2382,7 @@ function renderAdmin(){
       <div class="frow">
         <label class="f grow">Ad<input id="e_name" value="${esc(d.name)}" placeholder="məs. A3 rəngli çap"></label>
         <label class="f">Bölmə<select id="e_cat">${CATS.filter(c=>c[0]!=="search").map(([k,l])=>`<option value="${k}" ${k===d.cat?"selected":""}>${l}</option>`).join("")}</select></label>
-        <label class="f sm">İkon<input id="e_icon" value="${esc(d.icon)}" maxlength="4"></label>
+        <label class="f sm">İkon<span class="frow" style="gap:6px;flex-wrap:nowrap"><button type="button" class="btn ghost icpick" data-act="eicon" title="İkon seç">${esc(d.icon||"➕")}</button><input id="e_icon" value="${esc(d.icon)}" maxlength="8" style="width:64px"></span></label>
         <label class="f sm">Rəng<input id="e_color" type="color" value="${esc(d.color)}"></label>
         <div class="swatches">${SWATCHES.map(c=>`<button class="sw ${c===d.color?"on":""}" style="background:${c}" data-act="sw" data-c="${c}" aria-label="rəng ${c}"></button>`).join("")}</div>
         ${d.group?"":`<label class="f sm">Mürəkkəb / əlavə xərc<input id="e_ink" type="number" step="0.01" min="0" value="${d.ink}"></label>`}
@@ -2393,12 +2431,13 @@ function syncDraft(){
 const SWATCHES=["#2563eb","#1d4ed8","#0e7490","#16a34a","#15803d","#ca8a04","#ea580c","#dc2626","#db2777","#7c3aed","#6d28d9","#475569"];
 function renderCats(){
   return `<p class="sub">Satış ekranının yuxarısındakı bölmələr. Adı yazın və Enter basın, ↑ ↓ ilə sıranı dəyişin. "🔍 Axtarış" həmişə birinci olur. Düymələri bölməyə "Düymələr / Xidmətlər" tabından əlavə edirsiniz.</p>
-  <div class="tw"><table><tr><th></th><th>Bölmənin adı</th><th class="n">Düymə sayı</th><th></th></tr>
+  <div class="tw"><table><tr><th></th><th>İkon</th><th>Bölmənin adı</th><th class="n">Düymə sayı</th><th></th></tr>
   ${S.cats.map((c,i)=>{const n=S.items.filter(it=>it.cat===c.id).length;return `<tr>
     <td class="arrows"><button class="btn ghost sm" data-act="cup" data-i="${i}" ${i===0?"disabled":""} aria-label="yuxarı">↑</button><button class="btn ghost sm" data-act="cdown" data-i="${i}" ${i===S.cats.length-1?"disabled":""} aria-label="aşağı">↓</button></td>
+    <td><button class="btn ghost icpick" data-act="cicon" data-c="${c.id}" title="İkon seç">${esc(c.icon||"➕")}</button></td>
     <td><input class="wide" data-cid="${c.id}" value="${esc(c.name)}" aria-label="bölmənin adı"></td><td class="n">${n}</td>
     <td><button class="btn ghost sm" data-act="cbtn" data-c="${c.id}">Düymələrə bax</button> <button class="btn ghost sm del" data-act="cdel" data-c="${c.id}">Sil</button></td></tr>
-    ${delArm===c.id?`<tr class="confirm"><td></td><td colspan="3"><div class="frow">
+    ${delArm===c.id?`<tr class="confirm"><td></td><td colspan="4"><div class="frow">
       <b>"${esc(c.name)}" silinsin?</b>
       ${n?`<span class="sub">İçində ${n} düymə var:</span>
         <button class="btn red sm" data-act="cdelall" data-c="${c.id}">Bölməni ${n} düymə ilə birlikdə sil</button>
@@ -2406,7 +2445,7 @@ function renderCats(){
         <button class="btn sm" data-act="cmove" data-c="${c.id}">bölməsinə köçür, bölməni sil</button>`:""}`
       :`<button class="btn red sm" data-act="cdelall" data-c="${c.id}">Bəli, sil</button>`}
       <button class="btn ghost sm" data-act="cdelx">Ləğv et</button></div></td></tr>`:""}`}).join("")}
-  <tr><td></td><td><input id="nc_name" class="wide" placeholder="Yeni bölmə, məs. Möhür"></td><td></td><td><button class="btn sm" data-act="cadd">+ Bölmə əlavə et</button></td></tr>
+  <tr><td></td><td><button class="btn ghost icpick" data-act="ncicon" title="İkon seç">${esc(ncIcon||"➕")}</button></td><td><input id="nc_name" class="wide" placeholder="Yeni bölmə, məs. Möhür"></td><td></td><td><button class="btn sm" data-act="cadd">+ Bölmə əlavə et</button></td></tr>
   </table></div>`;
 }
 
@@ -2563,9 +2602,13 @@ document.addEventListener("click",e=>{
     if(o){const i1=S.items.indexOf(list[k]),i2=S.items.indexOf(o);[S.items[i1],S.items[i2]]=[S.items[i2],S.items[i1]];save();renderGrid()}
   }
   else if(a==="sw"){syncDraft();draft.color=t.dataset.c}
+  else if(a==="eicon"){syncDraft();pickIcon(draft.icon,"Düymənin ikonu",v=>{if(!draft)return;draft.icon=v;renderRep()});return}
+  else if(a==="cicon"){const c=S.cats.find(x=>x.id===t.dataset.c);if(!c)return;
+    pickIcon(c.icon||"",`“${c.name}” bölməsinin ikonu`,v=>{if(v)c.icon=v;else delete c.icon;save();renderTabs();renderRep()});return}
+  else if(a==="ncicon"){const nm=$("nc_name").value;pickIcon(ncIcon,"Yeni bölmənin ikonu",v=>{ncIcon=v;renderRep();setTimeout(()=>{if($("nc_name"))$("nc_name").value=nm},0)});return}
   else if(a==="cup"||a==="cdown"){const i=+t.dataset.i,j=a==="cup"?i-1:i+1;[S.cats[i],S.cats[j]]=[S.cats[j],S.cats[i]];save();renderTabs()}
   else if(a==="cadd"){const n=$("nc_name").value.trim();if(!n){toast("Bölmənin adını yazın");return}
-    S.cats.push({id:newId("c"),name:n});save();renderTabs();toast(`"${n}" bölməsi əlavə olundu`)}
+    const nc={id:newId("c"),name:n};if(ncIcon)nc.icon=ncIcon;ncIcon="";S.cats.push(nc);save();renderTabs();toast(`"${n}" bölməsi əlavə olundu`)}
   else if(a==="cbtn"){rtab="admin";setCat=t.dataset.c}
   else if(a==="cdel"){delArm=delArm===t.dataset.c?null:t.dataset.c}
   else if(a==="cdelx"){delArm=null}
