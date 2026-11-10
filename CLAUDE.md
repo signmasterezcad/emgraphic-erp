@@ -63,7 +63,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **🔍 Axtarış** (v0.13.0) Sevimlilər-in yerinə gəlib (daxili açar `"search"`, həmişə birinci tab, açılışda seçilir).
   Bütün bölmə və qruplarda düymə adı + qrup + bölmə adına görə axtarır; ə/ş/ç/ğ/ı/ö/ü hərfsiz yazmaq olar; Enter birinci nəticəni əlavə edir.
   Düymələrdəki köhnə `fav` sahəsi artıq işlənmir.
-- İndi bölmələr: Axtarış, ÇAP, Poliqrafiya Xidmətləri, Sublim, Kəsim Plotter, Fiber Lazer, Banner / Vinil.
+- İndi bölmələr: Axtarış, ÇAP, Poliqrafiya Xidmətləri, Sublim, Kəsim Plotter, Fiber Lazer, Banner / Vinil, **Studiya** (v0.41.0, id `studiya`, `S.mig.studiya`;
+  içində `st_sened` "Sənəd Şəkli" — qiyməti hələ 0, sahibi yazacaq). Sahibi sıranı özü dəyişib (ekranda: ÇAP, Banner / Vinil, Sublim, Fiber Lazer, Kəsim Plotter, Poliqrafiya…).
   Bölmə düymələri (`.tabs`, v0.28.1) sığmayanda ikinci sıraya düşür — sürüşdürmə çubuğu olmamalıdır (sahibinin istəyi).
 - **Klaviatura ilə nağd ödəniş** (v0.14.0): sifarişdə məhsul varsa, Space və ya Enter 1.5 saniyə ərzində iki dəfə → nağd satış.
   Birinci basış "Ödənildi" düyməsini sarı edir. Pəncərə açıq, düzəliş rejimi və ya yazı xanasında işləmir.
