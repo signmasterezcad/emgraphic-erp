@@ -64,7 +64,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Bütün bölmə və qruplarda düymə adı + qrup + bölmə adına görə axtarır; ə/ş/ç/ğ/ı/ö/ü hərfsiz yazmaq olar; Enter birinci nəticəni əlavə edir.
   Düymələrdəki köhnə `fav` sahəsi artıq işlənmir.
 - İndi bölmələr: Axtarış, ÇAP, Poliqrafiya Xidmətləri, Sublim, Kəsim Plotter, Fiber Lazer, Banner / Vinil, **Studiya** (v0.41.0, id `studiya`, `S.mig.studiya`;
-  içində `st_sened` "Sənəd Şəkli" — qiyməti hələ 0, sahibi yazacaq). Sahibi sıranı özü dəyişib (ekranda: ÇAP, Banner / Vinil, Sublim, Fiber Lazer, Kəsim Plotter, Poliqrafiya…).
+  içində `st_sened` "Sənəd Şəkli" — qiyməti hələ 0, sahibi yazacaq; v0.42.0 `S.mig.studiya2`: sahibinin özü yaratdığı "Sənəd şəkili Kostyum montaj" → 🤵, "Digər" → 🖼️ + `free:1`).
+  **💬 Qiyməti razılaşma ilə** (`free:1`, redaktorda `#e_free`): basanda `#ovM2` "free" rejimi — "Nə çəkildi" qeydi (`m2_note`, istəyə görə), Ədəd,
+  1 ədədin qiyməti ⇄ cəmi. Sifariş sətri `{uid,id,q,cp,note}`; satış sətri ad "Digər — qeyd", `plain` (hesabatda düymənin adı ilə qruplaşır), `note`. Sahibi sıranı özü dəyişib (ekranda: ÇAP, Banner / Vinil, Sublim, Fiber Lazer, Kəsim Plotter, Poliqrafiya…).
   Bölmə düymələri (`.tabs`, v0.28.1) sığmayanda ikinci sıraya düşür — sürüşdürmə çubuğu olmamalıdır (sahibinin istəyi).
 - **Klaviatura ilə nağd ödəniş** (v0.14.0): sifarişdə məhsul varsa, Space və ya Enter 1.5 saniyə ərzində iki dəfə → nağd satış.
   Birinci basış "Ödənildi" düyməsini sarı edir. Pəncərə açıq, düzəliş rejimi və ya yazı xanasında işləmir.

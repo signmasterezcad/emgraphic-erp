@@ -156,6 +156,20 @@ const path = require('path');
   ok(tabNames[1].startsWith('ÇAP') && tabNames[2].startsWith('Poliqrafiya Xidmətləri'), 'Poliqrafiya Xidmətləri bölməsi ÇAP-ın yanında');
   ok(tabNames.slice(-4).join('|') === 'Kəsim Plotter|Fiber Lazer|Banner / Vinil|Studiya', 'Kəsim Plotter, Fiber Lazer, Banner / Vinil, Studiya bölmələri sonda');
   ok(await p.evaluate(() => { const i = S.items.find(x => x.id === 'st_sened'); return i && i.name === 'Sənəd Şəkli' && i.cat === 'studiya'; }), 'Studiya bölməsində "Sənəd Şəkli" düyməsi');
+  // v0.42.0: sahibinin özü yaratdığı "Sənəd şəkili Kostyum montaj" və "Digər" (qiymət razılaşma ilə)
+  await p.evaluate(() => { S.items.push({ id: 'u_k1', name: 'Sənəd şəkili Kostyum montaj', cat: 'studiya', icon: '⭐', color: '#2563eb', fav: 0, ink: 0, recipe: [], tiers: [[1, 3]] },
+    { id: 'u_dg', name: 'Digər', cat: 'studiya', icon: '⭐', color: '#2563eb', fav: 0, ink: 0, recipe: [], tiers: [[1, 0]] }); delete S.mig.studiya2; upgrade(); save(); renderAll(); });
+  ok(await p.evaluate(() => S.items.find(i => i.id === 'u_k1').icon === '🤵' && S.items.find(i => i.id === 'u_dg').icon === '🖼️' && S.items.find(i => i.id === 'u_dg').free === 1), 'Kostyum montaj 🤵, Digər 🖼️ + qiymət razılaşma ilə');
+  await p.click('[data-cat=studiya]', { position: { x: 12, y: 12 } });
+  ok((await p.locator('[data-add=u_dg]').textContent()).includes('razılaşma'), 'Digər düyməsində "qiymət razılaşma ilə"');
+  await p.click('[data-add=u_dg]');
+  await p.waitForSelector('#ovM2:not([hidden]) #m2_note');
+  await p.fill('#m2_note', 'it şəkli'); await p.fill('#m2_n', '2'); await p.fill('#m2_tot', '15'); await p.press('#m2_tot', 'Enter');
+  ok((await p.textContent('#total')).startsWith('15.00') && (await p.textContent('#lines')).includes('it şəkli'), 'Digər: 2 ədəd, cəmi 15 ₼ yerində yazıldı, qeyd sifarişdə');
+  const nS = await p.evaluate(() => S.sales.length);
+  await p.click('#btnDone');
+  ok(await p.evaluate(n => { const s = S.sales[S.sales.length - 1]; const l = s.lines[0]; return S.sales.length === n + 1 && l.name === 'Digər — it şəkli' && l.q === 2 && l.price === 7.5 && l.plain === 'Digər'; }, nS), 'satış: "Digər — it şəkli", 2 × 7.50');
+  await p.evaluate(() => { S.sales.pop(); save(); renderAll(); }); // sonrakı yoxlamaların satış sayı dəyişməsin
   await p.click('[data-cat=lazer]', { position: { x: 12, y: 12 } });
   ok(await p.locator('#grid .svc').count() === 0, 'Fiber Lazer bölməsi boşdur');
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });
