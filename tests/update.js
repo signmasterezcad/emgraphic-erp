@@ -23,6 +23,15 @@ const path = require('path');
     return p;
   };
   try {
+    // təzə quraşdırma (exe): nümunə kassir/anbar/köhnə bölmələr yoxdur, Studiya sahibinin istədiyi kimi, "Buluda qoşul" izahı
+    const fresh = await open(false);
+    const f = await fresh.evaluate(() => ({ cats: S.cats.map(c => c.name).join('|'), users: S.users.map(u => u.name).join('|'), mats: S.materials.length,
+      st: S.items.filter(i => i.cat === 'studiya').map(i => i.icon + i.name + (i.free ? '*' : '')).join('|'), orphan: S.items.filter(i => !S.cats.some(c => c.id === i.cat)).length, clean: 'cleanStart' in S }));
+    ok(f.cats === 'ÇAP|Banner / Vinil|Sublim|Fiber Lazer|Kəsim Plotter|Poliqrafiya Xidmətləri|Studiya', 'təzə quraşdırma: bölmələr sahibinin sırası ilə, artıq bölmə yoxdur (' + f.cats + ')');
+    ok(f.users === 'Admin' && f.mats === 0 && f.orphan === 0 && !f.clean, 'təzə quraşdırma: yalnız Admin, nümunə anbar yoxdur');
+    ok(f.st === '🪪Sənəd Şəkli|🤵Sənəd şəkili Kostyum montaj|🖼️Digər*', 'Studiya: Sənəd Şəkli, Kostyum montaj, Digər (razılaşma ilə)');
+    ok(await fresh.isVisible('#banner') && (await fresh.textContent('#banner')).includes('Buluda qoşul'), 'təzə quraşdırma: "☁️ Buluda qoşul" izahı görünür');
+    await fresh.context().close();
     const old = await open(false);
     ok(await old.isHidden('#btnUpd'), 'köhnə exe (yeniləmə funksiyası yoxdur): düymə görünmür');
     await old.context().close();

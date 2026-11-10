@@ -197,6 +197,14 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   **Yeni kompüterdə buluda qoşulma** (`cloudAdopt()`): yerli məlumatda satış/xərc/alış/zay/ödəniş yoxdursa (`pristineLocal()`), nümunə (SEED) buluda
   qatılmır — buluddakı məlumat götürülür (bulud boşdursa yerli göndərilir). Sınaq: `tests/cloud.js` 7-ci hissə.
 
+- **🧹 Təzə quraşdırma təmiz açılır** (v0.44.0; sahibi iş kompüterində nümunə bölmələri, Leyla/Rəşad, itmiş PIN/kassir görüb qarışdı):
+  exe-də `firstRun` → `cleanStart()` (yalnız Admin, materiallar boş, reseptlər boş) + `upgrade()`-dən sonra `cleanStartLate()`: köhnə nümunə bölmələri
+  (foto, viz, skan, lam, kag) silinir, sıra ÇAP, Banner / Vinil, Sublim, Fiber Lazer, Kəsim Plotter, Poliqrafiya, Studiya; Studiyaya `st_kostyum` 🤵, `st_diger` 🖼️ free.
+  Sınaqlarda nümunə məlumat lazımdırsa: `window.KASSA_SAMPLE=1` (users.js, cloud.js). Brauzerdə (smoke) SEED dəyişmir.
+  Bulud qoşulmayıb və məlumat təmizdirsə banner: "👋 … ☁️ Buluda qoşulun" (`bancl`). Bulud bölməsində **⬇️ Buluddakı məlumatı götür** (`cltake`, təsdiqlə):
+  ehtiyat nüsxə → `cloudAdopt()` (bu kompüterdəkini buludla əvəz edir). Adopt-dan sonra admin tapılmasa `startSession()`.
+  Kassirlər/PIN cihazlar arası yalnız bulud ilə gəlir (Setup-a şəxsi məlumat qoyulmur — depo açıqdır).
+
 - **🔄 Yenilə düyməsi** (v0.40.0, sahibinin istəyi): başlıqda versiyanın yanında `#btnUpd` (yalnız exe-də, `CAN_UPD` = `erpUpdate`+`erpLatest` var; telefonda yox).
   exe `erpLatest()` (`launcher/update.go`) GitHub raw index.html-dən APP_VERSION-u oxuyur — açılışdan 4 san. sonra və hər 3 saatdan bir; yeni versiya varsa
   düymə sarı "🔄 Yenilə v0.x". Basanda: yoxlayır → "ən son versiya var" / təsdiq ("✓ Bəli, … yenilə", 6 san.) → cari sifariş varsa yeniləmir →

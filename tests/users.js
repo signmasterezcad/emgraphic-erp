@@ -10,6 +10,7 @@ let n = 0;
   const errs = [];
   const open = async () => {
     const p = await ctx.newPage(); p.on('pageerror', e => errs.push(e.message));
+    await p.addInitScript(() => { window.KASSA_SAMPLE = 1; }); // nümunə kassirlərlə (Leyla, Rəşad)
     await p.exposeFunction('erpLoad', () => fs.data);
     await p.exposeFunction('erpSave', j => { fs.data = j; });
     await p.exposeFunction('erpBackup', (j, kind) => { const k = ['avto', 'emel'].includes(kind) ? kind : 'el'; const name = `kassa-2026-11-09_10-00-${String(n++).padStart(2, '0')}-${k}.json`; fs.backups.unshift({ name, size: j.length, time: Date.now(), j }); return name; });

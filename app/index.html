@@ -351,7 +351,7 @@ h4{margin:6px 0 0;font-size:14px}
   <div class="today" id="today"></div>
 </header>
 <div class="chips wrap" id="chips" hidden></div>
-<div class="banner wrap" id="banner" hidden><span>Köhnə versiyadan keçirsiniz? Satış və anbar məlumatınızı köçürmək üçün: <b>⚙️ Ayarlar → 💾 Ehtiyat nüsxə → Ehtiyat nüsxədən bərpa et</b>.</span> <button class="btn sm" data-act="bango">Ora keç</button> <button class="btn ghost sm" data-act="banx">Bağla</button></div>
+<div class="banner wrap" id="banner" hidden><span id="bantxt">Köhnə versiyadan keçirsiniz? Satış və anbar məlumatınızı köçürmək üçün: <b>⚙️ Ayarlar → 💾 Ehtiyat nüsxə → Ehtiyat nüsxədən bərpa et</b>.</span> <button class="btn sm" data-act="bancl" id="bancl" hidden>☁️ Buluda qoşul</button> <button class="btn sm" data-act="bango">Ehtiyat nüsxədən bərpa</button> <button class="btn ghost sm" data-act="banx">Bağla</button></div>
 <div class="banner edit wrap" id="editbar" hidden><span>✏️ <b>Düzəliş rejimi.</b> Düymənin üstündəki ✏️ ilə dəyişin, 🗑 ilə silin, “+” ilə yenisini əlavə edin. Bölmə üçün də eyni. Bitirəndə “Hazır” basın.</span> <button class="btn sm" data-act="editdone">Hazır</button></div>
 
 <main class="wrap">
@@ -576,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.43.0";
+const APP_VERSION="0.44.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -804,11 +804,11 @@ async function loadData(){
     else try{S=parseData(localStorage.getItem(KEY)||"")}catch(e){}
   }
   if(!S&&PHONE_CLOUD)S=await cloudFirstLoad(); // telefon: məlumat buluddan gəlir, nümunə məlumat yaradılmır
-  if(!S){S=structuredClone(SEED);firstRun=true}
+  if(!S){S=structuredClone(SEED);firstRun=true;if(NATIVE&&!REMOTE&&!window.KASSA_SAMPLE)cleanStart()}
   if(NATIVE&&!firstRun&&!S.mig?.anbarSifir&&S.materials?.length)
     try{await window.erpBackup(backupText(),"el")}catch(e){}   // anbar silinməzdən əvvəl
   const migBefore=JSON.stringify(S.mig||{});
-  upgrade();
+  upgrade();cleanStartLate();
   opSig=dataSig(); // açılışın özü əməliyyat sayılmır
   if(migrated||JSON.stringify(S.mig)!==migBefore)save();
 }
@@ -1054,6 +1054,23 @@ function applyCloud(ch){
   if(document.readyState!=="loading"&&$("today")){renderHeader();renderTabs();renderGrid();renderOrder();renderDebtBadge();if(me)applyPerms()}
   localSaveOnly();
 }
+// Təzə quraşdırma (exe, v0.44.0): nümunə kassirlər, nümunə anbar və köhnə nümunə bölmələri olmadan, sahibinin indiki quruluşu ilə
+function cleanStart(){
+  S.workers=["Admin"];S.materials=[];S.items.forEach(i=>{i.recipe=[]});
+  S.mig=Object.assign(S.mig||{},{anbarSifir:1,cleanStart:1});
+  S.cleanStart=1;
+}
+function cleanStartLate(){ // upgrade()-dən sonra: bölmələr yaranıb
+  if(!S.cleanStart)return;delete S.cleanStart;
+  const old=["foto","viz","skan","lam","kag"];
+  S.items=S.items.filter(i=>!old.includes(i.cat));S.cats=S.cats.filter(c=>!old.includes(c.id));
+  const order=["cap","banner","sublim","lazer","plotter","poli","studiya"];
+  S.cats.sort((a,b)=>{const x=order.indexOf(a.id),y=order.indexOf(b.id);return (x<0?99:x)-(y<0?99:y)});
+  const sc=S.cats.find(c=>c.id==="studiya");
+  if(sc){if(!S.items.some(i=>i.id==="st_kostyum"))S.items.push({id:"st_kostyum",name:"Sənəd şəkili Kostyum montaj",cat:sc.id,icon:"🤵",color:"#2563eb",fav:0,ink:0,recipe:[],tiers:[[1,0]]});
+    if(!S.items.some(i=>i.id==="st_diger"))S.items.push({id:"st_diger",name:"Digər",cat:sc.id,icon:"🖼️",color:"#7c3aed",fav:0,ink:0,recipe:[],tiers:[[1,0]],free:1})}
+  S.mig.studiya2=1;
+}
 // Yeni kompüter (hələ satış/xərc yoxdur): nümunə məlumatı buluda qatma — buluddakını götür
 function pristineLocal(){return !S.sales.length&&!(S.expenses||[]).length&&!(S.purchases||[]).length&&!(S.waste||[]).length&&!(S.custPays||[]).length&&!(S.suppPays||[]).length}
 async function cloudAdopt(){
@@ -1064,7 +1081,7 @@ async function cloudAdopt(){
   S=Object.assign(S,keep);upgrade();saveCloudState();
   order=[];draft=null;localSaveOnly();
   if(me){me=S.users.find(u=>u.id===me.id)||null}
-  if(!me)logout();else{renderAll();renderDebtBadge();applyPerms()}
+  if(!me){logout();startSession()}else{renderAll();renderDebtBadge();applyPerms()}
   return true;
 }
 // Buluddan gələni yalnız bu cihazda yaz (bulud üçün təkrar göndərmə lazım deyil; LAN telefonlara da çatsın)
@@ -1184,6 +1201,8 @@ function renderCloud(){
     ${CL.err?`<p class="pill bad">${esc(CL.err)}</p>`:""}
     <p class="sub">İnternet olanda kompüter hər 10 saniyədən bir dəyişiklikləri buluda göndərir və oradan alır. İnternet kəsiləndə kassirlər işləməyə davam edir: yığılan əməliyyatlar internet gələn kimi özü gedir.</p>
     <div class="frow"><button class="btn" data-act="clnow">🔄 İndi sinxronlaşdır</button><button class="btn ghost" data-act="cloff">Buluddan ayır</button></div>
+    <div class="frow"><button class="btn ghost" data-act="cltake">${delArm==="cltake"?"Əminsiniz? Bu kompüterdəki məlumat buluddakı ilə əvəz olunacaq — Bəli":"⬇️ Buluddakı məlumatı götür (bu kompüterdəkini əvəz et)"}</button>
+      <span class="sub">Bu kompüterdə məlumat qarışıbsa (artıq bölmələr, kassirlər itib): əvvəl ehtiyat nüsxə yazılır, sonra hər şey buluddan (o biri kompüterdən) gəlir.</span></div>
     <h4>📱 Telefonunuzda açmaq</h4>
     <ol class="steps">
       <li>Bu linki telefonunuza göndərin (məs. WhatsApp-da özünüzə) və telefonda <b>Chrome</b> ilə açın:
@@ -2580,10 +2599,11 @@ function backupText(){return JSON.stringify({app:"KASSA",version:APP_VERSION,exp
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
-  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove","udel","cloff"].includes(a))delArm=null;
+  if(!["idel","mdel","reset","cdel","qdel","qcdel","ldel","cdelall","cmove","udel","cloff","cltake"].includes(a))delArm=null;
   if(a==="editdone"){setEdit(false);return}
   else if(a==="goedit"){if(!can("edit"))return;$("ovRep").hidden=true;draft=null;setEdit(true);return}
   else if(a==="banx"){$("banner").hidden=true;return}
+  else if(a==="bancl"){$("banner").hidden=true;mode="set";rtab="cloud";$("ovRep").hidden=false}
   else if(a==="bango"){$("banner").hidden=true;mode="set";rtab="backup";$("ovRep").hidden=false}
   else if(a==="qedit"){e.stopPropagation();openSet("admin",cat==="search"?"all":cat);draft={...structuredClone(item(t.dataset.id)),isNew:false}}
   else if(a==="qnew"){const g=grp&&item(grp);openSet("admin",g?g.cat:cat==="search"?"all":cat);
@@ -2605,7 +2625,7 @@ document.addEventListener("click",e=>{
   else if(a==="eicon"){syncDraft();pickIcon(draft.icon,"Düymənin ikonu",v=>{if(!draft)return;draft.icon=v;renderRep()});return}
   else if(a==="cicon"){const c=S.cats.find(x=>x.id===t.dataset.c);if(!c)return;
     pickIcon(c.icon||"",`“${c.name}” bölməsinin ikonu`,v=>{if(v)c.icon=v;else delete c.icon;save();renderTabs();renderRep()});return}
-  else if(a==="ncicon"){const nm=$("nc_name").value;pickIcon(ncIcon,"Yeni bölmənin ikonu",v=>{ncIcon=v;renderRep();setTimeout(()=>{if($("nc_name"))$("nc_name").value=nm},0)});return}
+  else if(a==="ncicon"){const nm=$("nc_name").value;pickIcon(ncIcon,"Yeni bölmənin ikonu",v=>{ncIcon=v;renderRep();if($("nc_name"))$("nc_name").value=nm});return}
   else if(a==="cup"||a==="cdown"){const i=+t.dataset.i,j=a==="cup"?i-1:i+1;[S.cats[i],S.cats[j]]=[S.cats[j],S.cats[i]];save();renderTabs()}
   else if(a==="cadd"){const n=$("nc_name").value.trim();if(!n){toast("Bölmənin adını yazın");return}
     const nc={id:newId("c"),name:n};if(ncIcon)nc.icon=ncIcon;ncIcon="";S.cats.push(nc);save();renderTabs();toast(`"${n}" bölməsi əlavə olundu`)}
@@ -2682,6 +2702,13 @@ document.addEventListener("click",e=>{
     if(!k||!pr||!em||!pw){toast("Bütün xanaları doldurun");return}
     t.disabled=true;t.textContent="Yoxlanır…";
     cloudSignIn(k,pr,em,pw,window.KASSA_CLOUD_URLS).then(()=>pristineLocal()?cloudAdopt():false).then(ad=>{toast(ad?"☁️ Buluda qoşuldu. Məlumat buluddan yükləndi":"☁️ Buluda qoşuldu. İlk sinxron başlayır…");cloudStart();renderRep()},e=>{toast("Qoşulmaq olmadı: "+(e.message||e));renderRep()});return}
+  else if(a==="cltake"){if(!isAdmin())return;if(delArm!=="cltake"){delArm="cltake";renderRep();return}
+    delArm=null;t.disabled=true;t.textContent="⏳ Buluddan yüklənir…";
+    (async()=>{cloudStop();for(let i=0;i<50&&CL.busy;i++)await new Promise(r=>setTimeout(r,200));
+      if(NATIVE&&!REMOTE)try{await window.erpBackup(backupText(),"el")}catch(e){}
+      const ad=await cloudAdopt();cloudStart();
+      toast(ad?"⬇️ Məlumat buluddan götürüldü ✓ (əvvəlki məlumat ehtiyat nüsxədədir)":"Bulud boşdur — bu kompüterin məlumatı qaldı")})()
+      .catch(e=>{cloudStart();toast("Alınmadı: "+(e.message||e))}).finally(()=>{if(!$("ovRep").hidden)renderRep()});return}
   else if(a==="clnow"){cloudTick().then(()=>{renderRep();toast(CL.online?"Sinxron ✓":"Alınmadı: "+CL.err)});return}
   else if(a==="clcopy"){const l=cloudPhoneLink();navigator.clipboard?.writeText(l).then(()=>toast("Link kopyalandı"),()=>toast("Kopyalamaq olmadı: linki seçib kopyalayın"));return}
   else if(a==="cloff"){if(!isAdmin())return;if(delArm!=="cloff"){delArm="cloff";t.textContent="Əminsiniz? Bəli, ayır";return}
@@ -2875,7 +2902,9 @@ $("keyIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault()
   }else if(NATIVE&&!REMOTE)await cloudInit();
   await loadData();
   if(NATIVE){try{PATHS=await window.erpPaths()}catch(e){}}
-  if(firstRun)$("banner").hidden=false;
+  // Yeni kompüter (v0.44.0): məlumat hələ buluddan gəlməyibsə, necə gətirməyi göstər
+  if(NATIVE&&!REMOTE&&!CL.cfg&&(firstRun||pristineLocal())){$("bantxt").innerHTML=`👋 Bu kompüterdə KASSA təzə quraşdırılıb. Başqa kompüterdəki <b>kassirlər, parol, düymələr və satışlar</b> buraya gəlsin deyə <b>☁️ Buluda qoşulun</b> (⚙️ Ayarlar → ☁️ Bulud). Qoşulmasanız, bu kompüter ayrıca işləyir.`;$("bancl").hidden=false;$("banner").hidden=false}
+  else if(firstRun)$("banner").hidden=false;
   startSession();renderDebtBadge();
   if(migrated)toast("Məlumat yeni fayl yaddaşına köçürüldü ✓");
   autoBackup();

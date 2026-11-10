@@ -63,7 +63,7 @@ const srv = http.createServer((req, res) => {
     const pcFiles = { data: '', kv: {} }; let pcOnline = true;
     const ctxPC = await b.newContext({ viewport: { width: 1366, height: 768 } });
     const PC = await ctxPC.newPage(); PC.on('pageerror', e => errs.push('PC: ' + e.message));
-    await PC.addInitScript(u => { window.KASSA_CLOUD_URLS = u; }, URLS);
+    await PC.addInitScript(u => { window.KASSA_CLOUD_URLS = u; window.KASSA_SAMPLE = 1; }, URLS);
     await PC.exposeFunction('erpLoad', () => pcFiles.data);
     await PC.exposeFunction('erpSave', j => { pcFiles.data = j; });
     await PC.exposeFunction('erpBackup', () => 'x');
@@ -206,6 +206,14 @@ const srv = http.createServer((req, res) => {
     ok(await P2.evaluate(() => S.items.find(i => i.id === 'fc_termo').tiers[0][1]) === 11 && await PC.evaluate(() => S.items.find(i => i.id === 'fc_termo').tiers[0][1]) === 11,
       'yeni kompüterin nümunə qiyməti (99) buluda düşmədi — buluddakı (11) qaldı');
     ok(JSON.parse(pc2.data).sales.length === 5 && docs.size >= before, 'yeni kompüterin faylına yazıldı');
+    // məlumat qarışıb: ⬇️ Buluddakı məlumatı götür
+    await P2.evaluate(() => { cloudStop(); S.cats.push({ id: 'qarisiq', name: 'Artıq bölmə' }); S.users = S.users.filter(u => u.role === 'admin'); S.sales.push({ id: 'zz', ts: Date.now(), total: 1, lines: [], pay: 'nağd' }); localSaveOnly(); });
+    await P2.click('#btnSet'); await P2.click('[data-rt=cloud]');
+    await P2.click('[data-act=cltake]'); ok((await P2.textContent('[data-act=cltake]')).includes('Əminsiniz'), 'götür: təsdiq soruşulur');
+    await P2.click('[data-act=cltake]');
+    await P2.waitForFunction(() => !S.cats.some(c => c.id === 'qarisiq'), null, { timeout: 15000 }); await sleep(500);
+    ok(await P2.evaluate(() => S.sales.length === 5 && !S.sales.some(x => x.id === 'zz') && S.users.length > 1), 'götür: bu kompüterin qarışıq məlumatı buluddakı ilə əvəz olundu (5 satış, kassirlər qayıtdı)');
+    ok(await PC.evaluate(() => !S.cats.some(c => c.id === 'qarisiq')) && ![...docs.keys()].some(k => k.includes('qarisiq')), 'artıq bölmə buluda getmədi');
   } finally {
     ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
     await b.close(); srv.close();
