@@ -243,7 +243,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 ## Açıq məsələlər
 - `YENILE.bat` Windows-da işləyir (istifadəçi v0.8.4-ə yenilənib, ekran şəklində görünür).
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
-- Google Disk-ə nüsxə — istifadəçi istəmədi. Setup Windows-da hələ yoxlanmayıb (istifadəçi işdə sınayacaq; SmartScreen xəbərdarlığı gözlənilir — imza yoxdur).
+- Google Disk-ə nüsxə — istifadəçi istəmədi. Setup iş kompüterində quraşdırıldı və işləyir; iş kompüteri v0.44.1-də linklə buluda qoşuldu (☁️ ✓, sahibi təsdiqlədi).
 - Bulud real Firebase ilə işləyir (layihə `kassa-7bad5`, istifadəçi təsdiqlədi: kompüter + telefon sinxron). GitHub Pages açıqdır. Depo Private olsa, Pages pulsuz işləmir.
 - APK real telefonda hələ yoxlanmayıb (emulyator yoxdur).
 - Telefon Windows-da real Wi-Fi ilə hələ yoxlanmayıb (Firewall icazəsi, IP ünvanı).
