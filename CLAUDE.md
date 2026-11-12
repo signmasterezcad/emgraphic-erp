@@ -50,6 +50,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Yaxa kartı — qrup (`g_yaxa`; `S.mig.yaxaQrup`), içindəki növləri istifadəçi yazacaq.
   Qruplar (`S.mig.sublimQruplar`, hamısı boş, istifadəçi zamanla yazacaq): Plaket (`g_plaket`), Suvenir (`g_suvenir`),
   Bayraq təkli/ikili/üçlü (`g_bayraq1/2/3`), Medal (`g_medal`), Alışqan (`g_alisqan`), Body (`g_body`).
+  Plaket içi (v0.51.0, `S.mig.plaketIci`): Plaket 10x15 16 (`pk_1015`), 13x18 16 (`pk_1318`), 15x21 25 (`pk_1521`).
 - Qiyməti 0 olan düymə "⚠ qiymət yoxdur" göstərir və satılmır.
 - **Başlıq quruluşu** (v0.38.0, sahibinin seçimi): **📦 Anbar** (`#btnStock`, `mode="stock"`, `RT_STOCK`: Qalıq / Sayım `anbar`, Materiallar `mat`,
   ⚠ Az qalanlar `low`; icazə `stock`) — Hesabatdan "Anbar / Sayım", Ayarlardan "Materiallar" bura köçdü. **💳 Borclar** (`#btnCust`, pəncərə `#ovCDebt`):

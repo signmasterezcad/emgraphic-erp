@@ -576,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.50.0";
+const APP_VERSION="0.51.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -800,6 +800,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.lazerM2){S.mig.lazerM2=1;
     const lc=S.cats.find(c=>c.id==="lazer")||S.cats.find(c=>norm(c.name)==="fiber lazer");
     if(lc&&!S.items.some(i=>i.id==="lz_m2"))S.items.push({id:"lz_m2",name:"Lazer işi",cat:lc.id,icon:"⚡",color:"#b91c1c",fav:0,ink:0,recipe:[],tiers:[[1,0]],area:1})}
+  // v0.51.0: Sublim → Plaket qrupunun içi
+  if(!S.mig.plaketIci){S.mig.plaketIci=1;
+    const g=S.items.find(i=>i.id==="g_plaket")||S.items.find(i=>i.group&&norm(i.name)==="plaket");
+    if(g)[["pk_1015","Plaket 10x15",16],["pk_1318","Plaket 13x18",16],["pk_1521","Plaket 15x21",25]].forEach(([id,n,p])=>{
+      if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:g.cat,parent:g.id,icon:g.icon||"🏆",color:g.color||"#b45309",fav:0,ink:0,recipe:[],tiers:[[1,p]]})})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
       const sz=m.replace(/\s|×/g,c=>c==="×"?"x":""),it=sf.items.find(y=>(y.name.match(/\d+x\d+/)||[])[0]===sz);if(it&&!i.src)i.src={supp:sf.id,item:it.id}})}
