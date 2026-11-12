@@ -170,7 +170,7 @@ const path = require('path');
   await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } });
   const tabNames = await p.locator('#tabs .tab').allTextContents();
   ok(tabNames[1].startsWith('ÇAP') && tabNames[2].startsWith('Poliqrafiya Xidmətləri'), 'Poliqrafiya Xidmətləri bölməsi ÇAP-ın yanında');
-  ok(tabNames.slice(-5).join('|') === 'Kəsim Plotter|Fiber Lazer|Banner / Vinil|Studiya|🖼️ Çərçivə', 'Kəsim Plotter, Fiber Lazer, Banner / Vinil, Studiya, 🖼️ Çərçivə bölmələri sonda');
+  ok(tabNames.slice(-3).join('|') === 'Banner / Vinil|Studiya|🖼️ Çərçivə' && !tabNames.some(t => /Plotter|Lazer/.test(t)), 'Banner / Vinil, Studiya, 🖼️ Çərçivə sonda; Plotter və Lazer ayrıca bölmə deyil');
   ok(await p.evaluate(() => { const i = S.items.find(x => x.id === 'st_sened'); return i && i.name === 'Sənəd Şəkli' && i.cat === 'studiya'; }), 'Studiya bölməsində "Sənəd Şəkli" düyməsi');
   // v0.42.0: sahibinin özü yaratdığı "Sənəd şəkili Kostyum montaj" və "Digər" (qiymət razılaşma ilə)
   await p.evaluate(() => { S.items.push({ id: 'u_k1', name: 'Sənəd şəkili Kostyum montaj', cat: 'studiya', icon: '⭐', color: '#2563eb', fav: 0, ink: 0, recipe: [], tiers: [[1, 3]] },
@@ -201,7 +201,7 @@ const path = require('path');
   ok(await p.evaluate(n => { const s = S.sales[S.sales.length - 1]; return S.sales.length === n + 1 && s.total === 6 && s.sub === 8 && s.disc === 2 && s.discReason === 'Kampaniya' && s.discPct === 25 && ordDisc === null; }, nS2), 'satış: cəm 8, endirim 2 (25%, Kampaniya), ödənilən 6; növbəti sifariş endirimsiz');
   await p.click('#btnHist'); ok((await p.textContent('#ovHist')).includes('🏷️ Endirim −2.00 ₼ (25%): Kampaniya'), 'tarixçədə endirim və səbəbi görünür'); await p.click('#ovHist [data-close]');
   await p.evaluate(() => { S.sales.pop(); save(); renderAll(); });
-  await p.click('[data-cat=plotter]', { position: { x: 12, y: 12 } });
+  await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } }); await p.click('[data-grp=g_plotter]');
   ok((await p.locator('[data-add=pl_m2]').textContent()).includes('m² ilə'), 'Kəsim Plotter: "Plotter kəsimi" — m² ilə, qiymət razılaşma ilə');
   await p.click('[data-add=pl_m2]'); await p.waitForSelector('#ovM2:not([hidden]) #m2_w');
   await p.fill('#m2_w', '2'); await p.fill('#m2_h', '0,5'); await p.fill('#m2_pm', '8'); await p.press('#m2_pm', 'Enter');
@@ -217,10 +217,12 @@ const path = require('path');
   await p.click('#btnDone');
   ok(await p.evaluate(n => { const s = S.sales[S.sales.length - 1]; const l = s.lines[0]; return S.sales.length === n + 1 && l.name === 'Digər — it şəkli' && l.q === 2 && l.price === 7.5 && l.plain === 'Digər'; }, nS), 'satış: "Digər — it şəkli", 2 × 7.50');
   await p.evaluate(() => { S.sales.pop(); save(); renderAll(); }); // sonrakı yoxlamaların satış sayı dəyişməsin
-  await p.click('[data-cat=lazer]', { position: { x: 12, y: 12 } });
-  ok(await p.locator('#grid .svc').count() === 1 && (await p.locator('[data-add=lz_m2]').textContent()).includes('m² ilə'), 'Fiber Lazer: "Lazer işi" — m² ilə, qiymət razılaşma ilə');
+  ok(await p.evaluate(() => { const g = id => S.items.find(i => i.id === id); return g('g_plotter')?.cat === 'poli' && g('g_lazer')?.cat === 'poli' && g('pl_m2').parent === 'g_plotter' && g('lz_m2').parent === 'g_lazer' && !S.cats.some(c => c.id === 'plotter' || c.id === 'lazer'); }), 'Kəsim Plotter və Fiber Lazer Poliqrafiya-nın içində qrup oldu (içindəki düymələrlə)');
+  await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } }); await p.click('[data-grp=g_lazer]');
+  ok(await p.locator('#grid [data-add]').count() === 1 && (await p.locator('[data-add=lz_m2]').textContent()).includes('m² ilə'), 'Poliqrafiya → Fiber Lazer: "Lazer işi" — m² ilə');
+  await p.click('[data-back]');
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });
-  ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Skan Etmə|Spiral Cildləmə', 'Poliqrafiya: 2 qrup (Skan, Spiral)');
+  ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Skan Etmə|Spiral Cildləmə|Kəsim Plotter|Fiber Lazer', 'Poliqrafiya: 4 qrup (Skan, Spiral, Kəsim Plotter, Fiber Lazer)');
   await p.click('[data-add=g_lamA4]'); await p.click('[data-add=g_lamA3]');
   ok((await p.textContent('#total')).startsWith('3.00'), 'Laminasiya A4 (1) + A3 (2) birbaşa satılır = 3.00');
   ok((await p.textContent('#chips')).includes('Laminasiya A4: 150'), 'satışdan əvvəl laminasiya qalığı 150');

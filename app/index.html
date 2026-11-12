@@ -591,7 +591,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.52.0";
+const APP_VERSION="0.53.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -820,6 +820,14 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     const g=S.items.find(i=>i.id==="g_plaket")||S.items.find(i=>i.group&&norm(i.name)==="plaket");
     if(g)[["pk_1015","Plaket 10x15",16],["pk_1318","Plaket 13x18",16],["pk_1521","Plaket 15x21",25]].forEach(([id,n,p])=>{
       if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:g.cat,parent:g.id,icon:g.icon||"🏆",color:g.color||"#b45309",fav:0,ink:0,recipe:[],tiers:[[1,p]]})})}
+  // v0.53.0: "Kəsim Plotter" və "Fiber Lazer" bölmələri Poliqrafiya Xidmətlərinin içinə qrup kimi köçür (bölmələr silinir)
+  if(!S.mig.plotLazPoli){S.mig.plotLazPoli=1;
+    const pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri");
+    if(pc)[["plotter","kesim plotter","g_plotter","Kəsim Plotter","✂️","#0369a1"],["lazer","fiber lazer","g_lazer","Fiber Lazer","⚡","#b91c1c"]].forEach(([cid,cn,gid,gn,ic,col])=>{
+      const c=S.cats.find(x=>x.id===cid)||S.cats.find(x=>norm(x.name)===cn);if(!c)return;
+      if(!S.items.some(i=>i.id===gid))S.items.push({id:gid,name:c.name||gn,cat:pc.id,icon:c.icon||ic,color:col,group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]});
+      S.items.filter(i=>i.cat===c.id).forEach(i=>{i.cat=pc.id;if(!i.group&&!i.parent)i.parent=gid});
+      S.cats=S.cats.filter(x=>x!==c);if(cat===c.id)cat="search"})}
   // v0.52.0: mövcud kassirlərə endirim icazəsi (admin sonra bağlaya bilər)
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
