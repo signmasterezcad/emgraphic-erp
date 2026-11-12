@@ -184,6 +184,23 @@ const path = require('path');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_cer_std').map(i => i.name.replace('Çərçivə ', '') + ':' + i.tiers[0][1]).join('|') === '6x9:2|10x15:3|13x18:4|15x21:5|21x30:6|20x25:6|25x30:10|25x38:12|30x40:13|30x42:13|30x45:15'
     && S.items.find(i => i.id === 'cer_diger').free === 1 && S.items.find(i => i.id === 'g_cer_std').cat === 'cerceve'), 'Çərçivə: Standart (11 ölçü, qiymətlərlə) + Digər çərçivə (razılaşma ilə)');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_plaket').map(i => i.name + ':' + i.tiers[0][1]).join('|') === 'Plaket 10x15:16|Plaket 13x18:16|Plaket 15x21:25'), 'Sublim → Plaket: 10x15 16, 13x18 16, 15x21 25');
+  // v0.52.0: 🏷️ Endirim
+  ok(await p.isVisible('#btnDisc') && !(await p.textContent('.ordhead')).includes('Cari sifariş'), '"Cari sifariş" yerində 🏷️ Endirim düyməsi');
+  await p.click('#btnDisc'); ok((await p.textContent('#toast')).includes('Əvvəlcə sifarişə'), 'boş sifarişdə endirim: izah');
+  await p.evaluate(() => { order = [{ id: 'cs_10_15', q: 2 }, { id: 'cs_6_9', q: 1 }]; renderOrder(); });
+  ok((await p.textContent('#total')).startsWith('8.00'), 'endirimdən əvvəl cəmi 8.00');
+  await p.click('#btnDisc'); await p.waitForSelector('#ovDisc:not([hidden]) #d_v');
+  await p.fill('#d_v', '1.5'); await p.press('#d_v', 'Enter');
+  ok((await p.textContent('#toast')).includes('səbəbini') && await p.isVisible('#ovDisc'), 'səbəb yazılmayanda endirim olmur');
+  await p.click('[data-dr="Daimi müştəri"]'); await p.click('[data-dc=ok]');
+  ok(await p.isHidden('#ovDisc') && (await p.textContent('#total')).startsWith('6.50') && (await p.textContent('#discRow')).includes('Daimi müştəri') && (await p.textContent('#discRow')).includes('−1.50'), 'endirim 1.50 ₼ (Daimi müştəri): cəmi 6.50');
+  await p.click('#btnDisc'); await p.click('[data-dm=pct]'); await p.fill('#d_v', '25'); await p.fill('#d_r', 'Kampaniya'); await p.press('#d_r', 'Enter');
+  ok((await p.textContent('#total')).startsWith('6.00') && (await p.textContent('#discRow')).includes('25%'), 'faizlə endirim: 25% → 6.00');
+  const nS2 = await p.evaluate(() => S.sales.length);
+  await p.click('#btnDone');
+  ok(await p.evaluate(n => { const s = S.sales[S.sales.length - 1]; return S.sales.length === n + 1 && s.total === 6 && s.sub === 8 && s.disc === 2 && s.discReason === 'Kampaniya' && s.discPct === 25 && ordDisc === null; }, nS2), 'satış: cəm 8, endirim 2 (25%, Kampaniya), ödənilən 6; növbəti sifariş endirimsiz');
+  await p.click('#btnHist'); ok((await p.textContent('#ovHist')).includes('🏷️ Endirim −2.00 ₼ (25%): Kampaniya'), 'tarixçədə endirim və səbəbi görünür'); await p.click('#ovHist [data-close]');
+  await p.evaluate(() => { S.sales.pop(); save(); renderAll(); });
   await p.click('[data-cat=plotter]', { position: { x: 12, y: 12 } });
   ok((await p.locator('[data-add=pl_m2]').textContent()).includes('m² ilə'), 'Kəsim Plotter: "Plotter kəsimi" — m² ilə, qiymət razılaşma ilə');
   await p.click('[data-add=pl_m2]'); await p.waitForSelector('#ovM2:not([hidden]) #m2_w');

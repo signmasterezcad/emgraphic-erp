@@ -116,7 +116,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   proqram birbaşa admin kimi açılır (`startSession`), varsa giriş ekranı (`#ovLogin`, `.ov.lock` — kənara basanda bağlanmır).
   Başlıqda `#btnUser` = Çıxış. İcazələr `PERMS`: zay, hist, delSale, reports, cost, stock, exp, edit, backup;
   `can(p)` (admin hər şey), tablar `TAB_PERM` ilə süzülür (`repTabs()/setTabs()`), "👥 Kassirlər" tabı yalnız admin.
-  Yeni kassir: `KASSIR_DEFAULT` = zay + hist. Satış/zay/sayım `worker: curName()`. "Endirim" funksiyası hələ yoxdur.
+  Yeni kassir: `KASSIR_DEFAULT` = zay + hist (+ supp, custSale, disc). Satış/zay/sayım `worker: curName()`.
+- **🏷️ Endirim** (v0.52.0): "Cari sifariş" başlığının yerində `#btnDisc` (icazə `disc`; kassirlərə standart, `S.mig.discPerm`). `#ovDisc`: ₼ məbləğ / % faiz,
+  səbəb məcburi (`#d_r`, hazır səbəblər `DISC_REASONS`). Sifariş vəziyyəti `ordDisc={mode,v,reason}`, `discAmt(sub)` (cəmdən çox olmur), `#discRow` (✕ silir).
+  Satış: `total` = sub − disc, `sub`, `disc`, `discReason`, `discPct`. Satış tarixçəsində sətir, Gün/Dövr hesabatında "🏷️ Endirimlər" KPI.
+  Məhsul hesabatı sətir cəmləri ilə (endirimsiz) qalır; satış/mənfəət/kassa `s.total` ilə (endirim çıxılıb).
 - **Hər əməliyyatdan sonra ehtiyat nüsxə** (v0.22.0): `save()` → `opBackupSoon()` (2 san. yığır) → `erpBackup(...,"emel")`,
   yalnız məlumat dəyişibsə (`dataSig()`, lastAuto/lastBackup nəzərə alınmır). exe-də `erpBackupKinds` yoxdursa (köhnə exe) işləmir.
   exe hər növü ayrıca saxlayır (`keepByKind`): emel 100, avto 60, el 30. Ehtiyat siyahısında növ süzgəci.

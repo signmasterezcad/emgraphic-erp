@@ -160,6 +160,13 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .pay{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .pay button{padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);font-weight:800}
 .pay button.on{border-color:var(--ok);color:var(--ok)}
+.discbtn{font-weight:800}
+.ordhead .discbtn.on{background:var(--warn)!important;color:#111!important;border-color:var(--warn)!important}
+.discrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:var(--panel2);border:1px dashed var(--warn);font-size:14px}
+.discrow .why{color:var(--muted);font-size:12px;display:block}
+.discrow b{color:var(--warn);white-space:nowrap}
+.dmode{display:flex;gap:6px}
+.dchips{display:flex;flex-wrap:wrap;gap:6px}
 .paydebt{padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);font-weight:800}
 .paydebt.on{border-color:var(--warn);color:var(--warn)}
 .custsel{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid var(--warn);border-radius:10px;padding:8px 10px;font-size:13px}
@@ -364,9 +371,10 @@ h4{margin:6px 0 0;font-size:14px}
   </section>
 
   <aside class="order">
-    <div class="ordhead"><h2>Cari sifariş</h2><button class="hbtn sm" id="btnHist">🧾 Satış Tarixçəsi</button></div>
+    <div class="ordhead"><button class="hbtn sm discbtn" id="btnDisc" title="Sifarişə endirim et">🏷️ Endirim</button><button class="hbtn sm" id="btnHist">🧾 Satış Tarixçəsi</button></div>
     <div class="lines" id="lines"></div>
     <div class="foot">
+      <div class="discrow" id="discRow" hidden></div>
       <div class="total"><span>Cəmi</span><b id="total">0.00 ₼</b></div>
       <div class="pay">
         <button id="payCash" class="on">💵 Nağd</button>
@@ -416,6 +424,13 @@ h4{margin:6px 0 0;font-size:14px}
   <div class="modal sm" role="dialog" aria-labelledby="srt">
     <div class="mh"><h3 id="srt">Kim çap edir?</h3><button class="hbtn" data-srcx>Ləğv</button></div>
     <div class="mb" id="srcBody"></div>
+  </div>
+</div>
+
+<div class="ov" id="ovDisc" hidden>
+  <div class="modal sm" role="dialog" aria-labelledby="dit">
+    <div class="mh"><h3 id="dit">🏷️ Endirim</h3><button class="hbtn" data-dx>Ləğv</button></div>
+    <div class="mb" id="discBody"></div>
   </div>
 </div>
 
@@ -576,7 +591,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.51.0";
+const APP_VERSION="0.52.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -805,6 +820,8 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     const g=S.items.find(i=>i.id==="g_plaket")||S.items.find(i=>i.group&&norm(i.name)==="plaket");
     if(g)[["pk_1015","Plaket 10x15",16],["pk_1318","Plaket 13x18",16],["pk_1521","Plaket 15x21",25]].forEach(([id,n,p])=>{
       if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:g.cat,parent:g.id,icon:g.icon||"🏆",color:g.color||"#b45309",fav:0,ink:0,recipe:[],tiers:[[1,p]]})})}
+  // v0.52.0: mövcud kassirlərə endirim icazəsi (admin sonra bağlaya bilər)
+  if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
       const sz=m.replace(/\s|×/g,c=>c==="×"?"x":""),it=sf.items.find(y=>(y.name.match(/\d+x\d+/)||[])[0]===sz);if(it&&!i.src)i.src={supp:sf.id,item:it.id}})}
@@ -1314,8 +1331,9 @@ const PERMS=[
   ["suppDebt","🚚 Tədarükçü borclarını görmək və ödəmək"],
   ["custSale","📝 Müştəriyə borca satmaq"],
   ["custDebt","🏢 Müştəri borclarını görmək və pulunu almaq"],
+  ["disc","🏷️ Endirim etmək"],
 ];
-const KASSIR_DEFAULT={zay:1,hist:1,supp:1,custSale:1};
+const KASSIR_DEFAULT={zay:1,hist:1,supp:1,custSale:1,disc:1};
 const TAB_PERM={borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"reports",anbar:"stock",bolme:"edit",admin:"edit",mat:"stock",backup:"backup"};
 let me=null, loginSel=null, pinBuf="", pinErr="";
 const isAdmin=()=>me?.role==="admin";
@@ -1461,7 +1479,11 @@ function renderOrder(){
     return `<div class="line"><div><div class="t">${esc(it.name)}${o.area?` ${areaTxt(o)}`:""}${o.note?` — ${esc(o.note)}`:""}</div>${it.src?`<div class="src">${o.from?"🚚 "+esc(suppName(o.from)||"Tədarükçü"):"🖨 Özümüz"}</div>`:""}<div class="s">${m2(p)} ₼ × ${o.q}${o.area?` · 1 m² ${m2(o.cp/o.area)} ₼`:""}</div></div>
       <div class="qty"><button data-dec="${k}" aria-label="azalt">−</button><input data-q="${k}" type="number" min="1" value="${o.q}" aria-label="say"><button data-inc="${k}" aria-label="artır">+</button></div>
       <div class="sum">${m2(p*o.q)} ₼</div></div>`}).join("");
-  const t=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);
+  const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0),d=discAmt(sub),t=sub-d;
+  if(!order.length)ordDisc=null;
+  $("discRow").hidden=!d;
+  if(d)$("discRow").innerHTML=`<span>🏷️ Endirim${ordDisc.mode==="pct"?` ${fmtN(ordDisc.v)}%`:""}<span class="why">${esc(ordDisc.reason)} · cəmi idi ${m2(sub)} ₼</span></span><b>−${m2(d)} ₼</b><button class="link" data-dc="x" title="Endirimi sil">✕</button>`;
+  $("btnDisc").classList.toggle("on",!!d);$("btnDisc").hidden=!can("disc");
   $("total").textContent=m2(t)+" ₼";
   $("mobBar").hidden=!order.length;document.body.classList.toggle("hasorder",!!order.length);
   if(order.length){$("mobN").textContent=`Sifariş: ${order.reduce((a,o)=>a+o.q,0)} ədəd`;$("mobT").textContent=m2(t)+" ₼"}
@@ -1517,6 +1539,41 @@ document.addEventListener("keydown",e=>{if($("ovIcon").hidden)return;
   else if(e.key==="Enter"&&e.target.id==="ic_own"){e.preventDefault();e.stopImmediatePropagation();const v=e.target.value.trim(),cb=icCb;closeIcon();cb?.(v)}},true);
 const catIcon=k=>S.cats.find(c=>c.id===k)?.icon||"";
 let ncIcon="";
+// 🏷️ Endirim (v0.52.0): sifarişə məbləğ (₼) və ya faiz (%) endirim + səbəb. Satışda total = cəm − endirim; sale.sub, disc, discReason
+let ordDisc=null,dD=null;
+const DISC_REASONS=["Daimi müştəri","Toplu sifariş","Tanış / dost","Qüsurlu iş","Kampaniya"];
+const discAmt=sub=>{if(!ordDisc||!(sub>0))return 0;const v=ordDisc.mode==="pct"?sub*Math.min(100,ordDisc.v)/100:Math.min(ordDisc.v,sub);return Math.round(v*100)/100};
+function openDisc(){if(!can("disc"))return;if(!order.length){toast("Əvvəlcə sifarişə məhsul əlavə edin");return}
+  dD=ordDisc?{mode:ordDisc.mode,v:String(ordDisc.v),reason:ordDisc.reason}:{mode:"amt",v:"",reason:""};renderDisc();$("ovDisc").hidden=false;setTimeout(()=>$("d_v")?.focus(),0)}
+function renderDisc(){const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);
+  $("discBody").innerHTML=`<div class="dmode">${[["amt","₼ məbləğ"],["pct","% faiz"]].map(([k,l])=>`<button class="tab sm ${dD.mode===k?"on":""}" data-dm="${k}">${l}</button>`).join("")}</div>
+    <label class="f">${dD.mode==="pct"?"Neçə faiz endirim? (%)":"Neçə manat endirim? (₼)"}<input id="d_v" inputmode="decimal" value="${esc(dD.v)}" placeholder="${dD.mode==="pct"?"məs. 10":"məs. 2"}"></label>
+    <label class="f">Endirimin səbəbi<input id="d_r" value="${esc(dD.reason)}" maxlength="80" placeholder="məs. daimi müştəri"></label>
+    <div class="dchips">${DISC_REASONS.map(r=>`<button class="btn ghost sm" data-dr="${esc(r)}">${esc(r)}</button>`).join("")}</div>
+    <div class="m2info" id="d_sum"></div>
+    <div class="frow"><span class="grow"></span>${ordDisc?`<button class="btn ghost" data-dc="x">Endirimi sil</button>`:""}<button class="btn" data-dc="ok">✓ Endirimi tətbiq et</button></div>`;
+  updDisc(sub)}
+function updDisc(sub){sub=sub??order.reduce((a,o)=>a+lineUnit(o)*o.q,0);const v=num(dD.v);
+  const d=v>0?Math.round((dD.mode==="pct"?sub*Math.min(100,v)/100:Math.min(v,sub))*100)/100:0;
+  if($("d_sum"))$("d_sum").innerHTML=d?`<span>Cəmi: ${m2(sub)} ₼ − <b>${m2(d)} ₼</b> = <b>${m2(sub-d)} ₼</b></span>${dD.mode==="amt"&&v>sub?'<span class="sub">(endirim cəmdən çox ola bilməz)</span>':""}`:`<span class="sub">Cəmi: ${m2(sub)} ₼. Endirimi yazın.</span>`}
+function applyDisc(){dD.v=$("d_v").value;dD.reason=$("d_r").value.trim();const v=num(dD.v);
+  if(!(v>0)){toast("Endirimin məbləğini yazın");$("d_v").focus();return}
+  if(dD.mode==="pct"&&v>100){toast("Faiz 100-dən çox ola bilməz");return}
+  if(!dD.reason){toast("Endirimin səbəbini yazın");$("d_r").focus();return}
+  ordDisc={mode:dD.mode,v,reason:dD.reason};$("ovDisc").hidden=true;renderOrder();toast("🏷️ Endirim tətbiq olundu")}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-dm],[data-dr],[data-dc],[data-dx],#btnDisc");if(!t)return;
+  if(t.id==="btnDisc"){openDisc();return}
+  if(t.hasAttribute("data-dc")&&t.dataset.dc==="x"){ordDisc=null;$("ovDisc").hidden=true;renderOrder();toast("Endirim silindi");return}
+  if($("ovDisc").hidden)return;
+  if(t.hasAttribute("data-dx")){$("ovDisc").hidden=true;return}
+  if($("d_v")){dD.v=$("d_v").value;dD.reason=$("d_r").value}
+  if(t.dataset.dm){dD.mode=t.dataset.dm;renderDisc();$("d_v").focus()}
+  else if(t.dataset.dr){dD.reason=t.dataset.dr;$("d_r").value=dD.reason;$("d_v").focus()}
+  else if(t.dataset.dc==="ok")applyDisc()});
+document.addEventListener("input",e=>{if($("ovDisc").hidden||e.target.id!=="d_v")return;dD.v=e.target.value;updDisc()});
+document.addEventListener("keydown",e=>{if($("ovDisc").hidden)return;
+  if(e.key==="Enter"||e.key==="NumpadEnter"){e.preventDefault();e.stopImmediatePropagation();applyDisc()}
+  else if(e.key==="Escape"){e.stopImmediatePropagation();$("ovDisc").hidden=true}},true);
 let m2For=null,m2D=null;
 function openM2(id){const it=item(id);m2For=id;m2D={mode:it.area?"wh":"free",w:"",h:"",a:"",n:"1",pm:"",tot:"",last:"pm",note:""};
   $("m2t").textContent=`${it.icon||""} ${it.name}: ${it.area?"ölçü və qiymət":"qiymət (razılaşma ilə)"}`;renderM2();$("ovM2").hidden=false;setTimeout(()=>$(it.area?"m2_w":"m2_note")?.focus(),0)}
@@ -1600,7 +1657,7 @@ const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=doneTxt()}
 const doneTxt=()=>pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovDisc").hidden;
 function finishSale(){
   disarmPay();
   if(pay==="borc"){if(!can("custSale"))pay="nağd";else if(!custById(ordCust)){openCustPick();return}}
@@ -1611,10 +1668,12 @@ function finishSale(){
     if(o.from){L.from=o.from;L.fromName=suppName(o.from)||"";const si=it.src?.supp===o.from?srcItem(it):null;L.scost=(si?.price||0)*(o.area?o.area*o.q:o.q)}return L});
   const short=[],used={};
   order.filter(o=>!o.from).forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;used[m]=(used[m]||0)+q*o.q;if(M.stock<0)short.push(M.name)}));
-  const sale={id:newId("s"),ts:Date.now(),worker:curName(),pay,lines,total:lines.reduce((a,l)=>a+l.sum,0),used};
+  const sub=lines.reduce((a,l)=>a+l.sum,0),dsc=discAmt(sub);
+  const sale={id:newId("s"),ts:Date.now(),worker:curName(),pay,lines,total:sub-dsc,used};
+  if(dsc){sale.sub=sub;sale.disc=dsc;sale.discReason=ordDisc.reason;if(ordDisc.mode==="pct")sale.discPct=ordDisc.v}
   const oc=pay==="borc"?custById(ordCust):null;if(oc){sale.cust=oc.id;sale.custName=oc.name}
   S.sales.push(sale);
-  pay="nağd";ordCust=null;
+  pay="nağd";ordCust=null;ordDisc=null;
   save();order=[];renderAll();autoBackup();
   toast((oc?`${oc.name} borcuna yazıldı: ${m2(sale.total)} ₼ · borc indi ${m2(custOwed(oc.id))} ₼`:"Satış yazıldı ✓")+(short.length?`. Diqqət: ${short.join(", ")} mənfiyə düşdü`:""));
 }
@@ -1741,7 +1800,7 @@ function renderHist(){
     ${list.slice(0,500).map(s=>{const k=saleKey(s);return `<tr class="${hDel===k?"confirm":""}">
       <td><b>${fmtDate(s.ts)}</b></td><td><b>${fmtTime(s.ts)}</b></td>
       <td>${salePill(s)}</td>
-      <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}</td>
+      <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}${s.disc?`<div class="sub">🏷️ Endirim −${m2(s.disc)} ₼${s.discPct?` (${fmtN(s.discPct)}%)`:""}: ${esc(s.discReason||"")}</div>`:""}</td>
       <td>${esc(s.worker||"")}</td><td class="n"><b>${m2(s.total)} ₼</b></td>
       <td>${!can("delSale")?"":hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
         :`<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
@@ -2322,6 +2381,7 @@ function renderRep(){
     const byW={};sales.forEach(s=>byW[s.worker]=(byW[s.worker]||0)+s.total);
     h+=`<div class="kpis">
       <div class="kpi"><span>Satış (${sales.length})</span><b>${m2(tot)} ₼</b></div>
+      ${sales.some(s=>s.disc)?`<div class="kpi"><span>🏷️ Endirimlər (${sales.filter(s=>s.disc).length})</span><b style="color:var(--warn)">${m2(sales.reduce((a,s)=>a+(s.disc||0),0))} ₼</b></div>`:""}
       <div class="kpi"><span>Nağd / Kart / Nisyə</span><b>${m2(cash)} / ${m2(sales.filter(s=>s.pay==="kart").reduce((a,s)=>a+s.total,0))} / ${m2(sales.filter(s=>s.pay==="borc").reduce((a,s)=>a+s.total,0))}</b></div>
       ${can("cost")?`<div class="kpi"><span>Material + mürəkkəb mayası</span><b>${m2(cost)} ₼</b></div>
       <div class="kpi"><span>Zay itkisi</span><b style="color:var(--bad)">${m2(wc)} ₼</b></div>
@@ -2810,7 +2870,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="payDebt"){openCustPick()}
   else if(t.id==="btnCust"){openCDebt()}
   else if(t.id==="btnDone")finishSale();
-  else if(t.id==="btnClear"){order=[];renderGrid();renderOrder()}
+  else if(t.id==="btnClear"){order=[];ordDisc=null;renderGrid();renderOrder()}
   else if(t.id==="btnUser")logout();
   else if(t.id==="btnCloud"){mode="set";rtab="cloud";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="btnZay")openZay();
