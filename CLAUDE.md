@@ -69,6 +69,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   1 ədədin qiyməti ⇄ cəmi. Sifariş sətri `{uid,id,q,cp,note}`; satış sətri ad "Digər — qeyd", `plain` (hesabatda düymənin adı ilə qruplaşır), `note`. Sahibi sıranı özü dəyişib (ekranda: ÇAP, Banner / Vinil, Sublim, Fiber Lazer, Kəsim Plotter, Poliqrafiya…).
   **Studiya paketləri** (v0.46.0, `S.mig.studiya3`): 3 qrup — 📸 Fotosessiya `g_sessiya` (`ss_1..4`: 1–4 dekor 20/30/35/45, kadr sayı adda),
   📔 Albomlu `g_albomlu` (`sa_1..4` 45/55/60/70, `sa_tek` Tək Albom free), 🎥 Videolu `g_videolu` (`sv_1..4` 40/50/65/70, `sv_tek` Tək Video free; "30 ₼-dən" adda).
+  🖼️ Ədədlə şəkillər `g_ededle` (v0.47.0, `S.mig.studiya4`): 15x21 6, 21x30 8, 25x38 10, 30x40 12 (`se_1521`, `se_2130`, `se_2538`, `se_3040`).
   **🖼️ Çərçivə** (v0.45.0, id `cerceve`, ikon 🖼️, `S.mig.cerceve`): boş bölmə, düymələri sahibi özü əlavə edir (sonda, Studiyadan sonra).
   Bölmə düymələri (`.tabs`, v0.28.1) sığmayanda ikinci sıraya düşür — sürüşdürmə çubuğu olmamalıdır (sahibinin istəyi).
 - **🎨 İkon seçimi** (v0.43.0): `pickIcon(cur,title,cb)` → `#ovIcon` (`ICONS`: Foto/Studiya, Çap/Ofis, Reklam, Hədiyyə/Sublim, Texnika, Rəng/Digər;

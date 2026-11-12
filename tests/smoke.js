@@ -177,9 +177,10 @@ const path = require('path');
     { id: 'u_dg', name: 'Digər', cat: 'studiya', icon: '⭐', color: '#2563eb', fav: 0, ink: 0, recipe: [], tiers: [[1, 0]] }); delete S.mig.studiya2; upgrade(); save(); renderAll(); });
   ok(await p.evaluate(() => S.items.find(i => i.id === 'u_k1').icon === '🤵' && S.items.find(i => i.id === 'u_dg').icon === '🖼️' && S.items.find(i => i.id === 'u_dg').free === 1), 'Kostyum montaj 🤵, Digər 🖼️ + qiymət razılaşma ilə');
   ok(await p.evaluate(() => { const k = id => S.items.filter(i => i.parent === id).map(i => i.name + ':' + (i.free ? 'free' : i.tiers[0][1])).join('|');
-    return S.items.filter(i => i.cat === 'studiya' && i.group).length === 3 && k('g_sessiya') === '1 dekor (20-25 kadr):20|2 dekor (30-35 kadr):30|3 dekor (40-45 kadr):35|4 dekor (50-55 kadr):45'
+    return S.items.filter(i => i.cat === 'studiya' && i.group).length === 4 && k('g_sessiya') === '1 dekor (20-25 kadr):20|2 dekor (30-35 kadr):30|3 dekor (40-45 kadr):35|4 dekor (50-55 kadr):45'
       && k('g_albomlu') === '1 dekor + albom:45|2 dekor + albom:55|3 dekor + albom:60|4 dekor + albom:70|Tək Albom (fotosessiyasız, 30 ₼-dən):free'
       && k('g_videolu') === '1 dekor + video:40|2 dekor + video:50|3 dekor + video:65|4 dekor + video:70|Tək Video (fotosessiyasız, 30 ₼-dən):free'; }), 'Studiya: Fotosessiya / Albomlu / Videolu qrupları və qiymətləri');
+  ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_ededle').map(i => i.name + ':' + i.tiers[0][1]).join('|') === '15x21:6|21x30:8|25x38:10|30x40:12' && S.items.find(i => i.id === 'g_ededle').cat === 'studiya'), 'Studiya: Ədədlə şəkillər (15x21 6, 21x30 8, 25x38 10, 30x40 12)');
   await p.click('[data-cat=studiya]', { position: { x: 12, y: 12 } });
   ok((await p.locator('[data-add=u_dg]').textContent()).includes('razılaşma'), 'Digər düyməsində "qiymət razılaşma ilə"');
   await p.click('[data-add=u_dg]');
