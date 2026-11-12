@@ -98,7 +98,7 @@ header h1{font-size:18px;margin:0;font-weight:800;flex:1 1 auto}
   .hbtn{padding:6px 10px;font-size:13px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
   .svc{min-height:92px;padding:12px 6px}
-  .svc .nm{font-size:14px}
+  .svc .nm{font-size:16px}
   .modal{max-height:94vh}
   .ov{padding:8px}
   .keyhint{display:none}
@@ -133,10 +133,10 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:12px}
 .svc{border:0;border-radius:14px;padding:16px 10px;color:#fff;text-align:center;display:grid;gap:4px;justify-items:center;min-height:112px;position:relative;transition:transform .08s}
 .svc:active{transform:scale(.97)}
-.svc .ic{font-size:28px;line-height:1}
-.svc .nm{font-weight:800;font-size:16px}
-.svc .pr{font-size:13px;font-weight:600;opacity:.92}
-.svc .tier{font-size:11px;opacity:.8}
+.svc .ic{font-size:32px;line-height:1}
+.svc .nm{font-weight:800;font-size:19px;line-height:1.2}
+.svc .pr{font-size:16px;font-weight:700;opacity:.95}
+.svc .tier{font-size:13px;opacity:.85}
 .svc .cnt{position:absolute;top:8px;right:10px;background:rgba(0,0,0,.35);border-radius:999px;padding:1px 8px;font-size:12px;font-weight:800}
 .note{color:var(--muted);font-size:12px;margin-top:14px;max-width:70ch;line-height:1.5}
 
@@ -623,7 +623,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.56.0";
+const APP_VERSION="0.57.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
