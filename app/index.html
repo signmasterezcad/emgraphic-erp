@@ -397,7 +397,7 @@ h4{margin:6px 0 0;font-size:14px}
 <main class="wrap">
   <section style="min-width:0">
     <div class="tabs" id="tabs"></div>
-    <div class="searchbar" id="searchbar" hidden><input id="q" type="search" placeholder="🔍 Düymə axtar: məs. surət, fincan, 10x15…" autocomplete="off" aria-label="Düymə axtar"><button class="btn ghost sm" id="qClear" hidden>Təmizlə</button></div>
+    <div class="searchbar" id="searchbar"><input id="q" type="search" placeholder="🔍 Düymə axtar: məs. surət, fincan, 10x15…" autocomplete="off" aria-label="Düymə axtar"><button class="btn ghost sm" id="qClear" hidden>Təmizlə</button></div>
     <div class="crumb" id="crumb" hidden></div>
     <div class="grid" id="grid"></div>
   </section>
@@ -611,7 +611,7 @@ const SEED = {
 };
 const DEFAULT_CATS=[["search","🔍 Axtarış"],["cap","Çap"],["foto","Foto"],["viz","Vizit / Promo"],["skan","Skan / Kserokopiya"],["lam","Laminasiya / Cild"],["kag","Kağız satışı"]];
 let CATS=[];
-function refreshCats(){CATS=[["search","🔍 Axtarış"],...S.cats.map(c=>[c.id,c.name])];if(!CATS.some(c=>c[0]===cat))cat="search"}
+function refreshCats(){CATS=[["search","🔍 Axtarış"],...S.cats.map(c=>[c.id,c.name])];if(cat==="search"||!CATS.some(c=>c[0]===cat))cat=S.cats[0]?.id||"search"} // v0.56.0: "Axtarış" tabı yoxdur, axtarış çubuğu həmişə görünür
 const REASONS=["Printer kağızı tutdu","Rəng səhv çıxdı","Kəsim səhvi","Müştəri faylı səhv","Test çapı","Digər"];
 
 // ---------- Saxlama ----------
@@ -623,7 +623,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.55.0";
+const APP_VERSION="0.56.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1463,7 +1463,7 @@ function renderHeader(){
 }
 function renderTabs(){
   refreshCats();
-  $("tabs").innerHTML=CATS.map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${catIcon(k)?esc(catIcon(k))+" ":""}${esc(l)}${editMode&&k!=="search"?
+  $("tabs").innerHTML=CATS.filter(c=>c[0]!=="search").map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${catIcon(k)?esc(catIcon(k))+" ":""}${esc(l)}${editMode&&k!=="search"?
     `<span class="tx" role="button" data-act="qcren" data-c="${k}" title="Adını dəyiş">✏️</span><span class="tx" role="button" data-act="qcdel" data-c="${k}" title="Sil">${delArm===k?(S.items.some(it=>it.cat===k)?`${S.items.filter(it=>it.cat===k).length} düymə ilə sil?`:"Sil?"):"🗑"}</span>`:""}</button>`).join("")
     +(editMode?`<button class="tab add" data-act="qcadd">+ Bölmə</button>`:"");
 }
@@ -1489,9 +1489,8 @@ function searchList(){
 const pathOf=it=>[CATS.find(c=>c[0]===it.cat)?.[1],it.parent?item(it.parent)?.name:""].filter(Boolean).join(" › ");
 function renderGrid(){
   const g=grp&&item(grp);if(grp&&!g)grp=null;
-  const cn=cat==="search"?"🔍 Axtarış":(CATS.find(c=>c[0]===cat)?.[1]||"");
-  const S_=cat==="search"&&!g;
-  $("searchbar").hidden=!S_;
+  const cn=cat==="search"||q.trim()?"🔍 Axtarış":(CATS.find(c=>c[0]===cat)?.[1]||"");
+  const S_=!g&&(!!q.trim()||cat==="search"); // yazı varsa: bütün bölmələrdə axtarış nəticəsi; nəticədəki qrupa basanda qrup açılır
   $("crumb").hidden=!g;
   if(g)$("crumb").innerHTML=`<button class="btn ghost" data-back>← ${esc(cn)}</button><span class="mini" style="background:${esc(g.color)}">${esc(g.icon)} ${esc(g.name)}</span>`;
   const list=g?kids(g.id):S_?searchList():S.items.filter(i=>i.cat===cat&&!i.parent);
@@ -2895,7 +2894,7 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-act]"))return;
   const t=e.target.closest("button");if(!t)return;
   if(editMode&&t.dataset.add)return;
-  if(t.dataset.cat){cat=t.dataset.cat;grp=null;renderTabs();renderGrid();if(cat==="search")setTimeout(()=>$("q").focus(),0)}
+  if(t.dataset.cat){cat=t.dataset.cat;grp=null;q="";qAdded=null;$("q").value="";$("qClear").hidden=true;renderTabs();renderGrid()}
   else if(t.id==="qClear"){q="";qAdded=null;$("q").value="";$("qClear").hidden=true;renderGrid();$("q").focus()}
   else if(t.dataset.grp){grp=t.dataset.grp;delArm=null;renderGrid()}
   else if(t.hasAttribute("data-back")){grp=null;delArm=null;renderGrid()}
@@ -2962,7 +2961,7 @@ document.querySelectorAll(".ov").forEach(ov=>{
 $("hFrom").addEventListener("change",e=>{hFrom=e.target.value;hDel=null;renderHist()});
 $("hTo").addEventListener("change",e=>{hTo=e.target.value;hDel=null;renderHist()});
 document.addEventListener("click",e=>{const t=e.target.closest("[data-hd]");if(!t)return;hFrom=hTo=t.dataset.hd;hDel=null;renderHist()});
-$("q").addEventListener("input",e=>{q=e.target.value;qAdded=null;$("qClear").hidden=!q;renderGrid()});
+$("q").addEventListener("input",e=>{q=e.target.value;qAdded=null;grp=null;$("qClear").hidden=!q;renderGrid()});
 // Axtarışda Enter: birinci nəticəni əlavə et. Yazı dəyişməyibsə və sifariş varsa, növbəti Enter ödəniş sayılır.
 let qAdded=null;
 $("q").addEventListener("keydown",e=>{
@@ -2984,7 +2983,7 @@ document.addEventListener("keydown",e=>{
   const tgt=e.target,isSpace=e.code==="Space",isEnter=e.code==="Enter"||e.code==="NumpadEnter";
   if(!isSpace&&!isEnter){
     // Axtarışda: hərf yazmağa başlayanda xana özü seçilsin
-    if(cat==="search"&&!grp&&e.key.length===1&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!isTyping(tgt)&&noModal())$("q").focus();
+    if(!editMode&&e.key.length===1&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!isTyping(tgt)&&noModal())$("q").focus();
     return;
   }
   if(tgt.id==="q")return;

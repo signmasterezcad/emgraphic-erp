@@ -49,8 +49,7 @@ const path = require('path');
   await p.click('[data-rt=admin]');
   await p.click('#ovRep [data-close]');
   // Axtarış (Sevimlilər əvəzinə)
-  await p.click('[data-cat=search]', { position: { x: 12, y: 12 } });
-  ok((await p.locator('#tabs .tab').first().textContent()).includes('Axtarış') && !(await p.textContent('#tabs')).includes('Sevimlilər'), 'birinci tab Axtarış, Sevimlilər yoxdur');
+  ok(!(await p.textContent('#tabs')).includes('Axtarış') && await p.locator('[data-cat=search]').count() === 0 && await p.isVisible('#q'), '"Axtarış" tabı yoxdur, axtarış çubuğu həmişə görünür');
   ok(await p.isVisible('#q') && await p.isHidden('.srchint') && await p.locator('main .note').count() === 0, 'boş axtarış: izah yazıları göstərilmir');
   await p.fill('#q', 'yoxdurbelesey');
   ok((await p.textContent('#grid')).includes('heç nə tapılmadı'), 'tapılmayanda izah');
@@ -72,7 +71,7 @@ const path = require('path');
   await p.click('[data-back]');
   ok((await p.inputValue('#q')) === 'foto kagiz' && await p.isVisible('#searchbar'), '← geri: axtarış yazısı qalır');
   await p.click('#qClear');
-  ok((await p.inputValue('#q')) === '' && (await p.textContent('#grid')).includes('bir neçə hərf yazın'), 'Təmizlə düyməsi');
+  ok((await p.inputValue('#q')) === '' && await p.locator('#grid .svc').count() > 0 && !(await p.textContent('#grid')).includes('heç nə tapılmadı'), 'Təmizlə düyməsi: yazı silinir, seçilmiş bölmənin düymələri qayıdır');
 
   // Bölmələr
   await p.click('#btnSet');
@@ -169,7 +168,7 @@ const path = require('path');
   await p.click('#btnSet'); await p.click('[data-act=goedit]'); await np.locator('[data-act=qdel]').click(); await np.locator('[data-act=qdel]').click(); await p.click('[data-act=editdone]');
   await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } });
   const tabNames = await p.locator('#tabs .tab').allTextContents();
-  ok(tabNames[1].startsWith('ÇAP') && tabNames[2].startsWith('Poliqrafiya Xidmətləri'), 'Poliqrafiya Xidmətləri bölməsi ÇAP-ın yanında');
+  ok(tabNames[0].startsWith('ÇAP') && tabNames[1].startsWith('Poliqrafiya Xidmətləri'), 'ÇAP birinci, Poliqrafiya Xidmətləri onun yanında');
   ok(tabNames.slice(-3).join('|') === 'Banner / Vinil|Studiya|🖼️ Çərçivə' && !tabNames.some(t => /Plotter|Lazer/.test(t)), 'Banner / Vinil, Studiya, 🖼️ Çərçivə sonda; Plotter və Lazer ayrıca bölmə deyil');
   ok(await p.evaluate(() => { const i = S.items.find(x => x.id === 'st_sened'); return i && i.name === 'Sənəd Şəkli' && i.cat === 'studiya'; }), 'Studiya bölməsində "Sənəd Şəkli" düyməsi');
   // v0.42.0: sahibinin özü yaratdığı "Sənəd şəkili Kostyum montaj" və "Digər" (qiymət razılaşma ilə)
@@ -379,7 +378,7 @@ const path = require('path');
   ok(await salesNow() === n0 + 3, 'say xanasında Enter: yalnız sayı qəbul edir');
   await p.keyboard.press('Enter'); await p.keyboard.press('Enter');
   ok(await salesNow() === n0 + 4 && await p.evaluate(() => S.sales.at(-1).total) === 3, '...sonra Enter iki dəfə: 3 × 1.00 nağd');
-  await p.click('[data-cat=search]', { position: { x: 12, y: 12 } });
+  await p.fill('#q', ''); await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } });
   await p.keyboard.type('termo');
   ok((await p.inputValue('#q')) === 'termo', 'Axtarışda hərf yazanda xana özü seçilir');
   await p.keyboard.press('Enter'); await p.keyboard.press('Enter'); await p.keyboard.press('Enter');
@@ -394,7 +393,7 @@ const path = require('path');
   // Satış Tarixçəsi
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });
   await p.click('[data-add=g_lamA3]'); await p.click('#payCard'); await p.click('#btnDone'); await p.click('#payCash');
-  await p.click('[data-cat=search]', { position: { x: 12, y: 12 } }); await p.fill('#q', 'termo');
+  await p.fill('#q', 'termo');
   await p.click('[data-add=fc_termo]'); await p.click('#btnDone');
   await p.click('#btnHist');
   ok(await p.isVisible('#ovHist') && (await p.textContent('#ht')).includes('Satış Tarixçəsi'), 'Satış Tarixçəsi pəncərəsi açıldı');
@@ -478,7 +477,7 @@ const path = require('path');
   ok(cer && cer.stock === 10 && Math.abs(cer.cost - 2.5) < 1e-9, 'anbar: Çərçivə 10 ədəd, maya 2.50');
   ok(await p.evaluate(id => S.items.find(i => i.id === 'a4s_bw').recipe.some(r => r[0] === id && r[1] === 1), kag.id), '"olduğu kimi satıram": düyməyə qoşuldu (resept 1 vərəq)');
   await p.click('#ovExp [data-close]');
-  await p.click('[data-cat=search]', { position: { x: 12, y: 12 } }); await p.fill('#q', 'sade yazi');
+  await p.fill('#q', 'sade yazi');
   await p.click('[data-add=a4s_bw]'); await p.fill('.line input', '10'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50); await p.click('#btnDone');
   ok((await M('A4 ofis kağızı')).stock === 1490, 'satış: anbardan 10 vərəq silindi (1490)');
   ok(await p.evaluate(() => Math.abs(S.sales.at(-1).lines[0].cost - 10 * (0.02 + 0.018)) < 1e-9), 'satışın mayası alış qiymətindən: 10 × (nümunə A4 0.02 + yeni kağız 0.018) = 0.38');

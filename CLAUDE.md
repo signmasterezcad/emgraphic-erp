@@ -67,10 +67,13 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **Kəsim Plotter** və **Fiber Lazer** — v0.53.0-dan (`S.mig.plotLazPoli`, sahibinin istəyi) ayrıca bölmə deyil, **Poliqrafiya Xidmətləri**-nin içində qrup:
   `g_plotter` ✂️, `g_lazer` ⚡ (köhnə bölmələrdəki düymələr bu qruplara köçür, bölmələr silinir; köhnə id-lər `plotter`/`lazer` (`S.mig.plotterLazer`)). Lazerdə (v0.50.0, `S.mig.lazerM2`) `lz_m2` "Lazer işi" ⚡ — eyni qayda. Plotterdə (v0.49.0, `S.mig.plotterM2`)
   `pl_m2` "Plotter kəsimi" ✂️ — `area:1`, tədarükçüsüz (banner/vinil kimi m² + sərbəst qiymət, alış dəyəri yoxdur).
-- **🔍 Axtarış** (v0.13.0) Sevimlilər-in yerinə gəlib (daxili açar `"search"`, həmişə birinci tab, açılışda seçilir).
+- **🔍 Axtarış** (v0.13.0; v0.56.0-dan **tab yoxdur**, sahibinin istəyi): axtarış çubuğu `#searchbar` həmişə bölmə düymələrinin altında görünür.
+  `cat` açılışda birinci bölmə (`refreshCats`: "search" → `S.cats[0]`); yazı varsa (`q.trim()`) qrupsuz rejimdə bütün bölmələrdən nəticə (`S_`),
+  nəticədəki qrupa basanda qrup açılır (geri = "🔍 Axtarış", yazı qalır); yazmağa başlayanda `grp=null`; bölmə tabına basanda axtarış təmizlənir;
+  hər yerdə hərf yazanda xana özü seçilir (düzəliş rejimi və pəncərə açıq olmasa).
   Bütün bölmə və qruplarda düymə adı + qrup + bölmə adına görə axtarır; ə/ş/ç/ğ/ı/ö/ü hərfsiz yazmaq olar; Enter birinci nəticəni əlavə edir.
   Düymələrdəki köhnə `fav` sahəsi artıq işlənmir.
-- İndi bölmələr: Axtarış, ÇAP, Poliqrafiya Xidmətləri (içində Kəsim Plotter, Fiber Lazer qrupları), Sublim, Banner / Vinil, **Studiya** (v0.41.0, id `studiya`, `S.mig.studiya`;
+- İndi bölmələr: ÇAP, Poliqrafiya Xidmətləri (içində Kəsim Plotter, Fiber Lazer qrupları), Sublim, Banner / Vinil, **Studiya** (v0.41.0, id `studiya`, `S.mig.studiya`;
   içində `st_sened` "Sənəd Şəkli" — qiyməti hələ 0, sahibi yazacaq; v0.42.0 `S.mig.studiya2`: sahibinin özü yaratdığı "Sənəd şəkili Kostyum montaj" → 🤵, "Digər" → 🖼️ + `free:1`).
   **💬 Qiyməti razılaşma ilə** (`free:1`, redaktorda `#e_free`): basanda `#ovM2` "free" rejimi — "Nə çəkildi" qeydi (`m2_note`, istəyə görə), Ədəd,
   1 ədədin qiyməti ⇄ cəmi. Sifariş sətri `{uid,id,q,cp,note}`; satış sətri ad "Digər — qeyd", `plain` (hesabatda düymənin adı ilə qruplaşır), `note`. Sahibi sıranı özü dəyişib (ekranda: ÇAP, Banner / Vinil, Sublim, Fiber Lazer, Kəsim Plotter, Poliqrafiya…).
