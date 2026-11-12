@@ -1,7 +1,7 @@
 // KASSA telefon (bulud) rejimi: proqram faylları telefonda saxlanır, internetsiz də açılır.
 // Səhifə: əvvəlcə internetdən (yeni versiya), olmasa yaddaşdan. Digər fayllar: yaddaşdan, arxada yenilənir.
-const C = "kassa-v1";
-const FILES = ["./", "index.html", "kassa.svg", "manifest.webmanifest", "fonts/notosans-latin.woff2", "fonts/notosans-latin-ext.woff2"];
+const C = "kassa-v2";
+const FILES = ["./", "index.html", "kassa.svg", "kamera.png", "manifest.webmanifest", "fonts/notosans-latin.woff2", "fonts/notosans-latin-ext.woff2"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {

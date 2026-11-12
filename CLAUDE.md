@@ -62,7 +62,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (`body{padding-left:200px}`), hər düymə öz rəngi ilə (`--c`: Zay qırmızı, Anbar narıncı, Hesabat göy, Xərclər bənövşəyi, Borclar firuzəyi, Tədarükçü yaşıl,
   Ayarlar boz — aşağıda, `.sgap`); telefonda (≤860px) başlığın altında 2 sütunlu rəngli düymələr. Düymə içi: `.ic` + `.lb` (id-lər eyni qalıb).
   `.side .hbtn[hidden]{display:none}` vacibdir (display:flex hidden-i üstələyir).
-  v0.59.0: menyunun boş yerində (`.sgap`) öz SVG fotoaparat şəkli (`.cam`, göy→bənövşəyi qradiyent, yalnız kompüterdə; ekran hündürlüyü ≤640px olanda gizli).
+  v0.60.0: menyunun boş yerində (`.sgap`) sahibinin göndərdiyi akvarel fotoaparat şəkli `app/kamera.png` (`.cam`; fonu Python ilə şəffaf edilib —
+  damalı ağ/boz fon kənardan doldurulub, kənarlar yumşaq; files.txt və sw.js-də var; yalnız kompüterdə, ekran hündürlüyü ≤640px olanda gizli). v0.59.0-dakı SVG silindi.
 - **✏️ Düzəliş** (v0.37.0): başlıqda yoxdur (`#btnEdit` gizli), **⚙️ Ayarlar**-ın yuxarısında "✏️ Düzəliş rejimini aç" (`data-act="goedit"`, `can("edit")`) —
   Ayarlar bağlanır, `setEdit(true)`; çıxış əvvəlki kimi "Hazır" (`editdone`).
 - **Kəsim Plotter** və **Fiber Lazer** — v0.53.0-dan (`S.mig.plotLazPoli`, sahibinin istəyi) ayrıca bölmə deyil, **Poliqrafiya Xidmətləri**-nin içində qrup:
