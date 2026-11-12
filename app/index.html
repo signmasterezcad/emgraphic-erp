@@ -324,7 +324,7 @@ table.hist .pill{font-size:12px;padding:3px 10px}
 @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.03)}}
 @media (prefers-reduced-motion:reduce){.done.armed{animation:none}}
 .keyhint{text-align:center}
-.searchbar{display:flex;gap:8px;margin-top:12px}
+.searchbar{display:flex;gap:8px;margin:0 0 12px}
 .searchbar input{flex:1;min-width:0;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
 .svc .tier.path{opacity:.85;font-weight:600}
 .svc .pr.noprice{background:rgba(0,0,0,.35);border-radius:999px;padding:1px 10px}
@@ -339,6 +339,19 @@ tr.confirm td{background:color-mix(in srgb,var(--bad) 10%,var(--panel));border-b
 .pathbox code{font-size:12px;overflow-wrap:anywhere}
 h4{margin:6px 0 0;font-size:14px}
 @media (prefers-reduced-motion:reduce){.svc{transition:none}}
+/* v0.58.0: bölmə düymələri — sol menyu kimi rəngli, bərabər enli */
+#tabs{display:grid;grid-template-columns:repeat(var(--tcols,4),minmax(0,1fr));gap:8px;padding-bottom:12px}
+#tabs .tab{--c:#475569;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 12px;border:0;border-radius:12px;
+  background:var(--c);color:#fff;font-size:15px;font-weight:800;box-shadow:inset 0 -3px 0 rgba(0,0,0,.22);cursor:pointer;transition:filter .12s,transform .12s;text-align:center}
+#tabs .tab .ic{font-size:19px;line-height:1}
+#tabs .tab .lb{min-width:0;overflow-wrap:anywhere}
+#tabs .tab:hover{filter:brightness(1.12)}
+#tabs .tab:active{transform:translateY(1px)}
+#tabs .tab.on{outline:3px solid var(--fg);outline-offset:2px}
+#tabs .tab:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+#tabs .tab.add{background:transparent;color:var(--accent);border:2px dashed var(--accent);box-shadow:none}
+#tabs .tab .tx{background:rgba(0,0,0,.3);color:#fff}
+@media (max-width:640px){#tabs{gap:6px}#tabs .tab{min-height:42px;padding:8px;font-size:13px;gap:5px}#tabs .tab .ic{font-size:16px}}
 /* v0.55.0: menyu solda, rəngli düymələr (sahibinin istəyi) */
 .side .hbtn{--c:#475569;display:flex;align-items:center;gap:10px;background:var(--c);color:#fff;border:0;border-radius:12px;padding:11px 14px;font-size:15px;font-weight:800;text-align:left;cursor:pointer;
   box-shadow:inset 0 -3px 0 rgba(0,0,0,.22);transition:filter .12s,transform .12s}
@@ -396,8 +409,8 @@ h4{margin:6px 0 0;font-size:14px}
 
 <main class="wrap">
   <section style="min-width:0">
-    <div class="tabs" id="tabs"></div>
     <div class="searchbar" id="searchbar"><input id="q" type="search" placeholder="🔍 Düymə axtar: məs. surət, fincan, 10x15…" autocomplete="off" aria-label="Düymə axtar"><button class="btn ghost sm" id="qClear" hidden>Təmizlə</button></div>
+    <div class="tabs" id="tabs"></div>
     <div class="crumb" id="crumb" hidden></div>
     <div class="grid" id="grid"></div>
   </section>
@@ -623,7 +636,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.57.0";
+const APP_VERSION="0.58.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1463,10 +1476,17 @@ function renderHeader(){
 }
 function renderTabs(){
   refreshCats();
-  $("tabs").innerHTML=CATS.filter(c=>c[0]!=="search").map(([k,l])=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}">${catIcon(k)?esc(catIcon(k))+" ":""}${esc(l)}${editMode&&k!=="search"?
+  $("tabs").innerHTML=CATS.filter(c=>c[0]!=="search").map(([k,l],i)=>`<button class="tab ${k===cat?"on":""}" data-cat="${k}" style="--c:${TAB_COLORS[i%TAB_COLORS.length]}">${catIcon(k)?`<span class="ic">${esc(catIcon(k))}</span> `:""}<span class="lb">${esc(l)}</span>${editMode&&k!=="search"?
     `<span class="tx" role="button" data-act="qcren" data-c="${k}" title="Adını dəyiş">✏️</span><span class="tx" role="button" data-act="qcdel" data-c="${k}" title="Sil">${delArm===k?(S.items.some(it=>it.cat===k)?`${S.items.filter(it=>it.cat===k).length} düymə ilə sil?`:"Sil?"):"🗑"}</span>`:""}</button>`).join("")
     +(editMode?`<button class="tab add" data-act="qcadd">+ Bölmə</button>`:"");
+  tabCols();
 }
+// v0.58.0: bölmə düymələri rəngli, bərabər enli; sütun sayı sıralar bərabər dolsun deyə seçilir (simmetriya: 6 → 3+3, 7 → 4+3)
+const TAB_COLORS=["#2563eb","#dc2626","#16a34a","#7c3aed","#d97706","#0891b2","#db2777","#0f766e","#4f46e5","#b45309"];
+function tabCols(){const el=$("tabs");if(!el)return;const n=el.children.length;if(!n)return;
+  const w=el.clientWidth||800,min=window.innerWidth<=640?120:150,max=Math.max(1,Math.floor((w+8)/(min+8))),rows=Math.ceil(n/max);
+  el.style.setProperty("--tcols",Math.ceil(n/rows))}
+window.addEventListener("resize",()=>tabCols());
 const isGroup=it=>!!it?.group;
 const kids=id=>S.items.filter(i=>i.parent===id);
 // düyməni (qrupdursa içindəkilərlə birlikdə) sil; silinən içdəki düymə sayını qaytarır
