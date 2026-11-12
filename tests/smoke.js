@@ -200,7 +200,7 @@ const path = require('path');
   ok(await p.evaluate(n => { const s = S.sales[S.sales.length - 1]; const l = s.lines[0]; return S.sales.length === n + 1 && l.name === 'Digər — it şəkli' && l.q === 2 && l.price === 7.5 && l.plain === 'Digər'; }, nS), 'satış: "Digər — it şəkli", 2 × 7.50');
   await p.evaluate(() => { S.sales.pop(); save(); renderAll(); }); // sonrakı yoxlamaların satış sayı dəyişməsin
   await p.click('[data-cat=lazer]', { position: { x: 12, y: 12 } });
-  ok(await p.locator('#grid .svc').count() === 0, 'Fiber Lazer bölməsi boşdur');
+  ok(await p.locator('#grid .svc').count() === 1 && (await p.locator('[data-add=lz_m2]').textContent()).includes('m² ilə'), 'Fiber Lazer: "Lazer işi" — m² ilə, qiymət razılaşma ilə');
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });
   ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Skan Etmə|Spiral Cildləmə', 'Poliqrafiya: 2 qrup (Skan, Spiral)');
   await p.click('[data-add=g_lamA4]'); await p.click('[data-add=g_lamA3]');

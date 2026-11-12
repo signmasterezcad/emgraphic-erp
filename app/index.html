@@ -576,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.49.0";
+const APP_VERSION="0.50.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -796,6 +796,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.plotterM2){S.mig.plotterM2=1;
     const pc=S.cats.find(c=>c.id==="plotter")||S.cats.find(c=>norm(c.name)==="kesim plotter");
     if(pc&&!S.items.some(i=>i.id==="pl_m2"))S.items.push({id:"pl_m2",name:"Plotter kəsimi",cat:pc.id,icon:"✂️",color:"#0369a1",fav:0,ink:0,recipe:[],tiers:[[1,0]],area:1})}
+  // v0.50.0: Fiber Lazer — m² ilə, qiyməti hər sifarişdə yazılır (plotter kimi, tədarükçüsüz)
+  if(!S.mig.lazerM2){S.mig.lazerM2=1;
+    const lc=S.cats.find(c=>c.id==="lazer")||S.cats.find(c=>norm(c.name)==="fiber lazer");
+    if(lc&&!S.items.some(i=>i.id==="lz_m2"))S.items.push({id:"lz_m2",name:"Lazer işi",cat:lc.id,icon:"⚡",color:"#b91c1c",fav:0,ink:0,recipe:[],tiers:[[1,0]],area:1})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
       const sz=m.replace(/\s|×/g,c=>c==="×"?"x":""),it=sf.items.find(y=>(y.name.match(/\d+x\d+/)||[])[0]===sz);if(it&&!i.src)i.src={supp:sf.id,item:it.id}})}
