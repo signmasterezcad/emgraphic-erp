@@ -371,7 +371,13 @@ h4{margin:6px 0 0;font-size:14px}
 .side .hbtn.on{outline:3px solid var(--warn);outline-offset:1px}
 #btnUser{--c:#334155}#btnZay{--c:#dc2626}#btnStock{--c:#d97706}#btnRep{--c:#2563eb}#btnExp{--c:#7c3aed}
 #btnCust{--c:#0891b2}#btnSupp{--c:#16a34a}#btnEdit{--c:#db2777}#btnSet{--c:#475569}#btnCloud{--c:#0f766e}
-.sgap{flex:1}
+.sgap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:10px 4px}
+.sgap .cam{width:100%;max-width:150px;height:auto;filter:drop-shadow(0 6px 14px rgba(37,99,235,.28));animation:camIn .6s ease-out both}
+.cam-sh{fill:rgba(0,0,0,.28)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .cam-sh{fill:rgba(15,23,42,.12)}}
+@keyframes camIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.sgap .cam{animation:none}}
+@media (max-height:640px){.sgap .cam{display:none}}
 @media (min-width:861px){
   .side{position:fixed;left:0;top:0;bottom:0;width:200px;z-index:15;display:flex;flex-direction:column;gap:8px;padding:14px 12px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto}
   body{padding-left:200px}
@@ -397,7 +403,27 @@ h4{margin:6px 0 0;font-size:14px}
   <button class="hbtn" id="btnCust"><span class="ic">💳</span><span class="lb">Borclar</span> <span class="badges"><span class="badge" id="custBadge" hidden title="Bizə borcludurlar"></span><span class="badge out" id="suppBadge" hidden title="Bizim borcumuz"></span></span></button>
   <button class="hbtn" id="btnSupp"><span class="ic">🚚</span><span class="lb">Tədarükçü</span></button>
   <button class="hbtn" id="btnEdit" hidden><span class="ic">✏️</span><span class="lb">Düzəliş</span></button>
-  <span class="sgap"></span>
+  <span class="sgap"><svg class="cam" viewBox="0 0 160 132" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="camBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>
+      <linearGradient id="camTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60a5fa"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+      <radialGradient id="camGlass" cx=".38" cy=".35" r=".75"><stop offset="0" stop-color="#93c5fd"/><stop offset=".35" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1023"/></radialGradient>
+      <linearGradient id="camRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2e8f0"/><stop offset="1" stop-color="#64748b"/></linearGradient>
+    </defs>
+    <ellipse class="cam-sh" cx="80" cy="124" rx="56" ry="6"/>
+    <rect x="50" y="14" width="44" height="20" rx="7" fill="url(#camTop)"/>
+    <rect x="106" y="18" width="20" height="10" rx="4" fill="#f59e0b"/>
+    <rect x="18" y="28" width="124" height="86" rx="20" fill="url(#camBody)"/>
+    <rect x="18" y="52" width="124" height="14" fill="rgba(0,0,0,.16)"/>
+    <circle cx="80" cy="71" r="36" fill="#0f172a"/>
+    <circle cx="80" cy="71" r="31" fill="url(#camRing)"/>
+    <circle cx="80" cy="71" r="25" fill="url(#camGlass)"/>
+    <circle cx="80" cy="71" r="13" fill="none" stroke="rgba(147,197,253,.45)" stroke-width="2"/>
+    <circle cx="71" cy="62" r="6" fill="rgba(255,255,255,.75)"/>
+    <circle cx="88" cy="80" r="2.5" fill="rgba(255,255,255,.45)"/>
+    <circle cx="124" cy="44" r="5" fill="#ef4444"/>
+    <rect x="28" y="38" width="16" height="9" rx="3" fill="rgba(255,255,255,.35)"/>
+  </svg></span>
   <button class="hbtn" id="btnCloud" hidden title="Bulud (Firebase) sinxronu"><span class="ic">☁️</span><span class="lb"><span id="cloudTxt"></span></span></button>
   <button class="hbtn" id="btnSet"><span class="ic">⚙️</span><span class="lb">Ayarlar</span></button>
   </nav>
@@ -636,7 +662,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.58.0";
+const APP_VERSION="0.59.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
