@@ -183,6 +183,12 @@ const path = require('path');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_ededle').map(i => i.name + ':' + i.tiers[0][1]).join('|') === '15x21:6|21x30:8|25x38:10|30x40:12' && S.items.find(i => i.id === 'g_ededle').cat === 'studiya'), 'Studiya: Ədədlə şəkillər (15x21 6, 21x30 8, 25x38 10, 30x40 12)');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_cer_std').map(i => i.name.replace('Çərçivə ', '') + ':' + i.tiers[0][1]).join('|') === '6x9:2|10x15:3|13x18:4|15x21:5|21x30:6|20x25:6|25x30:10|25x38:12|30x40:13|30x42:13|30x45:15'
     && S.items.find(i => i.id === 'cer_diger').free === 1 && S.items.find(i => i.id === 'g_cer_std').cat === 'cerceve'), 'Çərçivə: Standart (11 ölçü, qiymətlərlə) + Digər çərçivə (razılaşma ilə)');
+  await p.click('[data-cat=plotter]', { position: { x: 12, y: 12 } });
+  ok((await p.locator('[data-add=pl_m2]').textContent()).includes('m² ilə'), 'Kəsim Plotter: "Plotter kəsimi" — m² ilə, qiymət razılaşma ilə');
+  await p.click('[data-add=pl_m2]'); await p.waitForSelector('#ovM2:not([hidden]) #m2_w');
+  await p.fill('#m2_w', '2'); await p.fill('#m2_h', '0,5'); await p.fill('#m2_pm', '8'); await p.press('#m2_pm', 'Enter');
+  ok((await p.textContent('#total')).startsWith('8.00') && (await p.textContent('#lines')).includes('Plotter kəsimi 2 × 0,5 m (1 m²)'), 'plotter: 2 × 0,5 m × 8 ₼/m² = 8 ₼ sifarişdə');
+  await p.click('[data-act=clear]').catch(() => {}); await p.evaluate(() => { order = []; renderOrder(); renderGrid(); });
   await p.click('[data-cat=studiya]', { position: { x: 12, y: 12 } });
   ok((await p.locator('[data-add=u_dg]').textContent()).includes('razılaşma'), 'Digər düyməsində "qiymət razılaşma ilə"');
   await p.click('[data-add=u_dg]');

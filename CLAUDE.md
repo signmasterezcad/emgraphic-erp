@@ -59,7 +59,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   dövrdə nisyə satış/alınan, nisyə alış/ödənən; mal alışı nisyəsi `purchDebt()` də sayılır).
 - **✏️ Düzəliş** (v0.37.0): başlıqda yoxdur (`#btnEdit` gizli), **⚙️ Ayarlar**-ın yuxarısında "✏️ Düzəliş rejimini aç" (`data-act="goedit"`, `can("edit")`) —
   Ayarlar bağlanır, `setEdit(true)`; çıxış əvvəlki kimi "Hazır" (`editdone`).
-- **Kəsim Plotter** (id `plotter`) və **Fiber Lazer** (id `lazer`) bölmələri (`S.mig.plotterLazer`) — hələ boşdur.
+- **Kəsim Plotter** (id `plotter`) və **Fiber Lazer** (id `lazer`) bölmələri (`S.mig.plotterLazer`). Lazer hələ boşdur. Plotterdə (v0.49.0, `S.mig.plotterM2`)
+  `pl_m2` "Plotter kəsimi" ✂️ — `area:1`, tədarükçüsüz (banner/vinil kimi m² + sərbəst qiymət, alış dəyəri yoxdur).
 - **🔍 Axtarış** (v0.13.0) Sevimlilər-in yerinə gəlib (daxili açar `"search"`, həmişə birinci tab, açılışda seçilir).
   Bütün bölmə və qruplarda düymə adı + qrup + bölmə adına görə axtarır; ə/ş/ç/ğ/ı/ö/ü hərfsiz yazmaq olar; Enter birinci nəticəni əlavə edir.
   Düymələrdəki köhnə `fav` sahəsi artıq işlənmir.

@@ -576,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.48.0";
+const APP_VERSION="0.49.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -792,6 +792,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
       [["6x9",2],["10x15",3],["13x18",4],["15x21",5],["21x30",6],["20x25",6],["25x30",10],["25x38",12],["30x40",13],["30x42",13],["30x45",15]]
         .forEach(([n,p])=>add({id:"cs_"+n.replace("x","_"),name:"Çərçivə "+n,parent:"g_cer_std",tiers:[[1,p]]}));
       add({id:"cer_diger",name:"Digər çərçivə",icon:"✨",color:"#7c3aed",tiers:[[1,0]],free:1})}}
+  // v0.49.0: Kəsim Plotter — m² ilə, qiyməti hər sifarişdə yazılır (banner/vinil kimi, amma tədarükçüsüz — özümüz kəsirik)
+  if(!S.mig.plotterM2){S.mig.plotterM2=1;
+    const pc=S.cats.find(c=>c.id==="plotter")||S.cats.find(c=>norm(c.name)==="kesim plotter");
+    if(pc&&!S.items.some(i=>i.id==="pl_m2"))S.items.push({id:"pl_m2",name:"Plotter kəsimi",cat:pc.id,icon:"✂️",color:"#0369a1",fav:0,ink:0,recipe:[],tiers:[[1,0]],area:1})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
       const sz=m.replace(/\s|×/g,c=>c==="×"?"x":""),it=sf.items.find(y=>(y.name.match(/\d+x\d+/)||[])[0]===sz);if(it&&!i.src)i.src={supp:sf.id,item:it.id}})}
