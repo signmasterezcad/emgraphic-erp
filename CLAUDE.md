@@ -71,6 +71,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   📔 Albomlu `g_albomlu` (`sa_1..4` 45/55/60/70, `sa_tek` Tək Albom free), 🎥 Videolu `g_videolu` (`sv_1..4` 40/50/65/70, `sv_tek` Tək Video free; "30 ₼-dən" adda).
   🖼️ Ədədlə şəkillər `g_ededle` (v0.47.0, `S.mig.studiya4`): 15x21 6, 21x30 8, 25x38 10, 30x40 12 (`se_1521`, `se_2130`, `se_2538`, `se_3040`).
   **🖼️ Çərçivə** (v0.45.0, id `cerceve`, ikon 🖼️, `S.mig.cerceve`): boş bölmə, düymələri sahibi özü əlavə edir (sonda, Studiyadan sonra).
+  v0.48.0 `S.mig.cerceve2`: 📂 Standart çərçivələr `g_cer_std` (`cs_6_9`…: 6x9 2, 10x15 3, 13x18 4, 15x21 5, 21x30 6, 20x25 6, 25x30 10, 25x38 12,
+  30x40 13, 30x42 13, 30x45 15; ad "Çərçivə 6x9") + ✨ Digər çərçivə `cer_diger` (free). Sahibinin planı: başqa növlər (taxta, dekorativ…) ayrıca qrup kimi.
   Bölmə düymələri (`.tabs`, v0.28.1) sığmayanda ikinci sıraya düşür — sürüşdürmə çubuğu olmamalıdır (sahibinin istəyi).
 - **🎨 İkon seçimi** (v0.43.0): `pickIcon(cur,title,cb)` → `#ovIcon` (`ICONS`: Foto/Studiya, Çap/Ofis, Reklam, Hədiyyə/Sublim, Texnika, Rəng/Digər;
   "özünüz yazın" `#ic_own` (Win + .), "İkonsuz"). Düymə redaktorunda `data-act="eicon"` (+ köhnə `#e_icon` xanası, maxlength 8);

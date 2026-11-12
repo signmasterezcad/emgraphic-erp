@@ -181,6 +181,8 @@ const path = require('path');
       && k('g_albomlu') === '1 dekor + albom:45|2 dekor + albom:55|3 dekor + albom:60|4 dekor + albom:70|Tək Albom (fotosessiyasız, 30 ₼-dən):free'
       && k('g_videolu') === '1 dekor + video:40|2 dekor + video:50|3 dekor + video:65|4 dekor + video:70|Tək Video (fotosessiyasız, 30 ₼-dən):free'; }), 'Studiya: Fotosessiya / Albomlu / Videolu qrupları və qiymətləri');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_ededle').map(i => i.name + ':' + i.tiers[0][1]).join('|') === '15x21:6|21x30:8|25x38:10|30x40:12' && S.items.find(i => i.id === 'g_ededle').cat === 'studiya'), 'Studiya: Ədədlə şəkillər (15x21 6, 21x30 8, 25x38 10, 30x40 12)');
+  ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_cer_std').map(i => i.name.replace('Çərçivə ', '') + ':' + i.tiers[0][1]).join('|') === '6x9:2|10x15:3|13x18:4|15x21:5|21x30:6|20x25:6|25x30:10|25x38:12|30x40:13|30x42:13|30x45:15'
+    && S.items.find(i => i.id === 'cer_diger').free === 1 && S.items.find(i => i.id === 'g_cer_std').cat === 'cerceve'), 'Çərçivə: Standart (11 ölçü, qiymətlərlə) + Digər çərçivə (razılaşma ilə)');
   await p.click('[data-cat=studiya]', { position: { x: 12, y: 12 } });
   ok((await p.locator('[data-add=u_dg]').textContent()).includes('razılaşma'), 'Digər düyməsində "qiymət razılaşma ilə"');
   await p.click('[data-add=u_dg]');
