@@ -58,6 +58,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Müəssisələr (admin); həmişə birinci tabla açılır; başlıqda iki nişan: `#custBadge` "bizə …", `#suppBadge` (qırmızı) "biz …". `data-s` düymələri
   `#ovCDebt` içində də işləyir. **📊 Hesabat** (adı "Hesabat / Anbar" idi) → yeni **💳 Borclar** tabı (`borc`, yalnız baxış, dövrlə: indiki borclar,
   dövrdə nisyə satış/alınan, nisyə alış/ödənən; mal alışı nisyəsi `purchDebt()` də sayılır).
+- **Sol menyu** (v0.55.0, sahibinin istəyi): başlıqdakı düymələr `<nav class="side" id="sideNav">`-də — kompüterdə (>860px) solda sabit 200px zolaq
+  (`body{padding-left:200px}`), hər düymə öz rəngi ilə (`--c`: Zay qırmızı, Anbar narıncı, Hesabat göy, Xərclər bənövşəyi, Borclar firuzəyi, Tədarükçü yaşıl,
+  Ayarlar boz — aşağıda, `.sgap`); telefonda (≤860px) başlığın altında 2 sütunlu rəngli düymələr. Düymə içi: `.ic` + `.lb` (id-lər eyni qalıb).
+  `.side .hbtn[hidden]{display:none}` vacibdir (display:flex hidden-i üstələyir).
 - **✏️ Düzəliş** (v0.37.0): başlıqda yoxdur (`#btnEdit` gizli), **⚙️ Ayarlar**-ın yuxarısında "✏️ Düzəliş rejimini aç" (`data-act="goedit"`, `can("edit")`) —
   Ayarlar bağlanır, `setEdit(true)`; çıxış əvvəlki kimi "Hazır" (`editdone`).
 - **Kəsim Plotter** və **Fiber Lazer** — v0.53.0-dan (`S.mig.plotLazPoli`, sahibinin istəyi) ayrıca bölmə deyil, **Poliqrafiya Xidmətləri**-nin içində qrup:

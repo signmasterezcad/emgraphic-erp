@@ -339,22 +339,55 @@ tr.confirm td{background:color-mix(in srgb,var(--bad) 10%,var(--panel));border-b
 .pathbox code{font-size:12px;overflow-wrap:anywhere}
 h4{margin:6px 0 0;font-size:14px}
 @media (prefers-reduced-motion:reduce){.svc{transition:none}}
+/* v0.55.0: menyu solda, rəngli düymələr (sahibinin istəyi) */
+.side .hbtn{--c:#475569;display:flex;align-items:center;gap:10px;background:var(--c);color:#fff;border:0;border-radius:12px;padding:11px 14px;font-size:15px;font-weight:800;text-align:left;cursor:pointer;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.22);transition:filter .12s,transform .12s}
+.side .hbtn[hidden]{display:none}
+.side .hbtn:hover{filter:brightness(1.12)}
+.side .hbtn:active{transform:translateY(1px)}
+.side .hbtn:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.side .hbtn .ic{font-size:20px;line-height:1;width:24px;text-align:center;flex:none}
+.side .hbtn .lb{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2;overflow-wrap:anywhere}
+.side .hbtn .lb small{font-size:11px;font-weight:600;opacity:.85}
+.side .hbtn{flex-wrap:wrap}
+.side .hbtn .lb{flex:1 0 auto;max-width:100%}
+.side .hbtn .badges{display:flex;flex-wrap:wrap;gap:3px}
+.side .hbtn>.badge,.side .hbtn .badges{margin-left:34px}
+.side .hbtn .badge{margin-left:0}
+.side .hbtn>.badge{margin-left:34px}
+.side .hbtn.on{outline:3px solid var(--warn);outline-offset:1px}
+#btnUser{--c:#334155}#btnZay{--c:#dc2626}#btnStock{--c:#d97706}#btnRep{--c:#2563eb}#btnExp{--c:#7c3aed}
+#btnCust{--c:#0891b2}#btnSupp{--c:#16a34a}#btnEdit{--c:#db2777}#btnSet{--c:#475569}#btnCloud{--c:#0f766e}
+.sgap{flex:1}
+@media (min-width:861px){
+  .side{position:fixed;left:0;top:0;bottom:0;width:200px;z-index:15;display:flex;flex-direction:column;gap:8px;padding:14px 12px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto}
+  body{padding-left:200px}
+}
+@media (max-width:860px){
+  .side{flex-basis:100%;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:6px}
+  .side .hbtn{padding:8px 10px;font-size:13px;gap:6px}
+  .side .hbtn .ic{font-size:16px;width:18px}
+  .sgap{display:none}
+}
 </style>
 </head>
 <body>
 
 <header class="wrap">
   <h1><img src="kassa.svg" class="logo" alt="" width="28" height="28">KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span> <button class="updbtn" id="btnUpd" type="button" hidden title="Proqramı yenilə">🔄 Yenilə</button></h1>
-  <button class="hbtn user" id="btnUser" title="Çıxış: başqa işçi ilə gir">👤 <span class="un" id="userName"></span> · Çıxış</button>
-  <button class="hbtn" id="btnZay">🗑️ Zay</button>
-  <button class="hbtn" id="btnStock">📦 Anbar</button>
-  <button class="hbtn" id="btnRep">📊 Hesabat</button>
-  <button class="hbtn" id="btnExp">💸 Xərclər <span class="badge" id="debtBadge" hidden></span></button>
-  <button class="hbtn" id="btnCust">💳 Borclar <span class="badge" id="custBadge" hidden title="Bizə borcludurlar"></span><span class="badge out" id="suppBadge" hidden title="Bizim borcumuz"></span></button>
-  <button class="hbtn" id="btnSupp">🚚 Tədarükçü</button>
-  <button class="hbtn" id="btnEdit" hidden>✏️ Düzəliş</button>
-  <button class="hbtn" id="btnSet">⚙️ Ayarlar</button>
-  <button class="hbtn" id="btnCloud" hidden title="Bulud (Firebase) sinxronu">☁️ <span id="cloudTxt"></span></button>
+  <nav class="side" id="sideNav" aria-label="Menyu">
+  <button class="hbtn user" id="btnUser" title="Çıxış: başqa işçi ilə gir"><span class="ic">👤</span><span class="lb"><span class="un" id="userName"></span><small>Çıxış</small></span></button>
+  <button class="hbtn" id="btnZay"><span class="ic">🗑️</span><span class="lb">Zay</span></button>
+  <button class="hbtn" id="btnStock"><span class="ic">📦</span><span class="lb">Anbar</span></button>
+  <button class="hbtn" id="btnRep"><span class="ic">📊</span><span class="lb">Hesabat</span></button>
+  <button class="hbtn" id="btnExp"><span class="ic">💸</span><span class="lb">Xərclər</span> <span class="badge" id="debtBadge" hidden></span></button>
+  <button class="hbtn" id="btnCust"><span class="ic">💳</span><span class="lb">Borclar</span> <span class="badges"><span class="badge" id="custBadge" hidden title="Bizə borcludurlar"></span><span class="badge out" id="suppBadge" hidden title="Bizim borcumuz"></span></span></button>
+  <button class="hbtn" id="btnSupp"><span class="ic">🚚</span><span class="lb">Tədarükçü</span></button>
+  <button class="hbtn" id="btnEdit" hidden><span class="ic">✏️</span><span class="lb">Düzəliş</span></button>
+  <span class="sgap"></span>
+  <button class="hbtn" id="btnCloud" hidden title="Bulud (Firebase) sinxronu"><span class="ic">☁️</span><span class="lb"><span id="cloudTxt"></span></span></button>
+  <button class="hbtn" id="btnSet"><span class="ic">⚙️</span><span class="lb">Ayarlar</span></button>
+  </nav>
   <div class="today" id="today"></div>
 </header>
 <div class="chips wrap" id="chips" hidden></div>
@@ -590,7 +623,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.54.0";
+const APP_VERSION="0.55.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
