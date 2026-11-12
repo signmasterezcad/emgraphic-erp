@@ -576,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.45.0";
+const APP_VERSION="0.46.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -769,6 +769,15 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     const sc=S.cats.find(c=>c.id==="studiya")||S.cats.find(c=>norm(c.name)==="studiya"),inS=i=>sc&&i.cat===sc.id&&!i.group;
     S.items.filter(i=>inS(i)&&norm(i.name).includes("kost")).forEach(i=>{i.icon="🤵"});
     S.items.filter(i=>inS(i)&&norm(i.name)==="diger").forEach(i=>{i.icon="🖼️";i.free=1;delete i.area})}
+  // v0.46.0: Studiya — fotosessiya paketləri (3 qrup: Fotosessiya, Albomlu, Videolu); "Tək ..." qiyməti razılaşma ilə (30 ₼-dən)
+  if(!S.mig.studiya3){S.mig.studiya3=1;
+    const sc=S.cats.find(c=>c.id==="studiya")||S.cats.find(c=>norm(c.name)==="studiya");
+    if(sc){const add=o=>{if(!S.items.some(i=>i.id===o.id))S.items.push(Object.assign({cat:sc.id,fav:0,ink:0,recipe:[]},o))};
+      [["g_sessiya","Fotosessiya","📸","#0f766e",[["ss_1","1 dekor (20-25 kadr)",20],["ss_2","2 dekor (30-35 kadr)",30],["ss_3","3 dekor (40-45 kadr)",35],["ss_4","4 dekor (50-55 kadr)",45]]],
+       ["g_albomlu","Albomlu","📔","#b45309",[["sa_1","1 dekor + albom",45],["sa_2","2 dekor + albom",55],["sa_3","3 dekor + albom",60],["sa_4","4 dekor + albom",70],["sa_tek","Tək Albom (fotosessiyasız, 30 ₼-dən)",0]]],
+       ["g_videolu","Videolu","🎥","#be123c",[["sv_1","1 dekor + video",40],["sv_2","2 dekor + video",50],["sv_3","3 dekor + video",65],["sv_4","4 dekor + video",70],["sv_tek","Tək Video (fotosessiyasız, 30 ₼-dən)",0]]]]
+      .forEach(([gid,gn,ic,col,kids])=>{add({id:gid,name:gn,icon:ic,color:col,group:1,tiers:[[1,0]]});
+        kids.forEach(([id,n,p])=>add(p?{id,name:n,icon:ic,color:col,parent:gid,tiers:[[1,p]]}:{id,name:n,icon:ic,color:col,parent:gid,tiers:[[1,0]],free:1}))})}}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
       const sz=m.replace(/\s|×/g,c=>c==="×"?"x":""),it=sf.items.find(y=>(y.name.match(/\d+x\d+/)||[])[0]===sz);if(it&&!i.src)i.src={supp:sf.id,item:it.id}})}
