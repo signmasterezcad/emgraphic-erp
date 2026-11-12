@@ -173,7 +173,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .ctile{background:#b45309}
 .blines{display:grid;gap:8px}
 /* Boş sifarişdə: bu günün nağd və kart cəmi (düymə) */
-.phone .note,.phone .srchint{display:none}
+.srchint{display:none} /* v0.54.0: izah yazıları sahibinin istəyi ilə hər yerdə gizli */
 .badge.out{background:var(--bad);color:#fff}
 .editgo{padding-bottom:12px;border-bottom:1px solid var(--line)}
 .epay{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 0}
@@ -367,7 +367,6 @@ h4{margin:6px 0 0;font-size:14px}
     <div class="searchbar" id="searchbar" hidden><input id="q" type="search" placeholder="🔍 Düymə axtar: məs. surət, fincan, 10x15…" autocomplete="off" aria-label="Düymə axtar"><button class="btn ghost sm" id="qClear" hidden>Təmizlə</button></div>
     <div class="crumb" id="crumb" hidden></div>
     <div class="grid" id="grid"></div>
-    <p class="note">Düyməyə hər toxunuş sayı 1 artırır. Say artdıqca qiymət özü dəyişir (məsələn A4 çapında 1–10, 11–50, 51+). Satış bitəndə kağız anbardan avtomatik silinir. Düymə və bölmə əlavə etmək və ya silmək üçün yuxarıda “✏️ Düzəliş” basın. Məlumat yalnız bu kompüterdə saxlanır.</p>
   </section>
 
   <aside class="order">
@@ -591,7 +590,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.53.0";
+const APP_VERSION="0.54.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};

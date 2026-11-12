@@ -51,7 +51,7 @@ const path = require('path');
   // Axtarış (Sevimlilər əvəzinə)
   await p.click('[data-cat=search]', { position: { x: 12, y: 12 } });
   ok((await p.locator('#tabs .tab').first().textContent()).includes('Axtarış') && !(await p.textContent('#tabs')).includes('Sevimlilər'), 'birinci tab Axtarış, Sevimlilər yoxdur');
-  ok(await p.isVisible('#q') && (await p.textContent('#grid')).includes('bir neçə hərf yazın'), 'boş axtarış: izah görünür');
+  ok(await p.isVisible('#q') && await p.isHidden('.srchint') && await p.locator('main .note').count() === 0, 'boş axtarış: izah yazıları göstərilmir');
   await p.fill('#q', 'yoxdurbelesey');
   ok((await p.textContent('#grid')).includes('heç nə tapılmadı'), 'tapılmayanda izah');
   await p.fill('#q', 'a3 rengli cap');

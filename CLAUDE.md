@@ -188,7 +188,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `%APPDATA%\KASSA\data\bulud-*.json` (`erpKVGet/erpKVSet`), Google sorğuları exe-dən (`erpFetch`, yalnız *.googleapis.com; `launcher/cloud.go`).
   İlk yükləmədə (`CL.loading`) `upgrade()` işləmir — yarımçıq məlumatda köçürmələr (anbarSifir!) işə düşməsin.
   Telefon: `PAGES_URL` = https://signmasterezcad.github.io/kassa/app/ (GitHub Pages: main, kök; `.nojekyll`), link `#bulud=` (apiKey, projectId, email),
-  yalnız parol soruşulur; `PHONE_CLOUD` (body `.phone`: izah yazısı `.note` və boş axtarışın ipucu `.srchint` gizli; giriş ekranında yalnız admin — `loginUsers()`, v0.34.0);
+  yalnız parol soruşulur; `PHONE_CLOUD` (body `.phone`; v0.54.0-dan izah yazısı `.note` silinib və boş axtarışın ipucu `.srchint` hər yerdə gizlidir; giriş ekranında yalnız admin — `loginUsers()`, v0.34.0);
   `sw.js` + `manifest.webmanifest` (internetsiz açılır). Ayarlar → "☁️ Bulud" (admin): quraşdırma addımları,
   qoşul / indi sinxronlaşdır / ayır, telefon linki, Rules mətni (`request.auth.token.email == ...`). Başlıqda `#btnCloud` (✓ / n gözləyir / internet yoxdur).
   Sınaq: `node tests/cloud.js` (yaddaşda sınaq Firebase-i). GitHub Pages-i API ilə açmaq bu mühitdə qadağandır — istifadəçi Settings → Pages-dən açmalıdır.
