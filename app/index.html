@@ -576,7 +576,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.44.1";
+const APP_VERSION="0.45.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -762,6 +762,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     const sc=S.cats.find(c=>c.id==="studiya")||S.cats.find(c=>norm(c.name)==="studiya");
     if(!S.items.some(i=>i.id==="st_sened"))S.items.push({id:"st_sened",name:"Sənəd Şəkli",cat:sc.id,icon:"🪪",color:"#0f766e",fav:0,ink:0,recipe:[],tiers:[[1,0]]})}
   // v0.42.0: sahibinin özü yaratdığı Studiya düymələri — ikonlar; "Digər" qiyməti razılaşma ilə (free)
+  // v0.45.0: "Çərçivə" bölməsi (boş; düymələri sahibi özü əlavə edəcək)
+  if(!S.mig.cerceve){S.mig.cerceve=1;
+    if(!S.cats.some(c=>c.id==="cerceve"||norm(c.name)==="cercive"))S.cats.push({id:"cerceve",name:"Çərçivə",icon:"🖼️"})}
   if(!S.mig.studiya2){S.mig.studiya2=1;
     const sc=S.cats.find(c=>c.id==="studiya")||S.cats.find(c=>norm(c.name)==="studiya"),inS=i=>sc&&i.cat===sc.id&&!i.group;
     S.items.filter(i=>inS(i)&&norm(i.name).includes("kost")).forEach(i=>{i.icon="🤵"});
@@ -1064,7 +1067,7 @@ function cleanStartLate(){ // upgrade()-dən sonra: bölmələr yaranıb
   if(!S.cleanStart)return;delete S.cleanStart;
   const old=["foto","viz","skan","lam","kag"];
   S.items=S.items.filter(i=>!old.includes(i.cat));S.cats=S.cats.filter(c=>!old.includes(c.id));
-  const order=["cap","banner","sublim","lazer","plotter","poli","studiya"];
+  const order=["cap","banner","sublim","lazer","plotter","poli","studiya","cerceve"];
   S.cats.sort((a,b)=>{const x=order.indexOf(a.id),y=order.indexOf(b.id);return (x<0?99:x)-(y<0?99:y)});
   const sc=S.cats.find(c=>c.id==="studiya");
   if(sc){if(!S.items.some(i=>i.id==="st_kostyum"))S.items.push({id:"st_kostyum",name:"Sənəd şəkili Kostyum montaj",cat:sc.id,icon:"🤵",color:"#2563eb",fav:0,ink:0,recipe:[],tiers:[[1,0]]});

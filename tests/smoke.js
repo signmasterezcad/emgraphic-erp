@@ -170,7 +170,7 @@ const path = require('path');
   await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } });
   const tabNames = await p.locator('#tabs .tab').allTextContents();
   ok(tabNames[1].startsWith('ÇAP') && tabNames[2].startsWith('Poliqrafiya Xidmətləri'), 'Poliqrafiya Xidmətləri bölməsi ÇAP-ın yanında');
-  ok(tabNames.slice(-4).join('|') === 'Kəsim Plotter|Fiber Lazer|Banner / Vinil|Studiya', 'Kəsim Plotter, Fiber Lazer, Banner / Vinil, Studiya bölmələri sonda');
+  ok(tabNames.slice(-5).join('|') === 'Kəsim Plotter|Fiber Lazer|Banner / Vinil|Studiya|🖼️ Çərçivə', 'Kəsim Plotter, Fiber Lazer, Banner / Vinil, Studiya, 🖼️ Çərçivə bölmələri sonda');
   ok(await p.evaluate(() => { const i = S.items.find(x => x.id === 'st_sened'); return i && i.name === 'Sənəd Şəkli' && i.cat === 'studiya'; }), 'Studiya bölməsində "Sənəd Şəkli" düyməsi');
   // v0.42.0: sahibinin özü yaratdığı "Sənəd şəkili Kostyum montaj" və "Digər" (qiymət razılaşma ilə)
   await p.evaluate(() => { S.items.push({ id: 'u_k1', name: 'Sənəd şəkili Kostyum montaj', cat: 'studiya', icon: '⭐', color: '#2563eb', fav: 0, ink: 0, recipe: [], tiers: [[1, 3]] },
