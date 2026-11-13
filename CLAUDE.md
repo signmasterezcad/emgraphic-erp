@@ -106,6 +106,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   satışın `used` sahəsindəki material anbara qaytarılır (v0.15.0-dan əvvəlki satışlarda `used` yoxdur).
   **✏️ Ödənişi dəyiş** (v0.65.0): tarixçədə "✏️ Karta/Nağda dəyiş" (`data-h=payask` → `payok`, `changeSalePay`; icazə `delSale`), nağd ⇄ kart,
   satışda `payEdits=[{from,to,ts,by}]` qeydi tarixçədə görünür. Nisyə satışda düymə yoxdur (müştəri borcuna toxunur).
+  **↩️ Qaytar / Əvəzlə** (v0.67.0, icazə `refund` — kassirə standart **bağlı**): tarixçədə `data-h=ret` → `#ovRet` (sətir üzrə qaytarılan say, `retAvail`,
+  1-in qiyməti endirim nisbətində `retUnit`) → sifarişə mənfi sətir `{uid,id,q,cp:-u,ret:{sale,li,name,plain,cost1,scost1,m21,from,base}}` (`data-rx` ilə silinir).
+  Yeni mal əlavə olunsa fərq ödənir; yalnız qaytarmada düymə "↩️ Pulu qaytar: X ₼" (cəmi mənfi; nağd/kart, nisyə olmaz).
+  Satış sətri `q<0, sum<0, cost<0, ret:{sale,li}`; reseptdəki material anbara qayıdır (`used` mənfi); əsl satışda `returned={li:say}`.
+  Qaytarması olan satış silinmir (əvvəl qaytarma satışı); qaytarma satışı silinəndə `returned` geri azalır. Nisyə satışda düymə yoxdur.
 - **💸 Xərclər** (v0.18.0, başlıqda): 1-ci mərhələ hazırdır — **📦 Mal alışı** (`S.purchases`): təchizatçı, ödəniş nağd/kart/nisyə,
   bir qəbzdə bir neçə mal; "Say × 1 paçkada" = anbara düşən say; yeni mal yerindəcə yaradılır (vahid: ədəd/vərəq/…);
   "Olduğu kimi satıram" seçilən düymənin reseptinə [mal, 1] əlavə edir. Anbar artır, maya **orta qiymətlə** yenilənir:

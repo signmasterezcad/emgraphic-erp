@@ -451,6 +451,23 @@ const path = require('path');
   await p.click(`[data-h=payask][data-k="${pe}"]`); await p.click('[data-h=payok]'); await p.waitForTimeout(100);
   ok(await p.evaluate(id => S.sales.find(x => x.id === id).pay, pe) === 'nağd', 'geri nağda da dəyişmək olur');
   ok(await p.evaluate(() => { const s = { id: 'bx', ts: Date.now(), pay: 'borc', cust: 'c', custName: 'X', lines: [], total: 1 }; S.sales.push(s); renderHist(); const ok = !document.querySelector(`[data-h=payask][data-k="${saleKey(s)}"]`); S.sales.pop(); renderHist(); return ok; }), 'nisyə satışda "dəyiş" düyməsi yoxdur (borca toxunur)');
+  // v0.67.0: ↩️ Qaytar / Əvəzlə — material anbara qayıdır, əsl satışda qeyd, fərq hesablanır
+  await p.click('#ovHist [data-close]');
+  const lam0 = await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock);
+  await p.evaluate(() => { order = [{ id: 'g_lamA4', q: 2 }]; renderOrder(); }); await p.click('#btnDone');
+  const rs = await p.evaluate(() => S.sales.at(-1).id);
+  await p.click('#btnHist'); await p.click(`[data-h=ret][data-k="${rs}"]`); await p.fill('[data-rq="0"]', '1'); await p.click('[data-rt=add]');
+  ok(await p.isHidden('#ovHist') && (await p.textContent('#lines')).includes('Qaytarma: Laminasiya A4') && (await p.textContent('#btnDone')).includes('Pulu qaytar: 1.00'), '↩️ Qaytar: sifarişdə mənfi sətir, düymə "Pulu qaytar 1.00"');
+  await p.fill('#q', ''); await p.dispatchEvent('#q', 'input'); await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } }); await p.click('[data-add=g_lamA3]');
+  ok((await p.textContent('#total')).startsWith('1.00'), '🔁 Əvəzlə: A3 (2.00) − qaytarılan A4 (1.00) = fərq 1.00');
+  await p.click('#btnDone');
+  ok(await p.evaluate(({ rs, lam0 }) => { const o = S.sales.find(s => s.id === rs), x = S.sales.at(-1); return o.returned['0'] === 1 && x.total === 1 && x.lines.some(l => l.ret && l.q === -1) && S.materials.find(m => m.id === 'lam').stock === lam0 - 1; }, { rs, lam0 }), 'əvəzləmə yazıldı: fərq 1 ₼, əsl satışda "1 qaytarılıb", plyonka anbara qayıtdı (2 − 1)');
+  const ex = await p.evaluate(() => S.sales.at(-1).id);
+  await p.click('#btnHist');
+  ok((await p.textContent('#ovHist')).includes('↩️ Qaytarılıb: Laminasiya A4 ×1'), 'tarixçədə "qaytarılıb" qeydi');
+  await p.click(`[data-h=ask][data-k="${ex}"]`); await p.click('[data-h=del]'); await p.waitForTimeout(100);
+  await p.click(`[data-h=ask][data-k="${rs}"]`); await p.click('[data-h=del]'); await p.waitForTimeout(100);
+  ok(await p.evaluate(({ rs, ex }) => !S.sales.some(s => s.id === rs || s.id === ex), { rs, ex }) && await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock) === lam0, 'əvəzləmə və əsl satış silinəndə anbar əvvəlki kimi');
   // satışı silmək: material geri qayıdır
   const lamBefore = await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock);
   const target = await p.evaluate(() => { const s = [...S.sales].reverse().find(s => s.used && s.used.lam === 1 && s.lines.length === 1); return s && s.id; });

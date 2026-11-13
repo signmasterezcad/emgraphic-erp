@@ -75,6 +75,7 @@ let n = 0;
 
   // 5) Kassir: yalnız icazəli düymələr
   ok(await p.isVisible('#btnZay') && await p.isVisible('#btnHist'), 'Leyla: Zay və Tarixçə görünür');
+  ok(await p.evaluate(() => !can('refund')), 'Leyla: Qaytar / Əvəzlə icazəsi standart bağlıdır');
   ok(await p.isHidden('#btnRep') && await p.isHidden('#btnSet') && await p.isVisible('#btnExp') && await p.isHidden('#btnEdit') && await p.isHidden('#today'), 'Leyla: Hesabat, Ayarlar, Düzəliş, günün cəmi gizlidir; Xərclər görünür (v0.61.0)');
   await sellOne(p);
   ok(JSON.parse(fs.data).sales.at(-1).worker === 'Leyla', 'satış Leyla-nın adına yazıldı');
