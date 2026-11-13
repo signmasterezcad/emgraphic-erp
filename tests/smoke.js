@@ -441,6 +441,15 @@ const path = require('path');
   await p.click('#ovRep [data-close]');
   await p.evaluate(() => { S.sales = S.sales.filter(s => s.id !== 'rr1'); });
   await p.click('#btnHist');
+  // v0.65.0: ödəniş növünü düzəltmək (nağd ⇄ kart)
+  const pe = await p.evaluate(() => { const s = [...S.sales].reverse().find(x => x.pay === 'nağd'); return s && s.id; });
+  await p.click(`[data-h=payask][data-k="${pe}"]`);
+  ok(await p.locator('[data-h=payok]').count() === 1 && (await p.textContent('[data-h=payok]')).includes('Kart') && await p.evaluate(id => S.sales.find(s => s.id === id).pay, pe) === 'nağd', '✏️ Karta dəyiş: əvvəlcə təsdiq soruşur');
+  await p.click('[data-h=payok]'); await p.waitForTimeout(100);
+  ok(await p.evaluate(id => { const s = S.sales.find(x => x.id === id); return s.pay === 'kart' && s.payEdits.length === 1 && s.payEdits[0].from === 'nağd'; }, pe) && (await p.textContent('#ovHist')).includes('Ödəniş dəyişdirilib: 💵 Nağd → 💳 Kart'), 'satış karta keçdi, tarixçədə qeyd görünür');
+  await p.click(`[data-h=payask][data-k="${pe}"]`); await p.click('[data-h=payok]'); await p.waitForTimeout(100);
+  ok(await p.evaluate(id => S.sales.find(x => x.id === id).pay, pe) === 'nağd', 'geri nağda da dəyişmək olur');
+  ok(await p.evaluate(() => { const s = { id: 'bx', ts: Date.now(), pay: 'borc', cust: 'c', custName: 'X', lines: [], total: 1 }; S.sales.push(s); renderHist(); const ok = !document.querySelector(`[data-h=payask][data-k="${saleKey(s)}"]`); S.sales.pop(); renderHist(); return ok; }), 'nisyə satışda "dəyiş" düyməsi yoxdur (borca toxunur)');
   // satışı silmək: material geri qayıdır
   const lamBefore = await p.evaluate(() => S.materials.find(m => m.id === 'lam').stock);
   const target = await p.evaluate(() => { const s = [...S.sales].reverse().find(s => s.used && s.used.lam === 1 && s.lines.length === 1); return s && s.id; });

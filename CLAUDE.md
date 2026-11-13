@@ -103,6 +103,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   günə basanda o gün açılır), Nağd/Kart/Nisyə filtri,
   tarix gg.aa.iiii, saat ss:dd, cəmlər. Admin istənilən satışı silə bilər (təsdiqlə); silmədən əvvəl ehtiyat nüsxə,
   satışın `used` sahəsindəki material anbara qaytarılır (v0.15.0-dan əvvəlki satışlarda `used` yoxdur).
+  **✏️ Ödənişi dəyiş** (v0.65.0): tarixçədə "✏️ Karta/Nağda dəyiş" (`data-h=payask` → `payok`, `changeSalePay`; icazə `delSale`), nağd ⇄ kart,
+  satışda `payEdits=[{from,to,ts,by}]` qeydi tarixçədə görünür. Nisyə satışda düymə yoxdur (müştəri borcuna toxunur).
 - **💸 Xərclər** (v0.18.0, başlıqda): 1-ci mərhələ hazırdır — **📦 Mal alışı** (`S.purchases`): təchizatçı, ödəniş nağd/kart/nisyə,
   bir qəbzdə bir neçə mal; "Say × 1 paçkada" = anbara düşən say; yeni mal yerindəcə yaradılır (vahid: ədəd/vərəq/…);
   "Olduğu kimi satıram" seçilən düymənin reseptinə [mal, 1] əlavə edir. Anbar artır, maya **orta qiymətlə** yenilənir:

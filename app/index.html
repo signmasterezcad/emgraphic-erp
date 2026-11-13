@@ -643,7 +643,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.64.0";
+const APP_VERSION="0.65.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1883,13 +1883,19 @@ function renderHist(){
     ${list.slice(0,500).map(s=>{const k=saleKey(s);return `<tr class="${hDel===k?"confirm":""}">
       <td><b>${fmtDate(s.ts)}</b></td><td><b>${fmtTime(s.ts)}</b></td>
       <td>${salePill(s)}</td>
-      <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}${s.disc?`<div class="sub">🏷️ Endirim −${m2(s.disc)} ₼${s.discPct?` (${fmtN(s.discPct)}%)`:""}: ${esc(s.discReason||"")}</div>`:""}</td>
+      <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}${s.disc?`<div class="sub">🏷️ Endirim −${m2(s.disc)} ₼${s.discPct?` (${fmtN(s.discPct)}%)`:""}: ${esc(s.discReason||"")}</div>`:""}${(s.payEdits||[]).map(x=>`<div class="sub">✏️ Ödəniş dəyişdirilib: ${payName(x.from)} → ${payName(x.to)} (${esc(x.by||"")}, ${fmtDate(x.ts)} ${fmtTime(x.ts)})</div>`).join("")}</td>
       <td>${esc(s.worker||"")}</td><td class="n"><b>${m2(s.total)} ₼</b></td>
-      <td>${!can("delSale")?"":hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
-        :`<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
+      <td>${!can("delSale")?"":hPayEd===k?`<button class="btn sm" data-h="payok" data-k="${k}">Bəli, ${s.pay==="nağd"?"💳 Kart":"💵 Nağd"} et</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`:hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
+        :`${s.pay!=="borc"?`<button class="btn ghost sm" data-h="payask" data-k="${k}" title="Kassir səhv ödəniş növü seçibsə">✏️ ${s.pay==="nağd"?"Karta":"Nağda"} dəyiş</button> `:""}<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
     ${list.length>500?`<p class="sub">Son 500 satış göstərilir (cəmlər hamısı üzrədir). Tarix aralığını daraldın.</p>`:""}`
     :`<p class="sub empty-grp">${title}: satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
 }
+// v0.65.0: satışın ödəniş növünü düzəltmək (nağd ⇄ kart; nisyə satışda yox — borca toxunur). İcazə delSale (admin).
+let hPayEd=null;
+const payName=p=>p==="nağd"?"💵 Nağd":p==="kart"?"💳 Kart":"📝 Nisyə";
+function changeSalePay(k){if(!can("delSale"))return;const s=S.sales.find(x=>saleKey(x)===k);hPayEd=null;if(!s||s.pay==="borc"){renderHist();return}
+  const to=s.pay==="nağd"?"kart":"nağd";(s.payEdits=s.payEdits||[]).push({from:s.pay,to,ts:Date.now(),by:curName()});s.pay=to;
+  save();renderHeader();renderHist();toast(`${fmtDate(s.ts)} ${fmtTime(s.ts)} — ${m2(s.total)} ₼ satış: ödəniş ${payName(to)} oldu ✓`)}
 const salePill=s=>s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>';
 async function deleteSale(k){
   if(!can("delSale"))return;
@@ -1912,8 +1918,10 @@ document.addEventListener("click",e=>{
     else if(a==="month"){hFrom=D(now.getFullYear(),now.getMonth(),1);hTo=dayKey(Date.now())}
     else if(a==="pmonth"){hFrom=D(now.getFullYear(),now.getMonth()-1,1);hTo=D(now.getFullYear(),now.getMonth(),0)}
     else if(a==="all")hFrom=hTo="";
-    else if(a==="ask")hDel=t.dataset.k;
-    else if(a==="delx")hDel=null;
+    else if(a==="ask"){hDel=t.dataset.k;hPayEd=null}
+    else if(a==="payask"){hPayEd=t.dataset.k;hDel=null}
+    else if(a==="payok"){changeSalePay(t.dataset.k);return}
+    else if(a==="delx"){hDel=null;hPayEd=null}
     else if(a==="del"){deleteSale(t.dataset.k);return}
     if(a!=="ask"&&a!=="delx"&&a!=="del")hDel=null;
   }
