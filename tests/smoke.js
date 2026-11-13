@@ -185,6 +185,7 @@ const path = require('path');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_cer_std').map(i => i.name.replace('Çərçivə ', '') + ':' + i.tiers[0][1]).join('|') === '6x9:2|10x15:3|13x18:4|15x21:5|21x30:6|20x25:6|25x30:10|25x38:12|30x40:13|30x42:13|30x45:15'
     && S.items.find(i => i.id === 'cer_diger').free === 1 && S.items.find(i => i.id === 'g_cer_std').cat === 'cerceve'), 'Çərçivə: Standart (11 ölçü, qiymətlərlə) + Digər çərçivə (razılaşma ilə)');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_plaket').map(i => i.name + ':' + i.tiers[0][1]).join('|') === 'Plaket 10x15:16|Plaket 13x18:16|Plaket 15x21:25'), 'Sublim → Plaket: 10x15 16, 13x18 16, 15x21 25');
+  ok(await p.evaluate(() => S.items.find(i => i.id === 'pq_vizit')?.tiers[0][1] === 0.1 && S.items.find(i => i.id === 'pq_vizit').cat === 'poli' && S.items.filter(i => i.parent === 'g_konfet').map(i => i.tiers[0][1]).join('|') === '0.5|0.4|0.8'), 'Poliqrafiya: Vizit Kart 0.10, Konfet Kartı 0.50 / 0.40 / 0.80');
   // v0.52.0: 🏷️ Endirim
   ok(await p.isVisible('#btnDisc') && !(await p.textContent('.ordhead')).includes('Cari sifariş'), '"Cari sifariş" yerində 🏷️ Endirim düyməsi');
   await p.click('#btnDisc'); ok((await p.textContent('#toast')).includes('Əvvəlcə sifarişə'), 'boş sifarişdə endirim: izah');
@@ -223,7 +224,7 @@ const path = require('path');
   ok(await p.locator('#grid [data-add]').count() === 1 && (await p.locator('[data-add=lz_m2]').textContent()).includes('m² ilə'), 'Poliqrafiya → Fiber Lazer: "Lazer işi" — m² ilə');
   await p.click('[data-back]');
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });
-  ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Skan Etmə|Spiral Cildləmə|Kəsim Plotter|Fiber Lazer', 'Poliqrafiya: 4 qrup (Skan, Spiral, Kəsim Plotter, Fiber Lazer)');
+  ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Skan Etmə|Spiral Cildləmə|Kəsim Plotter|Fiber Lazer|Konfet Kartı', 'Poliqrafiya: 5 qrup (Skan, Spiral, Kəsim Plotter, Fiber Lazer, Konfet Kartı)');
   await p.click('[data-add=g_lamA4]'); await p.click('[data-add=g_lamA3]');
   ok((await p.textContent('#total')).startsWith('3.00'), 'Laminasiya A4 (1) + A3 (2) birbaşa satılır = 3.00');
   ok((await p.textContent('#chips')).includes('Laminasiya A4: 150'), 'satışdan əvvəl laminasiya qalığı 150');

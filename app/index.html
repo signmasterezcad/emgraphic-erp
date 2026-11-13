@@ -643,7 +643,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.63.0";
+const APP_VERSION="0.64.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -891,6 +891,13 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
         if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:g.cat,parent:g.id,icon:ic,color:g.color||"#1d4ed8",fav:0,ink:k?0:ink,recipe:k?[]:rec.map(r=>[...r]),tiers:[[1,pr]]})})}}
   // v0.62.0: "Sadə yazı ağ-qara" — 101+ pilləsi (0.05) ləğv, həmişə 0.10 (endirim lazımsa Endirim düyməsi ilə)
   if(!S.mig.a4bwPille){S.mig.a4bwPille=1;const it=S.items.find(i=>i.id==="a4s_bw");if(it)it.tiers=[[1,0.10]]}
+  // v0.64.0: Poliqrafiya → Vizit Kart 0.10 + "Konfet Kartı" qrupu (3 qiymət: 0.50, 0.40, 0.80 — adları sahibi dəqiqləşdirəcək)
+  if(!S.mig.vizitKonfet){S.mig.vizitKonfet=1;
+    const pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri");
+    if(pc){const add=o=>{if(!S.items.some(i=>i.id===o.id))S.items.push(Object.assign({cat:pc.id,fav:0,ink:0,recipe:[]},o))};
+      add({id:"pq_vizit",name:"Vizit Kart",icon:"📇",color:"#0f766e",tiers:[[1,0.10]]});
+      add({id:"g_konfet",name:"Konfet Kartı",icon:"🍬",color:"#db2777",group:1,tiers:[[1,0]]});
+      [["kk_050",0.50],["kk_040",0.40],["kk_080",0.80]].forEach(([id,p])=>add({id,name:"Konfet Kartı "+p.toFixed(2),parent:"g_konfet",icon:"🍬",color:"#db2777",tiers:[[1,p]]}))}}
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
