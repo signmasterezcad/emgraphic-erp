@@ -67,7 +67,7 @@ const path = require('path');
   ok((await p.textContent('#total')).startsWith('10.00'), 'Enter: birinci nəticə sifarişə əlavə olunur (Fincan Termo 10)');
   await p.click('#btnClear');
   await p.fill('#q', 'foto kagiz'); await p.click('[data-grp=g_foto]');
-  ok(await p.isVisible('#crumb') && (await p.textContent('#crumb')).includes('Axtarış') && await p.locator('#grid [data-add]').count() === 9, 'qrup tapılır, basanda içi açılır');
+  ok(await p.isVisible('#crumb') && (await p.textContent('#crumb')).includes('Axtarış') && await p.locator('#grid [data-add]').count() === 11, 'qrup tapılır, basanda içi açılır (11 düymə: + A4 120 qram, A4 Sticker)');
   await p.click('[data-back]');
   ok((await p.inputValue('#q')) === 'foto kagiz' && await p.isVisible('#searchbar'), '← geri: axtarış yazısı qalır');
   await p.click('#qClear');
@@ -185,6 +185,7 @@ const path = require('path');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_cer_std').map(i => i.name.replace('Çərçivə ', '') + ':' + i.tiers[0][1]).join('|') === '6x9:2|10x15:3|13x18:4|15x21:5|21x30:6|20x25:6|25x30:10|25x38:12|30x40:13|30x42:13|30x45:15'
     && S.items.find(i => i.id === 'cer_diger').free === 1 && S.items.find(i => i.id === 'g_cer_std').cat === 'cerceve'), 'Çərçivə: Standart (11 ölçü, qiymətlərlə) + Digər çərçivə (razılaşma ilə)');
   ok(await p.evaluate(() => S.items.filter(i => i.parent === 'g_plaket').map(i => i.name + ':' + i.tiers[0][1]).join('|') === 'Plaket 10x15:16|Plaket 13x18:16|Plaket 15x21:25'), 'Sublim → Plaket: 10x15 16, 13x18 16, 15x21 25');
+  ok(await p.evaluate(() => ['fk_a4_120:2:A4 120 qram', 'fk_a4_stk:3:A4 Sticker'].every(x => { const [id, pr, n] = x.split(':'); const i = S.items.find(y => y.id === id); return i && i.parent === 'g_foto' && i.tiers[0][1] === +pr && i.name === n; })), 'Foto Kağızlar: A4 120 qram 2, A4 Sticker 3');
   ok(await p.evaluate(() => S.items.find(i => i.id === 'pq_vizit')?.tiers[0][1] === 0.1 && S.items.find(i => i.id === 'pq_vizit').cat === 'poli' && S.items.filter(i => i.parent === 'g_konfet').map(i => i.tiers[0][1]).join('|') === '0.5|0.4|0.8'), 'Poliqrafiya: Vizit Kart 0.10, Konfet Kartı 0.50 / 0.40 / 0.80');
   // v0.52.0: 🏷️ Endirim
   ok(await p.isVisible('#btnDisc') && !(await p.textContent('.ordhead')).includes('Cari sifariş'), '"Cari sifariş" yerində 🏷️ Endirim düyməsi');
@@ -251,7 +252,7 @@ const path = require('path');
   await p.click('#btnClear'); await p.click('[data-back]');
   ok(await p.locator('#grid .svc.grpt').count() === 4 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 4 qrup (A4 Sadə, A3 Sadə, Foto, Sənəd Surəti), köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
-  ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === '10x15|13x18|15x21|20x25|21x30|25x38|30x40|30x42|30x45', 'Foto Kağızlar: 9 ölçü');
+  ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === '10x15|13x18|15x21|20x25|21x30|25x38|30x40|30x42|30x45|A4 120 qram|A4 Sticker', 'Foto Kağızlar: 9 ölçü + A4 120 qram + A4 Sticker');
   await p.click('[data-add=fk_1015]');
   ok(await p.isVisible('#ovSrc') && (await p.textContent('#srcBody')).includes('Samir Foto'), '10x15: "Özümüz / Samir Foto" seçimi çıxır');
   await p.click('[data-src=own]'); await p.click('[data-add=fk_3045]');
@@ -276,7 +277,7 @@ const path = require('path');
   ok((await p.textContent('#chips')).includes('10x15 foto kağızı: 499'), 'qrupdakı düymə ilə satış: foto kağız 500 → 499');
   await p.click('[data-back]');
   ok(!(await p.isVisible('#crumb')) && await p.locator('#grid [data-add]', { hasText: '10x15 parlaq' }).count() === 0, '← geri: bölməyə qayıtdı, içdəki düymə burada görünmür');
-  ok((await p.textContent('.svc.grpt:has-text("Test qrupu")')).includes('1 düymə') && (await p.textContent('[data-grp=g_foto]')).includes('9 düymə'), 'qrup düyməsində içindəki say görünür (1 və 9)');
+  ok((await p.textContent('.svc.grpt:has-text("Test qrupu")')).includes('1 düymə') && (await p.textContent('[data-grp=g_foto]')).includes('11 düymə'), 'qrup düyməsində içindəki say görünür (1 və 11)');
   // Ayarlarda yeni qrup yaratmaq
   await p.click('#btnSet'); await p.click('[data-rt=admin]'); await p.click('[data-act=scat][data-c=cap]'); await p.click('[data-act=new]');
   await p.selectOption('#e_type', 'group'); await p.fill('#e_name', 'Laminasiya qrupu'); await p.click('[data-act=isave]');

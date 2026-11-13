@@ -41,6 +41,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
     A3 sadə 0.50 (`a3s_bw`), A3 50% rəngli 0.70 (`a3s_50`), A3 100% rəngli 1.00 (`a3s_100`); köhnə resept birinciyə keçir.
   - Foto Kağızlar (`S.mig.fotoIci`, id `fk_1015`…): 10x15 0.40 (1 foto kağız 10x15), 13x18 0.80, 15x21 1, 20x25 3, 21x30 3,
     25x38 8, 30x40 12, 30x42 12, 30x45 15 (10x15-dən başqalarının materialı yoxdur).
+    v0.66.0 (`S.mig.fotoA4`): + A4 120 qram 2 (`fk_a4_120`), A4 Sticker 3 (`fk_a4_stk`).
 - **Poliqrafiya Xidmətləri** (id `poli`, ÇAP-ın yanında; `S.mig.poliBolme`): 4 qrup — Skan Etmə (`g_skan`), Spiral Cildləmə (`g_spiral`),
   Laminasiya A4 (`g_lamA4`), Laminasiya A3 (`g_lamA3`). İçi (`S.mig.poliIci`):
   - Skan Etmə: A4 skan 0.50 (`sk_a4`), A3 skan 0.50 (`sk_a3`). Spiral: 50/100/200/300 vərəqə qədər — 3/5/7/10 (`sp_50`…`sp_300`).
