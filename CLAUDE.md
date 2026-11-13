@@ -89,7 +89,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   **🖼️ Çərçivə** (v0.45.0, id `cerceve`, ikon 🖼️, `S.mig.cerceve`): boş bölmə, düymələri sahibi özü əlavə edir (sonda, Studiyadan sonra).
   v0.48.0 `S.mig.cerceve2`: 📂 Standart çərçivələr `g_cer_std` (`cs_6_9`…: 6x9 2, 10x15 3, 13x18 4, 15x21 5, 21x30 6, 20x25 6, 25x30 10, 25x38 12,
   30x40 13, 30x42 13, 30x45 15; ad "Çərçivə 6x9") + ✨ Digər çərçivə `cer_diger` (free). Sahibinin planı: başqa növlər (taxta, dekorativ…) ayrıca qrup kimi.
-  v0.68.0 `S.mig.laserCer`: 🔆 Laser Çərçivələr qrupu `g_cer_laser` (CO2 lazerlə kəsilmiş, boş — sahibi modelləri sonra deyəcək; təklif: adda kod L01…, şəkilli düymə).
+  v0.68.0 `S.mig.laserCer`: 🔆 Laser Çərçivələr qrupu `g_cer_laser` (CO2 lazerlə kəsilmiş; təklif: adda kod L01…, şəkilli düymə).
+  İçi: v0.69.0 `S.mig.laserCanim` — ❤️ Canım 13x18 (`lc_canim_1318`, qiyməti hələ 0 — sahibi deməyib).
   Bölmə düymələri (`.tabs`, v0.28.1) sığmayanda ikinci sıraya düşür — sürüşdürmə çubuğu olmamalıdır (sahibinin istəyi).
   v0.58.0: axtarış çubuğu bölmələrin **üstündə**; bölmələr sol menyu kimi rəngli (`TAB_COLORS`, sıraya görə), bərabər enli grid;
   `tabCols()` sütun sayını sıralar bərabər dolsun deyə seçir (simmetriya: 6 → 3+3) — sahibinin istəyi "simmetriyanı pozma".
