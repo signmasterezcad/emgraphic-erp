@@ -614,6 +614,14 @@ const path = require('path');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
   ok(await p.locator('.ov [data-max]').count() === 7, 'bütün 7 pəncərədə böyüt düyməsi var');
 
+  // v0.71.0: 🧹 Sistemi Sıfırla (ən sonda — hər şeyi silir)
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  const it0 = await p.evaluate(() => S.items.length);
+  await p.click('#btnRep'); ok(await p.isVisible('#btnReset'), 'Hesabatda "🧹 Sistemi Sıfırla" düyməsi');
+  await p.click('#btnReset'); await p.click('[data-rs=go]'); await p.waitForTimeout(100);
+  ok(await p.evaluate(() => S.sales.length > 0) && await p.isVisible('#ovReset'), 'SIFIRLA yazılmadan heç nə silinmir');
+  await p.fill('#rs_word', 'SIFIRLA'); await p.click('[data-rs=go]'); await p.waitForTimeout(200);
+  ok(await p.evaluate(it0 => !S.sales.length && !S.expenses.length && !S.purchases.length && !S.waste.length && !Object.keys(S.cash).length && S.items.length === it0 && S.materials.every(m => m.stock === 0), it0), 'sıfırlandı: satış/xərc/alış/zay/kassa yox; düymələr qaldı, anbar sayı 0');
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
 })();

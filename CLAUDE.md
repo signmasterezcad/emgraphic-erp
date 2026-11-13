@@ -129,6 +129,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   3-cü mərhələ (v0.20.0): **📅 Aylıq** tab (Hesabat / Anbar; `monthStats()`, `renderMonthly()`): xalis = satış − satış sətirlərinin `cost`-u
   − zay `cost` − digər xərclər (mal alışı çıxılmır). Ay seçimi, əvvəlki ayla ▲/▼ % (xərclərdə azalma yaşıl), son 12 ayın SVG sütun
   qrafiki (Satış `--series-1`, Xalis `--series-2`, validator hər iki mövzuda keçib), 24 aylıq cədvəl, ayın xərc növləri və ən çox satılanlar.
+- **🧹 Sistemi Sıfırla** (v0.71.0, sahibinin istəyi — sınaq bitəndə ciddi işə başlamaq üçün): Hesabat pəncərəsinin başlığında `#btnReset`
+  (yalnız admin, yalnız `mode==="rep"`, telefonda yox) → `#ovReset`: sayları göstərir, **SIFIRLA** yazmaq məcburidir, əvvəl `erpBackup(...,"el")`.
+  Silir: sales, purchases, expenses, waste, custPays, suppPays, cash; seçimlə (standart açıq) materials[].stock=0. Qalır: items, cats, users, suppliers,
+  customers, expCats, recurring, materials siyahısı. `S.resetAt`. Bulud qoşuludursa silmə digər cihazlara da gedir.
 - **Pəncərəni böyüt / kiçilt** (v0.21.0): hər `.ov` pəncərənin başlığında "⛶ Böyüt / 🗗 Kiçilt" (və başlığa iki dəfə basmaq);
   seçim `localStorage["kassa.maxed"]`-də (pəncərə id-sinə görə).
 - **Loqo** (v0.21.0): `launcher/icon/kassa.svg` (mavi kvadrat, qəbz, K) → PNG-lər → `app/kassa.ico` (öz Python skriptimizlə, PNG daxilli ICO)
