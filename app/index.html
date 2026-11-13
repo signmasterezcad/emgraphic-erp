@@ -653,7 +653,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.67.0";
+const APP_VERSION="0.68.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -913,6 +913,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     const g=S.items.find(i=>i.id==="g_foto")||S.items.find(i=>i.group&&norm(i.name)==="foto kagizlar");
     if(g)[["fk_a4_120","A4 120 qram",2,"📄"],["fk_a4_stk","A4 Sticker",3,"🏷️"]].forEach(([id,n,p,ic])=>{
       if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:g.cat,parent:g.id,icon:ic,color:g.color||"#16a34a",fav:0,ink:0,recipe:[],tiers:[[1,p]]})})}
+  // v0.68.0: Çərçivə → "Laser Çərçivələr" qrupu (boş; içini sahibi sonra deyəcək)
+  if(!S.mig.laserCer){S.mig.laserCer=1;
+    const cc=S.cats.find(c=>c.id==="cerceve")||S.cats.find(c=>norm(c.name)==="cercive");
+    if(cc&&!S.items.some(i=>i.id==="g_cer_laser"))S.items.push({id:"g_cer_laser",name:"Laser Çərçivələr",cat:cc.id,icon:"🔆",color:"#b91c1c",group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]})}
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
