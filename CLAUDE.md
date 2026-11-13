@@ -37,7 +37,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - Sənəd Surəti (`S.mig.kserIci`): A4 ağ-qara surət 0.20 / 51+ 0.15 (`ks_a4bw`, 1 vərəq A4), A3 ağ-qara surət 0.50 (`ks_a3bw`),
     A3 ağ-qara surət (2 üzlü) 1.00 (`ks_a3bw2`) — A3 materialı hələ yoxdur, resept boşdur;
     Telefondan sənəd surəti 0.30 (`ks_tel`, 1 vərəq A4; `S.mig.telQiymet`).
-  - A3 Sadə (0.50) və Sertifikat Kağızı (1.00) qrup deyil, birbaşa satış düyməsidir (`S.mig.a3Sert`; material yoxdur).
+  - Sertifikat Kağızı (1.00) birbaşa satış düyməsidir (`S.mig.a3Sert`). **A3 Sadə** v0.61.0-dan qrupdur (`S.mig.a3Qrup`, `g_a3`):
+    A3 sadə 0.50 (`a3s_bw`), A3 50% rəngli 0.70 (`a3s_50`), A3 100% rəngli 1.00 (`a3s_100`); köhnə resept birinciyə keçir.
   - Foto Kağızlar (`S.mig.fotoIci`, id `fk_1015`…): 10x15 0.40 (1 foto kağız 10x15), 13x18 0.80, 15x21 1, 20x25 3, 21x30 3,
     25x38 8, 30x40 12, 30x42 12, 30x45 15 (10x15-dən başqalarının materialı yoxdur).
 - **Poliqrafiya Xidmətləri** (id `poli`, ÇAP-ın yanında; `S.mig.poliBolme`): 4 qrup — Skan Etmə (`g_skan`), Spiral Cildləmə (`g_spiral`),
@@ -128,7 +129,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   proqram birbaşa admin kimi açılır (`startSession`), varsa giriş ekranı (`#ovLogin`, `.ov.lock` — kənara basanda bağlanmır).
   Başlıqda `#btnUser` = Çıxış. İcazələr `PERMS`: zay, hist, delSale, reports, cost, stock, exp, edit, backup;
   `can(p)` (admin hər şey), tablar `TAB_PERM` ilə süzülür (`repTabs()/setTabs()`), "👥 Kassirlər" tabı yalnız admin.
-  Yeni kassir: `KASSIR_DEFAULT` = zay + hist (+ supp, custSale, disc). Satış/zay/sayım `worker: curName()`.
+  Yeni kassir: `KASSIR_DEFAULT` = zay + hist (+ supp, custSale, disc, exp). Satış/zay/sayım `worker: curName()`.
+  v0.61.0 (`S.mig.expPerm`, sahibinin istəyi): bütün kassirlərə `exp` (💸 Xərclər) verildi; admin Kassirlər bölməsində bağlaya bilər.
 - **🏷️ Endirim** (v0.52.0): "Cari sifariş" başlığının yerində `#btnDisc` (icazə `disc`; kassirlərə standart, `S.mig.discPerm`). `#ovDisc`: ₼ məbləğ / % faiz,
   səbəb məcburi (`#d_r`, hazır səbəblər `DISC_REASONS`). Sifariş vəziyyəti `ordDisc={mode,v,reason}`, `discAmt(sub)` (cəmdən çox olmur), `#discRow` (✕ silir).
   Satış: `total` = sub − disc, `sub`, `disc`, `discReason`, `discPct`. Satış tarixçəsində sətir, Gün/Dövr hesabatında "🏷️ Endirimlər" KPI.

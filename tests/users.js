@@ -75,7 +75,7 @@ let n = 0;
 
   // 5) Kassir: yalnız icazəli düymələr
   ok(await p.isVisible('#btnZay') && await p.isVisible('#btnHist'), 'Leyla: Zay və Tarixçə görünür');
-  ok(await p.isHidden('#btnRep') && await p.isHidden('#btnSet') && await p.isHidden('#btnExp') && await p.isHidden('#btnEdit') && await p.isHidden('#today'), 'Leyla: Hesabat, Ayarlar, Xərclər, Düzəliş, günün cəmi gizlidir');
+  ok(await p.isHidden('#btnRep') && await p.isHidden('#btnSet') && await p.isVisible('#btnExp') && await p.isHidden('#btnEdit') && await p.isHidden('#today'), 'Leyla: Hesabat, Ayarlar, Düzəliş, günün cəmi gizlidir; Xərclər görünür (v0.61.0)');
   await sellOne(p);
   ok(JSON.parse(fs.data).sales.at(-1).worker === 'Leyla', 'satış Leyla-nın adına yazıldı');
   await p.click('#btnHist');
@@ -114,7 +114,7 @@ let n = 0;
   // 8) 🚚 Tədarükçü: kassir yazır, xərclərə düşür, admin aylıq hesabatı görür
   ok(JSON.parse(fs.data).suppliers.map(x => x.name).join('|') === 'Samir Foto|Vəfa Foto|Şamil Vinetka|Samir Banner', '4 tədarükçü hazırdır');
   await p.click('#btnUser'); await p.click(`[data-login="${leyla}"]`); await p.keyboard.type('2222'); await p.keyboard.press('Enter');
-  ok(await p.isVisible('#btnSupp') && await p.isHidden('#btnExp'), 'Leyla: 🚚 Tədarükçü görünür, Xərclər yox');
+  ok(await p.isVisible('#btnSupp') && await p.isVisible('#btnExp'), 'Leyla: 🚚 Tədarükçü və 💸 Xərclər görünür');
   await p.click('#btnSupp');
   ok(await p.locator('#stabs .tab').count() === 0 && await p.locator('.stile').count() === 4, 'Leyla: yalnız alış yazmaq (hesabat tabı yoxdur), 4 tədarükçü');
   await p.click('.stile:has-text("Samir Foto")'); await p.click('[data-s=save]');

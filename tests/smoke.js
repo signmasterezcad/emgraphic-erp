@@ -119,8 +119,10 @@ const path = require('path');
 
   // ÇAP bölməsi: 4 qrup düyməsi, içində düymələr
   ok((await p.textContent('#tabs')).includes('ÇAP'), 'bölmənin adı ÇAP');
-  await p.click('[data-add=g_a3]'); await p.click('[data-add=g_sert]');
-  ok((await p.textContent('#total')).startsWith('1.50'), 'A3 Sadə (0.50) + Sertifikat Kağızı (1.00) birbaşa satılır = 1.50');
+  await p.click('[data-add=g_sert]'); await p.click('[data-grp=g_a3]');
+  ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === 'A3 sadə|A3 50% rəngli|A3 100% rəngli', 'A3 Sadə qrup oldu: A3 sadə, A3 50% rəngli, A3 100% rəngli');
+  await p.click('[data-add=a3s_bw]'); await p.click('[data-add=a3s_50]'); await p.click('[data-add=a3s_100]'); await p.click('[data-back]');
+  ok((await p.textContent('#total')).startsWith('3.20'), 'Sertifikat (1.00) + A3 0.50 + 0.70 + 1.00 = 3.20');
   await p.click('#btnClear');
   await p.click('[data-grp=g_a4]');
   ok((await p.locator('#grid [data-add]').allTextContents()).join('|').includes('Sadə yazı ağ-qara') && await p.locator('#grid [data-add]').count() === 8, 'A4 Sadə: içində 8 düymə');
@@ -246,7 +248,7 @@ const path = require('path');
   await p.click('#btnClear'); await p.click('[data-add=ks_tel]');
   ok((await p.textContent('#total')).startsWith('0.30'), 'Telefondan sənəd surəti: 0.30');
   await p.click('#btnClear'); await p.click('[data-back]');
-  ok(await p.locator('#grid .svc.grpt').count() === 3 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 3 qrup (A4 Sadə, Foto, Sənəd Surəti), köhnə 3 düymə silinib');
+  ok(await p.locator('#grid .svc.grpt').count() === 4 && (await p.locator('#grid .svc.grpt .nm').allTextContents()).pop() === 'Sənəd Surəti (Kserokopiya)' && await p.locator('[data-add=a4bw],[data-add=a4c],[data-add=a4qc]').count() === 0, 'ÇAP: 4 qrup (A4 Sadə, A3 Sadə, Foto, Sənəd Surəti), köhnə 3 düymə silinib');
   await p.click('[data-grp=g_foto]');
   ok((await p.locator('#grid [data-add] .nm').allTextContents()).join('|') === '10x15|13x18|15x21|20x25|21x30|25x38|30x40|30x42|30x45', 'Foto Kağızlar: 9 ölçü');
   await p.click('[data-add=fk_1015]');

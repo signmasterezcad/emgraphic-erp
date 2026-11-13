@@ -640,7 +640,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.60.0";
+const APP_VERSION="0.61.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -878,6 +878,14 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
       S.items.filter(i=>i.cat===c.id).forEach(i=>{i.cat=pc.id;if(!i.group&&!i.parent)i.parent=gid});
       S.cats=S.cats.filter(x=>x!==c);if(cat===c.id)cat="search"})}
   // v0.52.0: mövcud kassirlərə endirim icazəsi (admin sonra bağlaya bilər)
+  // v0.61.0: kassirlər Xərcləri görür (icazə exp; admin sonra bağlaya bilər)
+  if(!S.mig.expPerm&&S.users){S.mig.expPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.exp===undefined||!u.perms.exp)u.perms.exp=1}})}
+  // v0.61.0: ÇAP → "A3 Sadə" birbaşa düymə idi, indi qrup: A3 sadə 0.50, A3 50% rəngli 0.70, A3 100% rəngli 1.00
+  if(!S.mig.a3Qrup){S.mig.a3Qrup=1;
+    const g=S.items.find(i=>i.id==="g_a3")||S.items.find(i=>norm(i.name)==="a3 sade"&&!i.parent);
+    if(g){const rec=g.group?[]:(g.recipe||[]),ink=g.group?0:(g.ink||0);g.group=1;g.recipe=[];g.tiers=[[1,0]];g.ink=0;delete g.src;delete g.free;delete g.area;
+      [["a3s_bw","A3 sadə",0.5,"📃"],["a3s_50","A3 50% rəngli",0.7,"🎨"],["a3s_100","A3 100% rəngli",1,"🌈"]].forEach(([id,n,pr,ic],k)=>{
+        if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:g.cat,parent:g.id,icon:ic,color:g.color||"#1d4ed8",fav:0,ink:k?0:ink,recipe:k?[]:rec.map(r=>[...r]),tiers:[[1,pr]]})})}}
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
@@ -1390,7 +1398,7 @@ const PERMS=[
   ["custDebt","🏢 Müştəri borclarını görmək və pulunu almaq"],
   ["disc","🏷️ Endirim etmək"],
 ];
-const KASSIR_DEFAULT={zay:1,hist:1,supp:1,custSale:1,disc:1};
+const KASSIR_DEFAULT={zay:1,hist:1,supp:1,custSale:1,disc:1,exp:1};
 const TAB_PERM={borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"reports",anbar:"stock",bolme:"edit",admin:"edit",mat:"stock",backup:"backup"};
 let me=null, loginSel=null, pinBuf="", pinErr="";
 const isAdmin=()=>me?.role==="admin";
