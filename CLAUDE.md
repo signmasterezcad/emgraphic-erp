@@ -132,7 +132,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **🧹 Sistemi Sıfırla** (v0.71.0, sahibinin istəyi — sınaq bitəndə ciddi işə başlamaq üçün): Hesabat pəncərəsinin başlığında `#btnReset`
   (yalnız admin, yalnız `mode==="rep"`, telefonda yox) → `#ovReset`: sayları göstərir, **SIFIRLA** yazmaq məcburidir, əvvəl `erpBackup(...,"el")`.
   Silir: sales, purchases, expenses, waste, custPays, suppPays, cash; seçimlə (standart açıq) materials[].stock=0. Qalır: items, cats, users, suppliers,
-  customers, expCats, recurring, materials siyahısı. `S.resetAt`. Bulud qoşuludursa silmə digər cihazlara da gedir.
+  customers, expCats, recurring, materials siyahısı. `S.resetAt`.
+  v0.72.0 (sahibinin istəyi): hər növ ayrıca işarə qutusu ilə seçilir (`data-rsk`: sales, purchases, expenses, waste, pays, cash — hamısı standart açıq); heç nə seçilməyibsə silmir. Bulud qoşuludursa silmə digər cihazlara da gedir.
 - **Pəncərəni böyüt / kiçilt** (v0.21.0): hər `.ov` pəncərənin başlığında "⛶ Böyüt / 🗗 Kiçilt" (və başlığa iki dəfə basmaq);
   seçim `localStorage["kassa.maxed"]`-də (pəncərə id-sinə görə).
 - **Loqo** (v0.21.0): `launcher/icon/kassa.svg` (mavi kvadrat, qəbz, K) → PNG-lər → `app/kassa.ico` (öz Python skriptimizlə, PNG daxilli ICO)

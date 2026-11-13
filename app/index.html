@@ -163,7 +163,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 .discbtn{font-weight:800}
 .resetbtn{border-color:var(--bad)!important;color:var(--bad)!important;margin-left:auto;margin-right:8px}
 #ovReset{z-index:45}
-.resetlist{margin:0;padding-left:20px;display:grid;gap:4px;line-height:1.45}
+.resetlist{margin:0;padding-left:4px;display:grid;gap:8px;line-height:1.45}#resetBody label.chk{font-size:15px;align-items:flex-start}#resetBody label.chk input{width:18px;height:18px;flex:none;margin-top:2px}
 .line.retline{background:color-mix(in srgb,var(--bad) 10%,transparent);border-radius:10px}
 .line.retline .sum{color:var(--bad)}
 td.acts{white-space:nowrap}
@@ -663,7 +663,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.71.0";
+const APP_VERSION="0.72.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1941,23 +1941,25 @@ let hPayEd=null;
 // v0.71.0: 🧹 Sistemi Sıfırla (yalnız admin, Hesabatda) — sınaq əməliyyatları silinir, quruluş (düymələr, bölmələr, kassirlər, tədarükçülər…) qalır
 function openReset(){if(!isAdmin())return;
   const n=k=>(S[k]||[]).length,cashN=Object.keys(S.cash||{}).length;
-  $("resetBody").innerHTML=`<p><b>Sınaq üçün etdiyiniz bütün əməliyyatlar silinəcək:</b></p>
-    <ul class="resetlist"><li>🧾 Satışlar (qaytarma, endirim, nisyə daxil) — <b>${n("sales")}</b></li><li>📦 Mal alışları — <b>${n("purchases")}</b></li>
-      <li>🧾 Xərclər və tədarükçü alışları — <b>${n("expenses")}</b></li><li>🗑️ Zay qeydləri — <b>${n("waste")}</b></li>
-      <li>💳 Borc ödənişləri (müştəri və tədarükçü) — <b>${n("custPays")+n("suppPays")}</b></li><li>💰 Kassa qeydləri (səhər / saydım) — <b>${cashN}</b> gün</li></ul>
-    <p class="sub">Beləliklə hesabatlar, kassa və borclar sıfırdan başlayır.</p>
+  const rows=[["sales","🧾 Satışlar (qaytarma, endirim, nisyə daxil)",n("sales")],["purchases","📦 Mal alışları",n("purchases")],
+    ["expenses","🧾 Xərclər və tədarükçü alışları",n("expenses")],["waste","🗑️ Zay qeydləri",n("waste")],
+    ["pays","💳 Borc ödənişləri (müştəri və tədarükçü)",n("custPays")+n("suppPays")],["cash","💰 Kassa qeydləri (səhər / saydım)",cashN+" gün"]];
+  $("resetBody").innerHTML=`<p><b>Silmək istədiyiniz əməliyyatları seçin</b> (işarəni götürsəniz, o qalır):</p>
+    <div class="resetlist">${rows.map(r=>`<label class="chk"><input type="checkbox" data-rsk="${r[0]}" checked> ${r[1]} — <b>${r[2]}</b></label>`).join("")}</div>
     <p><b>Qalır (dəyişmir):</b> bölmələr, düymələr və qiymətlər, kassirlər və PIN-lər, tədarükçülər və qiymət siyahıları, müəssisələr, xərc növləri, aylıq təkrarlanan xərc şablonları, anbardakı malların siyahısı.</p>
     <label class="chk"><input type="checkbox" id="rs_stock" checked> 📦 Anbardakı malların <b>sayını 0</b> et (sınaq alışları ilə gələn qalıqlar silinsin; mallar siyahıda qalır)</label>
     <p class="sub">Silmədən əvvəl ehtiyat nüsxə yazılır — səhv olsa, ⚙️ Ayarlar → 💾 Ehtiyat nüsxə bölməsindən geri qaytarmaq olar.${CL.cfg?" Buluda qoşulu digər cihazlarda (telefon, o biri kompüter) da silinəcək.":""}</p>
     <label class="f"><span>Təsdiq üçün böyük hərflərlə <b>SIFIRLA</b> yazın</span><input id="rs_word" autocomplete="off" placeholder="SIFIRLA"></label>
-    <div class="frow"><span class="grow"></span><button class="btn ghost" data-rsx>Ləğv</button><button class="btn red" data-rs="go">🧹 Bəli, hamısını sıfırla</button></div>`;
+    <div class="frow"><span class="grow"></span><button class="btn ghost" data-rsx>Ləğv</button><button class="btn red" data-rs="go">🧹 Bəli, seçilənləri sıfırla</button></div>`;
   $("ovReset").hidden=false;setTimeout(()=>$("rs_word")?.focus(),0)}
 async function doReset(){if(!isAdmin())return;
   if($("rs_word").value.trim().toLocaleUpperCase("az")!=="SIFIRLA"){toast("Təsdiq üçün SIFIRLA yazın");$("rs_word").focus();return}
-  const stock=$("rs_stock").checked;
+  const stock=$("rs_stock").checked,sel={};document.querySelectorAll("#resetBody [data-rsk]").forEach(c=>{sel[c.dataset.rsk]=c.checked});
+  if(!stock&&!Object.values(sel).some(Boolean)){toast("Heç nə seçilməyib");return}
   if(order.length){order=[];ordDisc=null}
   if(NATIVE&&!REMOTE)try{await window.erpBackup(backupText(),"el")}catch(e){}
-  S.sales=[];S.purchases=[];S.expenses=[];S.waste=[];S.custPays=[];S.suppPays=[];S.cash={};
+  if(sel.sales)S.sales=[];if(sel.purchases)S.purchases=[];if(sel.expenses)S.expenses=[];if(sel.waste)S.waste=[];
+  if(sel.pays){S.custPays=[];S.suppPays=[]}if(sel.cash)S.cash={};
   if(stock)(S.materials||[]).forEach(m=>{m.stock=0});
   S.resetAt=Date.now();
   save();$("ovReset").hidden=true;$("ovRep").hidden=true;renderAll();renderDebtBadge();
