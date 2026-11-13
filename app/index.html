@@ -197,6 +197,9 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-blo
 @media (max-width:560px){.bl{grid-template-columns:minmax(0,1fr) 70px 100px auto}}
 .done{padding:16px;border-radius:12px;border:0;background:var(--ok);color:#fff;font-size:20px;font-weight:800}
 .done:disabled{background:var(--ok-soft);color:var(--muted);cursor:not-allowed}
+.cancel{padding:16px;border-radius:12px;border:0;background:var(--bad);color:#fff;font-size:20px;font-weight:800;cursor:pointer}
+.cancel:hover{filter:brightness(1.1)}
+.cancel.off{background:color-mix(in srgb,var(--bad) 16%,var(--panel));color:var(--muted);cursor:default;filter:none}
 .link{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:13px}
 
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px;z-index:20}
@@ -433,7 +436,7 @@ h4{margin:6px 0 0;font-size:14px}
       <div class="custsel" id="custSel" hidden></div>
       <button class="done" id="btnDone" disabled>Ödənildi ✓</button>
       <p class="sub keyhint">⌨️ Klaviatura: <b>Space</b> və ya <b>Enter</b> iki dəfə — nağd ödəniş</p>
-      <button class="link" id="btnClear">Sifarişi ləğv et</button>
+      <button class="cancel" id="btnClear">Sifarişi ləğv et ✕</button>
     </div>
   </aside>
 </main>
@@ -640,7 +643,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.62.0";
+const APP_VERSION="0.63.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1560,7 +1563,7 @@ function renderOrder(){
   $("total").textContent=m2(t)+" ₼";
   $("mobBar").hidden=!order.length;document.body.classList.toggle("hasorder",!!order.length);
   if(order.length){$("mobN").textContent=`Sifariş: ${order.reduce((a,o)=>a+o.q,0)} ədəd`;$("mobT").textContent=m2(t)+" ₼"}
-  $("btnDone").disabled=!order.length;
+  $("btnDone").disabled=!order.length;$("btnClear").classList.toggle("off",!order.length);
   $("payCash").classList.toggle("on",pay==="nağd");$("payCard").classList.toggle("on",pay==="kart");
   $("payDebt").hidden=!can("custSale");$("payDebt").classList.toggle("on",pay==="borc");
   const oc=pay==="borc"&&custById(ordCust);$("custSel").hidden=!oc;
