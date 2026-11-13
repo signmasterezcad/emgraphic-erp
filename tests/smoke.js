@@ -188,6 +188,7 @@ const path = require('path');
   ok(await p.evaluate(() => ['fk_a4_120:2:A4 120 qram', 'fk_a4_stk:3:A4 Sticker'].every(x => { const [id, pr, n] = x.split(':'); const i = S.items.find(y => y.id === id); return i && i.parent === 'g_foto' && i.tiers[0][1] === +pr && i.name === n; })), 'Foto Kağızlar: A4 120 qram 2, A4 Sticker 3');
   ok(await p.evaluate(() => { const g = S.items.find(i => i.id === 'g_cer_laser'); return g && g.group && g.cat === 'cerceve' && g.name === 'Laser Çərçivələr'; }), 'Çərçivə: "Laser Çərçivələr" qrupu');
   ok(await p.evaluate(() => S.items.find(i => i.id === 'lc_canim_1318')?.parent === 'g_cer_laser'), 'Laser Çərçivələr → Canım 13x18');
+  ok(await p.evaluate(() => S.items.find(i => i.id === 'lc_burc_1015')?.parent === 'g_cer_laser'), 'Laser Çərçivələr → Bürclü 10x15');
   ok(await p.evaluate(() => S.items.find(i => i.id === 'pq_vizit')?.tiers[0][1] === 0.1 && S.items.find(i => i.id === 'pq_vizit').cat === 'poli' && S.items.filter(i => i.parent === 'g_konfet').map(i => i.tiers[0][1]).join('|') === '0.5|0.4|0.8'), 'Poliqrafiya: Vizit Kart 0.10, Konfet Kartı 0.50 / 0.40 / 0.80');
   // v0.52.0: 🏷️ Endirim
   ok(await p.isVisible('#btnDisc') && !(await p.textContent('.ordhead')).includes('Cari sifariş'), '"Cari sifariş" yerində 🏷️ Endirim düyməsi');
