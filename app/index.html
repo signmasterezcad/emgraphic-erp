@@ -640,7 +640,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.61.0";
+const APP_VERSION="0.62.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -886,6 +886,8 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     if(g){const rec=g.group?[]:(g.recipe||[]),ink=g.group?0:(g.ink||0);g.group=1;g.recipe=[];g.tiers=[[1,0]];g.ink=0;delete g.src;delete g.free;delete g.area;
       [["a3s_bw","A3 sadə",0.5,"📃"],["a3s_50","A3 50% rəngli",0.7,"🎨"],["a3s_100","A3 100% rəngli",1,"🌈"]].forEach(([id,n,pr,ic],k)=>{
         if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:g.cat,parent:g.id,icon:ic,color:g.color||"#1d4ed8",fav:0,ink:k?0:ink,recipe:k?[]:rec.map(r=>[...r]),tiers:[[1,pr]]})})}}
+  // v0.62.0: "Sadə yazı ağ-qara" — 101+ pilləsi (0.05) ləğv, həmişə 0.10 (endirim lazımsa Endirim düyməsi ilə)
+  if(!S.mig.a4bwPille){S.mig.a4bwPille=1;const it=S.items.find(i=>i.id==="a4s_bw");if(it)it.tiers=[[1,0.10]]}
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;

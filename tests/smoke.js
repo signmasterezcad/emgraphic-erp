@@ -129,7 +129,7 @@ const path = require('path');
   await p.click('[data-add=a4s_bw]'); await p.fill('.line input', '100'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50);
   ok((await p.textContent('#total')).startsWith('10.00'), 'Sadə yazı ağ-qara: 100 × 0.10 = 10.00');
   await p.fill('.line input', '101'); await p.dispatchEvent('.line input', 'change'); await p.waitForTimeout(50);
-  ok((await p.textContent('#total')).startsWith('5.05'), '100-dən çox: 101 × 0.05 = 5.05');
+  ok((await p.textContent('#total')).startsWith('10.10') && !(await p.textContent('[data-add=a4s_bw]')).includes('101+'), '100-dən çox da 0.10: 101 × 0.10 = 10.10 (pillə yoxdur)');
   await p.click('#btnClear'); await p.click('[data-add=a4s_40]');
   ok((await p.textContent('#total')).startsWith('0.30'), 'Qismən 40% rəngli: 0.30');
   await p.click('#btnClear'); await p.click('[data-add=a4s_60]'); await p.click('[data-add=a4s_100]');
