@@ -665,7 +665,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.73.0";
+const APP_VERSION="0.74.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1449,7 +1449,7 @@ const PERMS=[
   ["refund","↩️ Malı qaytarmaq / əvəzləmək"],
 ];
 const KASSIR_DEFAULT={zay:1,hist:1,supp:1,custSale:1,disc:1,exp:1};
-const TAB_PERM={borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"reports",anbar:"stock",bolme:"edit",admin:"edit",mat:"stock",backup:"backup"};
+const TAB_PERM={pnl:"cost",borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"reports",anbar:"stock",bolme:"edit",admin:"edit",mat:"stock",backup:"backup"};
 let me=null, loginSel=null, pinBuf="", pinErr="";
 const isAdmin=()=>me?.role==="admin";
 const can=p=>!!me&&(me.role==="admin"||!!me.perms?.[p]);
@@ -1868,6 +1868,35 @@ function renderMonthly(){
     <div><h4>${monName(m.k)}: ən çox satılanlar</h4>${top.length?`<div class="tw"><table>${top.map(([n,v])=>`<tr><td>${esc(n)}</td><td class="n sub">×${v.q}</td><td class="n">${m2(v.sum)} ₼</td></tr>`).join("")}</table></div>`:`<p class="sub">Bu ay satış yoxdur.</p>`}</div>
   </div>
   ${srcSection(m)}`;
+}
+// v0.74.0: 💰 Mənfəət — ay seçilir: satış, bu ayın bütün xərcləri (maya, zay, hər xərc növü və hər qeyd), qazancım
+function renderProfit(){
+  const rows=monthStats();if(!mSel||!rows.some(r=>r.k===mSel))mSel=rows[0].k;
+  const i=rows.findIndex(r=>r.k===mSel),m=rows[i],pv=rows[i+1],inM=ts=>ts&&monKey(ts)===m.k;
+  const exps=S.expenses.filter(x=>inM(x.ts)).sort((a,b)=>b.ts-a.ts),cats=Object.entries(m.cats).sort((a,b)=>b[1]-a[1]);
+  const allExp=m.cost+m.waste+m.exp,buy=S.purchases.filter(p=>inM(p.ts)).reduce((a,p)=>a+(p.total||0),0);
+  const unpaid=(S.recurring||[]).filter(r=>!S.expenses.some(x=>x.rec===r.id&&monKey(x.ts)===m.k));
+  const pill=x=>x.pay==="nisyə"?"📝 Nisyə":x.pay==="kart"?"💳 Kart":"💵 Nağd";
+  const row=(lab,v,sub)=>`<tr><td>${lab}${sub?`<div class="sub">${sub}</div>`:""}</td><td class="n"><b>${m2(v)} ₼</b></td><td class="n sub">${allExp?(v/allExp*100).toFixed(0)+"%":""}</td></tr>`;
+  return `<div class="frow"><label class="f">Ay<select id="m_sel">${rows.map(r=>`<option value="${r.k}" ${r.k===mSel?"selected":""}>${monName(r.k)}</option>`).join("")}</select></label>
+    ${pv?`<span class="sub">Faizlər ${monName(pv.k)} ilə müqayisədir</span>`:""}</div>
+  <div class="kpis pnl">
+    <div class="kpi"><span>💵 Satışdan gələn pul (${m.n} satış)</span><b>${m2(m.sales)} ₼</b>${pv?chgTag(m.sales,pv.sales):""}</div>
+    <div class="kpi"><span>📋 Bütün xərclərim</span><b style="color:var(--bad)">−${m2(allExp)} ₼</b>${pv?chgTag(allExp,pv.cost+pv.waste+pv.exp,1):""}</div>
+    <div class="kpi hero"><span>🟢 Qazancım — ${monName(m.k)}</span><b style="color:${m.net<0?"var(--bad)":"var(--ok)"}">${m2(m.net)} ₼</b>${pv?chgTag(m.net,pv.net):""}</div>
+  </div>
+  <h4>📋 ${monName(m.k)}: bütün xərclərim</h4>
+  <div class="tw"><table>
+    ${m.cost?row("🧾 Satılan malın mayası (kağız, mürəkkəb…)",m.cost,"Satılan düymələrin reseptinə görə anbardan çıxan malın dəyəri"):""}
+    ${m.waste?row("🗑️ Zay",m.waste):""}
+    ${cats.map(([c,v])=>row("💸 "+esc(c),v)).join("")}
+    ${allExp?`<tr class="selrow"><td><b>Cəmi xərc</b></td><td class="n"><b style="color:var(--bad)">${m2(allExp)} ₼</b></td><td></td></tr>`:`<tr><td class="sub">Bu ay xərc yazılmayıb.</td><td></td><td></td></tr>`}
+  </table></div>
+  ${unpaid.length?`<p class="sub">⚠ Bu ay hələ yazılmayan aylıq xərclər: ${unpaid.map(r=>`<b>${esc(r.cat)}</b> ${m2(r.amount)} ₼`).join(", ")} — ödəyib 💸 Xərclər-də yazanda qazancdan çıxılacaq.</p>`:""}
+  ${buy?`<p class="sub">📦 Bu ay mal alışına (anbara) <b>${m2(buy)} ₼</b> verilib. Bu, xərc sayılmır — mal anbardadır; satıldıqca mayası yuxarıdakı “Satılan malın mayası”na düşür.</p>`:""}
+  ${exps.length?`<details><summary><b>🧾 Xərclər bir-bir (${exps.length})</b></summary><div class="tw"><table class="hist"><tr><th>Tarix</th><th>Növ</th><th>Nə üçün</th><th>Ödəniş</th><th class="n">Məbləğ</th></tr>
+    ${exps.map(x=>`<tr><td>${fmtDate(x.ts)}</td><td>${esc(x.cat||"")}</td><td class="wrap">${esc(x.note||"")}</td><td>${pill(x)}</td><td class="n"><b>${m2(x.amount)} ₼</b></td></tr>`).join("")}</table></div></details>`:""}
+  <p class="sub">Qazancım = satışdan gələn pul − bütün xərclər (satılan malın mayası + zay + 💸 Xərclər-də yazılanlar: icarə, maaş, tədarükçü alışları…).</p>`;
 }
 // 🖨 Özümüz / 🚚 Tədarükçüdən: eyni düymə, hesabatda ayrı
 function srcSection(m){
@@ -2558,7 +2587,7 @@ function rrPreset(a){const now=new Date(),D=(y,m,d)=>dayKey(new Date(y,m,d).getT
 document.addEventListener("click",e=>{const t=e.target.closest("[data-rr],[data-rd]");if(!t||$("ovRep").hidden)return;
   if(t.dataset.rd)rFrom=rTo=t.dataset.rd;else[rFrom,rTo]=rrPreset(t.dataset.rr);renderRep()});
 document.addEventListener("change",e=>{if(e.target.id==="r_from"){rFrom=e.target.value;renderRep()}else if(e.target.id==="r_to"){rTo=e.target.value;renderRep()}});
-const RT_REP=[["gun","📆 Gün / Dövr"],["ay","📅 Aylıq"],["mal","Məhsul + mənfəət"],["zay","Zay"],["borc","💳 Borclar"]];
+const RT_REP=[["gun","📆 Gün / Dövr"],["ay","📅 Aylıq"],["pnl","💰 Mənfəət"],["mal","Məhsul + mənfəət"],["zay","Zay"],["borc","💳 Borclar"]];
 // 📦 Anbar (v0.38.0: Hesabatdan və Ayarlardan ayrıca düyməyə köçdü)
 const RT_STOCK=[["anbar","Qalıq / Sayım"],["mat","Materiallar"],["low","⚠ Az qalanlar"]];
 const stockTabs=()=>RT_STOCK.filter(()=>can("stock"));
@@ -2616,6 +2645,7 @@ function renderRep(){
       ${sales.slice(-10).reverse().map(s=>`<tr><td>${one?fmtTime(s.ts):fmtDate(s.ts)+" "+fmtTime(s.ts)}</td><td>${s.worker}</td><td>${s.lines.map(l=>l.name+" ×"+l.q).join(", ")}</td><td>${s.pay}</td><td class="n">${m2(s.total)} ₼</td></tr>`).join("")}</table></div>`;
   }
   if(rtab==="ay")h=renderMonthly();
+  if(rtab==="pnl")h=renderProfit();
   if(rtab==="mal"){
     const agg={};sales.forEach(s=>s.lines.forEach(l=>{const k=l.id+(l.from?"@"+l.from:""),a=agg[k]||(agg[k]={area:!!l.base,name:(l.base?l.base+" (m²)":(l.plain||l.name))+(l.from?` · 🚚 ${l.fromName||suppName(l.from)||""}`:(item(l.id)?.src?" · 🖨 özümüz":"")),q:0,sum:0,cost:0});a.q+=l.base?+(l.m2||0):l.q;a.sum+=l.sum;a.cost+=l.from?(l.scost||0):l.cost}));
     const rows=Object.values(agg).sort((a,b)=>b.sum-a.sum);

@@ -129,6 +129,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   3-cü mərhələ (v0.20.0): **📅 Aylıq** tab (Hesabat / Anbar; `monthStats()`, `renderMonthly()`): xalis = satış − satış sətirlərinin `cost`-u
   − zay `cost` − digər xərclər (mal alışı çıxılmır). Ay seçimi, əvvəlki ayla ▲/▼ % (xərclərdə azalma yaşıl), son 12 ayın SVG sütun
   qrafiki (Satış `--series-1`, Xalis `--series-2`, validator hər iki mövzuda keçib), 24 aylıq cədvəl, ayın xərc növləri və ən çox satılanlar.
+- **💰 Mənfəət** (v0.74.0, sahibinin istəyi "bu ay nə qədər qazanmışam"): Hesabatda Aylıq-dan sonra tab `pnl` (icazə `cost`), `renderProfit()` —
+  ay seçimi (`mSel`, `monthStats()`), 3 KPI (satışdan gələn pul / 📋 bütün xərclərim = maya + zay + S.expenses / 🟢 qazancım = `net`),
+  xərclər cədvəli (maya, zay, hər növ), ödənilməyən aylıq təkrarlananlar xəbərdarlığı, mal alışı qeydi (xərc sayılmır), "Xərclər bir-bir".
 - **🧹 Sistemi Sıfırla** (v0.71.0, sahibinin istəyi — sınaq bitəndə ciddi işə başlamaq üçün): Hesabat pəncərəsinin başlığında `#btnReset`
   (yalnız admin, yalnız `mode==="rep"`, telefonda yox) → `#ovReset`: sayları göstərir, **SIFIRLA** yazmaq məcburidir, əvvəl `erpBackup(...,"el")`.
   Silir: sales, purchases, expenses, waste, custPays, suppPays, cash; seçimlə (standart açıq) materials[].stock=0. Qalır: items, cats, users, suppliers,

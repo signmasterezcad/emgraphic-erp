@@ -614,6 +614,12 @@ const path = require('path');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
   ok(await p.locator('.ov [data-max]').count() === 7, 'bütün 7 pəncərədə böyüt düyməsi var');
 
+  // v0.74.0: 💰 Mənfəət tabı
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  await p.click('#btnRep'); await p.click('[data-rt=pnl]');
+  ok(await p.evaluate(() => { const m = monthStats()[0]; return document.getElementById('rbody').textContent.includes('Qazancım') && document.getElementById('rbody').textContent.includes(m2(m.net)); }), 'Hesabatda "💰 Mənfəət" tabı: bütün xərclər və qazancım');
+  await p.click('#ovRep [data-close]');
+
   // v0.73.0: ☀️/🌙 mövzu
   const th0 = await p.evaluate(() => curTheme()); await p.click('#btnTheme');
   ok(await p.evaluate(t => curTheme() !== t && localStorage.getItem('kassa.theme') === curTheme(), th0), 'mövzu düyməsi ağ/qara rejimi dəyişir və yadda saxlayır');
