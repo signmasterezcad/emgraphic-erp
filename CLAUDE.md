@@ -134,6 +134,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Silir: sales, purchases, expenses, waste, custPays, suppPays, cash; seçimlə (standart açıq) materials[].stock=0. Qalır: items, cats, users, suppliers,
   customers, expCats, recurring, materials siyahısı. `S.resetAt`.
   v0.72.0 (sahibinin istəyi): hər növ ayrıca işarə qutusu ilə seçilir (`data-rsk`: sales, purchases, expenses, waste, pays, cash — hamısı standart açıq); heç nə seçilməyibsə silmir. Bulud qoşuludursa silmə digər cihazlara da gedir.
+- **☀️/🌙 Ağ / qara rejim** (v0.73.0, sahibinin istəyi): başlıqda Yenilə-nin yanında `#btnTheme` (qara rejimdə ☀️, ağda 🌙);
+  `<html data-theme>` + `localStorage["kassa.theme"]` (hər cihazda ayrıca; `<head>`-dəki kiçik skript açılışda tətbiq edir), `curTheme()`, `renderTheme()`.
 - **Pəncərəni böyüt / kiçilt** (v0.21.0): hər `.ov` pəncərənin başlığında "⛶ Böyüt / 🗗 Kiçilt" (və başlığa iki dəfə basmaq);
   seçim `localStorage["kassa.maxed"]`-də (pəncərə id-sinə görə).
 - **Loqo** (v0.21.0): `launcher/icon/kassa.svg` (mavi kvadrat, qəbz, K) → PNG-lər → `app/kassa.ico` (öz Python skriptimizlə, PNG daxilli ICO)

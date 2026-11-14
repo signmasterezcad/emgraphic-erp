@@ -614,6 +614,11 @@ const path = require('path');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
   ok(await p.locator('.ov [data-max]').count() === 7, 'bütün 7 pəncərədə böyüt düyməsi var');
 
+  // v0.73.0: ☀️/🌙 mövzu
+  const th0 = await p.evaluate(() => curTheme()); await p.click('#btnTheme');
+  ok(await p.evaluate(t => curTheme() !== t && localStorage.getItem('kassa.theme') === curTheme(), th0), 'mövzu düyməsi ağ/qara rejimi dəyişir və yadda saxlayır');
+  await p.click('#btnTheme'); ok(await p.evaluate(t => curTheme() === t, th0), 'ikinci basış əvvəlki rejimə qaytarır');
+
   // v0.71.0: 🧹 Sistemi Sıfırla (ən sonda — hər şeyi silir)
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   const it0 = await p.evaluate(() => S.items.length);
